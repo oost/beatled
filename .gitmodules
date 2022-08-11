@@ -1,0 +1,6 @@
+[submodule "lib/restbed"]
+	path = lib/restbed
+	url = https://github.com/corvusoft/restbed.git
+[submodule "lib/restinio"]
+	path = lib/restinio
+	url = https://github.com/stiffstream/restinio
