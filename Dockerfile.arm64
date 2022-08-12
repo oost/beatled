@@ -18,13 +18,8 @@ RUN curl -L https://github.com/rvagg/rpi-newer-crosstools/archive/eb68350c5c8ec1
   mv /home/toolchains/rpi-newer-crosstools-eb68350c5c8ec1663b7fe52c742ac4271e3217c5 /home/toolchains/arm-rpi-linux-gnueabihf
 
 
-WORKDIR /app
-
-RUN curl -L https://github.com/Stiffstream/restinio/releases/download/v.0.6.16/restinio-0.6.16-full.tar.bz2 -o restinio.tar.bz2 && \
-  mkdir external && \
-  tar -xf restinio.tar.bz2 -C external
-
-COPY ./server /app
+COPY ./server /app/server
+COPY ./CMakeLists.txt /app
 WORKDIR /app
 
 #  && \

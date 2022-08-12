@@ -1,6 +1,9 @@
 #include <iostream>
 #include <map>
 
+#include <json.hpp>
+using json = nlohmann::json;
+
 #include <restinio/all.hpp>
 
 #include <clara.hpp>
@@ -174,9 +177,15 @@ auto server_handler(const std::string &root_dir)
 			"/api/status",
 			[](auto req, auto)
 			{
+				// create an empty structure (null)
+				json j;
+
+				// add a number that is stored as double (note the implicit conversion of j to an object)
+				j["message"] = "It's all good!";
+
 				init_resp(req->create_response())
 						.append_header(restinio::http_field::content_type, "text/json; charset=utf-8")
-						.set_body(R"-({"message" : "Hello world!"})-")
+						.set_body(j.dump())
 						.done();
 
 				return restinio::request_accepted();
