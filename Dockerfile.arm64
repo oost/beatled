@@ -1,0 +1,70 @@
+# syntax=docker/dockerfile:1
+FROM --platform=$BUILDPLATFORM debian AS build
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
+RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM" 
+RUN echo "I am running $(cat /etc/os-release) on a machine with architecture $(uname -m)"
+
+RUN   apt-get update \
+  &&  apt-get install -y gcc cmake make build-essential pkg-config git ninja-build \
+  curl zip unzip tar gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf \
+  && rm -rf /var/lib/apt/lists/*
+
+
+WORKDIR /home
+RUN curl -L https://github.com/rvagg/rpi-newer-crosstools/archive/eb68350c5c8ec1663b7fe52c742ac4271e3217c5.tar.gz -o rpi-toolchain.tar.gz && \
+  mkdir /home/toolchains && \
+  tar xzf rpi-toolchain.tar.gz -C /home/toolchains && \
+  mv /home/toolchains/rpi-newer-crosstools-eb68350c5c8ec1663b7fe52c742ac4271e3217c5 /home/toolchains/arm-rpi-linux-gnueabihf
+
+COPY ./server /app
+WORKDIR /app
+
+RUN curl -L https://github.com/Stiffstream/restinio/releases/download/v.0.6.16/restinio-0.6.16-full.tar.bz2 -o restinio.tar.bz2 && \
+  mkdir external && \
+  tar -xf restinio.tar.bz2 -C external
+#  && \
+# cd external/restinio-0.6.16/dev && \
+# mkdir cmake_build && \
+# cd cmake_build && \
+# cmake -DCMAKE_INSTALL_PREFIX=target -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=/app/rpiz-toolchain.cmake  .. && \
+# cmake --build . --config Release --target install
+
+
+
+# RUN git clone https://github.com/Microsoft/vcpkg.git
+# WORKDIR /home/vcpkg
+# RUN export VCPKG_FORCE_SYSTEM_BINARIES=1
+# RUN ./bootstrap-vcpkg.sh
+# RUN echo $(cmake --version)
+# RUN ./vcpkg install restinio:arm-linux clara:arm-linux
+
+
+
+# RUN ARMCC_PREFIX=/home/toolchains/arm-rpi-linux-gnueabihf/x64-gcc-6.5.0/arm-rpi-linux-gnueabihf/bin/arm-rpi-linux-gnueabihf- && \
+#   ARMCC_FLAGS="-march=armv6 -mfpu=vfp -funsafe-math-optimizations" && \
+#   cmake -DCMAKE_C_COMPILER=${ARMCC_PREFIX}gcc \
+#   -DCMAKE_CXX_COMPILER=${ARMCC_PREFIX}g++ \
+#   -DCMAKE_C_FLAGS="${ARMCC_FLAGS}" \
+#   -DCMAKE_CXX_FLAGS="${ARMCC_FLAGS}" \
+#   -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
+#   -DCMAKE_SYSTEM_NAME=Linux \
+#   -DCMAKE_SYSTEM_PROCESSOR=armv6 \
+#   # -DCMAKE_TOOLCHAIN_FILE=/home/vcpkg/scripts/buildsystems/vcpkg.cmake \
+#   -B build -S . && \
+#   cmake --build build
+
+RUN cmake -DCMAKE_TOOLCHAIN_FILE=./rpiz-toolchain.cmake \
+  -B build -S . -GNinja && \
+  cmake --build build
+
+
+# RUN cmake -DCMAKE_TOOLCHAIN_FILE=./toolchain-arm.cmake \
+#   # -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
+#   -GNinja \
+#   -B build -S . && \
+#   cmake --build build
+
+
+FROM scratch AS export
+COPY --from=build /app/build .
