@@ -18,8 +18,8 @@ RUN curl -L https://github.com/rvagg/rpi-newer-crosstools/archive/eb68350c5c8ec1
   mv /home/toolchains/rpi-newer-crosstools-eb68350c5c8ec1663b7fe52c742ac4271e3217c5 /home/toolchains/arm-rpi-linux-gnueabihf
 
 
-COPY ./server /app/server
-COPY ./CMakeLists.txt /app
+COPY server /app/server
+COPY CMakeLists.txt /app
 
 WORKDIR /app
 
