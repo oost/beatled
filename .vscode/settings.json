@@ -1,3 +1,5 @@
 {
-  "cmake.sourceDirectory": "${workspaceFolder}/server"
+  "cmake.configureSettings": {
+    "CMAKE_TOOLCHAIN_FILE": "/home/pi/projects/vcpkg/scripts/buildsystems/vcpkg.cmake"
+  }
 }

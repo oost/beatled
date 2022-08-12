@@ -38,10 +38,10 @@ RUN echo "*** Building an example ***" \
   && conan install --install-folder cmake-build-release --build=missing .. 
 
 
-WORKDIR /home/restinio-conan-example/build
+WORKDIR /home/restinio-conan-example
 
-RUN ARMCC_PREFIX=/home/toolchains/arm-rpi-linux-gnueabihf/x64-gcc-6.5.0/arm-rpi-linux-gnueabihf/bin/arm-rpi-linux-gnueabihf- \
-  ARMCC_FLAGS="-march=armv6 -mfpu=vfp -funsafe-math-optimizations" \
+RUN ARMCC_PREFIX=/home/toolchains/arm-rpi-linux-gnueabihf/x64-gcc-6.5.0/arm-rpi-linux-gnueabihf/bin/arm-rpi-linux-gnueabihf- && \
+  ARMCC_FLAGS="-march=armv6 -mfpu=vfp -funsafe-math-optimizations" && \
   cmake -DCMAKE_C_COMPILER=${ARMCC_PREFIX}gcc \
   -DCMAKE_CXX_COMPILER=${ARMCC_PREFIX}g++ \
   -DCMAKE_C_FLAGS="${ARMCC_FLAGS}" \
@@ -49,10 +49,9 @@ RUN ARMCC_PREFIX=/home/toolchains/arm-rpi-linux-gnueabihf/x64-gcc-6.5.0/arm-rpi-
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
   -DCMAKE_SYSTEM_NAME=Linux \
   -DCMAKE_SYSTEM_PROCESSOR=armv6 \
-  # -DCMAKE_TOOLCHAIN_FILE=cmake-build-release/conan_toolchain.cmake \
-  -DCMAKE_BUILD_TYPE=Release \
-  ..\
-  && cmake --build . --config Release
+  # -DCMAKE_TOOLCHAIN_FILE=build/cmake-build-release/conan_toolchain.cmake \
+  -B build -S . && \
+  cmake --build build
 
 EXPOSE 8080
 

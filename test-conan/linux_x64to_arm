@@ -1,0 +1,26 @@
+toolchain=/home/toolchains/arm-rpi-linux-gnueabihf/x64-gcc-6.5.0/arm-rpi-linux-gnueabihf
+target_host=arm-rpi-linux-gnueabihf- 
+cc_compiler=gcc
+cxx_compiler=g++
+
+[env]
+CONAN_CMAKE_FIND_ROOT_PATH=$toolchain  # Optional, for CMake to find things in that folder
+# CONAN_CMAKE_SYSROOT=$toolchain/sysroot  # Optional, if we want to define sysroot
+CHOST=$target_host
+AR=$target_host-ar
+AS=$target_host-as
+RANLIB=$target_host-ranlib
+CC=$target_host-$cc_compiler
+CXX=$target_host-$cxx_compiler
+STRIP=$target_host-strip
+RC=$target_host-windres
+
+[settings]
+# We are cross-building to Windows
+os=Linux
+arch=armv6
+compiler=gcc
+compiler.version=6
+compiler.libcxx=libstdc++11
+build_type=Release
+
