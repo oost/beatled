@@ -17,12 +17,16 @@ RUN curl -L https://github.com/rvagg/rpi-newer-crosstools/archive/eb68350c5c8ec1
   tar xzf rpi-toolchain.tar.gz -C /home/toolchains && \
   mv /home/toolchains/rpi-newer-crosstools-eb68350c5c8ec1663b7fe52c742ac4271e3217c5 /home/toolchains/arm-rpi-linux-gnueabihf
 
-COPY ./server /app
+
 WORKDIR /app
 
 RUN curl -L https://github.com/Stiffstream/restinio/releases/download/v.0.6.16/restinio-0.6.16-full.tar.bz2 -o restinio.tar.bz2 && \
   mkdir external && \
   tar -xf restinio.tar.bz2 -C external
+
+COPY ./server /app
+WORKDIR /app
+
 #  && \
 # cd external/restinio-0.6.16/dev && \
 # mkdir cmake_build && \
@@ -41,22 +45,22 @@ RUN curl -L https://github.com/Stiffstream/restinio/releases/download/v.0.6.16/r
 
 
 
-# RUN ARMCC_PREFIX=/home/toolchains/arm-rpi-linux-gnueabihf/x64-gcc-6.5.0/arm-rpi-linux-gnueabihf/bin/arm-rpi-linux-gnueabihf- && \
-#   ARMCC_FLAGS="-march=armv6 -mfpu=vfp -funsafe-math-optimizations" && \
-#   cmake -DCMAKE_C_COMPILER=${ARMCC_PREFIX}gcc \
-#   -DCMAKE_CXX_COMPILER=${ARMCC_PREFIX}g++ \
-#   -DCMAKE_C_FLAGS="${ARMCC_FLAGS}" \
-#   -DCMAKE_CXX_FLAGS="${ARMCC_FLAGS}" \
-#   -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
-#   -DCMAKE_SYSTEM_NAME=Linux \
-#   -DCMAKE_SYSTEM_PROCESSOR=armv6 \
-#   # -DCMAKE_TOOLCHAIN_FILE=/home/vcpkg/scripts/buildsystems/vcpkg.cmake \
-#   -B build -S . && \
-#   cmake --build build
-
-RUN cmake -DCMAKE_TOOLCHAIN_FILE=./rpiz-toolchain.cmake \
-  -B build -S . -GNinja && \
+RUN ARMCC_PREFIX=/home/toolchains/arm-rpi-linux-gnueabihf/x64-gcc-6.5.0/arm-rpi-linux-gnueabihf/bin/arm-rpi-linux-gnueabihf- && \
+  ARMCC_FLAGS="-march=armv6 -mfpu=vfp -funsafe-math-optimizations" && \
+  cmake -DCMAKE_C_COMPILER=${ARMCC_PREFIX}gcc \
+  -DCMAKE_CXX_COMPILER=${ARMCC_PREFIX}g++ \
+  -DCMAKE_C_FLAGS="${ARMCC_FLAGS}" \
+  -DCMAKE_CXX_FLAGS="${ARMCC_FLAGS}" \
+  -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
+  -DCMAKE_SYSTEM_NAME=Linux \
+  -DCMAKE_SYSTEM_PROCESSOR=armv6 \
+  # -DCMAKE_TOOLCHAIN_FILE=/home/vcpkg/scripts/buildsystems/vcpkg.cmake \
+  -B build -S . && \
   cmake --build build
+
+# RUN cmake -DCMAKE_TOOLCHAIN_FILE=./rpiz-toolchain.cmake \
+#   -B build -S . -GNinja && \
+#   cmake --build build
 
 
 # RUN cmake -DCMAKE_TOOLCHAIN_FILE=./toolchain-arm.cmake \

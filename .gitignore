@@ -1,2 +1,4 @@
 build/
 lib/restinio-0.6.16
+out/**
+test-conan/out/

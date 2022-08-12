@@ -1,5 +1,5 @@
 [requires]
-restinio/0.6.9
+restinio/0.6.16
 
 [generators]
 CMakeDeps
