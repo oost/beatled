@@ -42,7 +42,7 @@ RUN   apt-get update \
   &&  apt-get install -y tar 
 
 WORKDIR /home
-COPY client/beat-server-html /home 
+COPY client /home 
 RUN npm install && npm run build 
 
 ####################################
