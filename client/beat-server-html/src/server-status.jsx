@@ -1,38 +1,48 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import Button from 'react-bootstrap/Button';
+
 
 export function ServerStatus() {
   const [error, setError] = useState(null);
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [status, setStatus] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [status, setStatus] = useState(null);
 
   // Note: the empty deps array [] means
   // this useEffect will run once
   // similar to componentDidMount()
-  useEffect(() => {
+  const updateStatus = () => {
+    setIsLoading(true);
     fetch("/api/status")
       .then(res => res.json())
       .then(
         (result) => {
-          setIsLoaded(true);
           setStatus(result);
         },
         // Note: it's important to handle errors here
         // instead of a catch() block so that we don't swallow
         // exceptions from actual bugs in components.
         (error) => {
-          setIsLoaded(true);
           setError(error);
         }
       )
-  }, [])
+      .then(() =>setIsLoading(false));
+      
+  };
 
+  let message = "";
   if (error) {
-    return <div>Error: {error.message}</div>;
-  } else if (!isLoaded) {
-    return <div>Loading...</div>;
-  } else {
-    return (
+    message = <div>Error: {error.message}</div>;
+  } else if (isLoading) {
+    message = <div>Loading...</div>;
+  } else if (status) {
+    message = (
       <p>{status.message}</p>
     );
   }
+  return <div>
+    <Button variant="primary" onClick={() => updateStatus()}>Update Status</Button>{' '}
+    {message}
+  </div>
+
+
 }
