@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
-import Button from 'react-bootstrap/Button';
-
+import React, { useState } from "react";
+import Button from "react-bootstrap/Button";
 
 export function ServerStatus() {
   const [error, setError] = useState(null);
@@ -13,7 +12,7 @@ export function ServerStatus() {
   const updateStatus = () => {
     setIsLoading(true);
     fetch("/api/status")
-      .then(res => res.json())
+      .then((res) => res.json())
       .then(
         (result) => {
           setStatus(result);
@@ -25,8 +24,7 @@ export function ServerStatus() {
           setError(error);
         }
       )
-      .then(() =>setIsLoading(false));
-      
+      .then(() => setIsLoading(false));
   };
 
   let message = "";
@@ -35,14 +33,14 @@ export function ServerStatus() {
   } else if (isLoading) {
     message = <div>Loading...</div>;
   } else if (status) {
-    message = (
-      <p>{status.message}</p>
-    );
+    message = <p>{status.message}</p>;
   }
-  return <div>
-    <Button variant="primary" onClick={() => updateStatus()}>Update Status</Button>{' '}
-    {message}
-  </div>
-
-
+  return (
+    <div>
+      {message}
+      <Button variant="primary" onClick={() => updateStatus()}>
+        Update Status
+      </Button>{" "}
+    </div>
+  );
 }

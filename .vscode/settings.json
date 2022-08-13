@@ -1,3 +1,10 @@
 {
-  "cmake.sourceDirectory": "${workspaceFolder}/server"
+  "cmake.sourceDirectory": "${workspaceFolder}/server",
+  "files.associations": {
+    "*.ipp": "cpp"
+  },
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
 }
