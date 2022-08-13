@@ -1,10 +1,8 @@
 #include <iostream>
 #include <map>
-#include <restinio/all.hpp>
 #include <clara.hpp>
 #include <fmt/format.h>
 #include "http/server_handler.h"
-using json = nlohmann::json;
 
 
 struct app_args_t
@@ -53,7 +51,6 @@ struct app_args_t
 
 int main(int argc, char const *argv[])
 {
-	using namespace std::chrono;
 
 	try
 	{
@@ -61,21 +58,7 @@ int main(int argc, char const *argv[])
 
 		if (!args.m_help)
 		{
-			using traits_t =
-					restinio::traits_t<
-							restinio::asio_timer_manager_t,
-							// restinio::null_logger_t,
-							restinio::single_threaded_ostream_logger_t,
-							router_t>;
-
-			restinio::run(
-					restinio::on_thread_pool<traits_t>(args.m_pool_size)
-							.address(args.m_address)
-							.port(args.m_port)
-							.request_handler(server_handler(args.m_root_dir))
-							.read_next_http_message_timelimit(10s)
-							.write_http_response_timelimit(1s)
-							.handle_request_timeout(1s));
+			start_http_server(args.m_pool_size, args.m_address, args.m_port, args.m_root_dir);
 		}
 	}
 	catch (const std::exception &ex)
