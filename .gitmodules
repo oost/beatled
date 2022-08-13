@@ -7,3 +7,21 @@
 [submodule "lib/CppServer"]
 	path = lib/CppServer
 	url = https://github.com/chronoxor/CppServer.git
+[submodule "lib/asio"]
+	path = lib/asio
+	url = https://github.com/chriskohlhoff/asio.git
+[submodule "lib/Lyra"]
+	path = lib/Lyra
+	url = https://github.com/bfgroup/Lyra.git
+[submodule "server/external/asio"]
+	path = server/external/asio
+	url = https://github.com/chriskohlhoff/asio.git
+[submodule "server/external/Lyra"]
+	path = server/external/Lyra
+	url = https://github.com/bfgroup/Lyra.git
+[submodule "server/external/fmt"]
+	path = server/external/fmt
+	url = https://github.com/fmtlib/fmt.git
+[submodule "server/external/json"]
+	path = server/external/json
+	url = https://github.com/nlohmann/json.git

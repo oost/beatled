@@ -1,0 +1,1 @@
+add_library(state_manager state_machine.cpp)
