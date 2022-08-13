@@ -1,18 +1,3 @@
-[submodule "lib/restbed"]
-	path = lib/restbed
-	url = https://github.com/corvusoft/restbed.git
-[submodule "lib/restinio"]
-	path = lib/restinio
-	url = https://github.com/stiffstream/restinio
-[submodule "lib/CppServer"]
-	path = lib/CppServer
-	url = https://github.com/chronoxor/CppServer.git
-[submodule "lib/asio"]
-	path = lib/asio
-	url = https://github.com/chriskohlhoff/asio.git
-[submodule "lib/Lyra"]
-	path = lib/Lyra
-	url = https://github.com/bfgroup/Lyra.git
 [submodule "server/external/asio"]
 	path = server/external/asio
 	url = https://github.com/chriskohlhoff/asio.git

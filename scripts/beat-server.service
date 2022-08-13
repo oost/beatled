@@ -1,0 +1,12 @@
+[Unit]
+Description=Beat Server service
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+ExecStart=/home/pi/beat-server/scripts/start-server.sh 
+
+[Install]
+WantedBy=multi-user.target
