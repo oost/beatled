@@ -49,10 +49,8 @@ void Server::run() {
     threads.push_back(thread);
   }
 
-  std::cout << "Creating UDP server" << std::endl;
   UDPServer udp_server(io_context_, udp_server_parameters_);
 
-  std::cout << "Creating HTTP server" << std::endl;
   HTTPServer(io_context_, http_server_parameters_);
 
   std::cout << "Waiting for threads" << std::endl;

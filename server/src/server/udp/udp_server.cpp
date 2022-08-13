@@ -3,6 +3,7 @@
 #include <asio/ts/internet.hpp>
 #include <cstdlib>
 #include <iostream>
+#include <string>
 
 #include "server_parameters.h"
 #include "udp_server.h"
@@ -15,6 +16,9 @@ enum { max_length = 1024 };
 UDPServer::UDPServer(asio::io_context &io_context,
                      const udp_server_parameters_t &server_parameters)
     : socket_(io_context, udp::endpoint(udp::v4(), server_parameters.port)) {
+  std::cout << "Starting UDP server, listening on: " << socket_.local_endpoint()
+            << std::endl;
+
   do_receive();
 }
 
