@@ -1,6 +1,7 @@
 {
   "cmake.sourceDirectory": "${workspaceFolder}/server",
   "files.associations": {
+    "**/*.h.in": "plaintext",
     "*.ipp": "cpp",
     "__bit_reference": "cpp",
     "__bits": "cpp",
@@ -100,5 +101,8 @@
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "[javascript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[cpp]": {
+    "editor.defaultFormatter": "ms-vscode.cpptools"
   }
 }

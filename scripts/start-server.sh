@@ -4,4 +4,4 @@
 SCRIPT_PATH=$(dirname "$0")
 IP4_ADDRESS=$(ip -o -4 addr list wlan0 | awk '{print $4}' | cut -d/ -f1)
 
-$SCRIPT_PATH/../server/test_restinio -a $IP4_ADDRESS $SCRIPT_PATH/../client/
+$SCRIPT_PATH/../server/beat_server -a $IP4_ADDRESS $SCRIPT_PATH/../client/
