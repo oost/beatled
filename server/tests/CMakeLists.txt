@@ -1,0 +1,14 @@
+add_executable(async_udp_echo_server async_udp_echo_server.cpp)
+add_executable(blocking_udp_echo_server blocking_udp_echo_server.cpp)
+add_executable(blocking_udp_echo_client blocking_udp_echo_client.cpp)
+
+target_link_libraries(async_udp_echo_server asio)
+target_link_libraries(blocking_udp_echo_server asio)
+target_link_libraries(blocking_udp_echo_client asio)
+
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+
+target_link_libraries(async_udp_echo_server Threads::Threads)
+target_link_libraries(blocking_udp_echo_server Threads::Threads)
+target_link_libraries(blocking_udp_echo_client Threads::Threads)

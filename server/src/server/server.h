@@ -34,9 +34,6 @@ public:
   void run();
 
 private:
-  /// Handle a request to stop the server.
-  void handle_stop();
-
   /// The number of threads that will call io_context::run().
   std::size_t thread_pool_size_;
 

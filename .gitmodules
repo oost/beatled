@@ -10,3 +10,6 @@
 [submodule "server/external/json"]
 	path = server/external/json
 	url = https://github.com/nlohmann/json.git
+[submodule "server/external/kissfft"]
+	path = server/external/kissfft
+	url = https://github.com/mborgerding/kissfft.git

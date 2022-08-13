@@ -11,8 +11,6 @@
 using namespace server;
 using asio::ip::udp;
 
-enum { max_length = 1024 };
-
 UDPServer::UDPServer(asio::io_context &io_context,
                      const udp_server_parameters_t &server_parameters)
     : socket_(io_context, udp::endpoint(udp::v4(), server_parameters.port)) {
@@ -23,11 +21,13 @@ UDPServer::UDPServer(asio::io_context &io_context,
 }
 
 void UDPServer::do_receive() {
+  std::cout << "do_receive" << std::endl;
+
   socket_.async_receive_from(
       asio::buffer(data_, max_length), remote_endpoint_,
       [this](std::error_code ec, std::size_t bytes_recvd) {
         if (!ec && bytes_recvd > 0) {
-          std::cout << "Received: " << data_ << "\n";
+          std::cout << "Received: " << data_ << std::endl;
           do_send(bytes_recvd);
         } else {
           do_receive();

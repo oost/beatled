@@ -11,7 +11,7 @@ struct app_args_t {
   bool m_help{false};
   std::string m_address{"localhost"};
   std::uint16_t m_port{8080};
-  std::size_t m_pool_size{1};
+  std::size_t m_pool_size{2};
   std::string m_root_dir{"."};
 
   static app_args_t parse(int argc, const char *argv[]) {

@@ -3,7 +3,7 @@
 RPIZ_HOST=raspberrypiz.local
 RPIZ_BEATSERVER_TGZ=beat-server.tar.gz
 cd out 
-tar -czvf $RPIZ_BEATSERVER_TGZ .
+tar -czf $RPIZ_BEATSERVER_TGZ .
 
 scp $RPIZ_BEATSERVER_TGZ ${RPIZ_HOST}:/home/pi
 
@@ -13,6 +13,8 @@ ssh ${RPIZ_HOST} << EOF
   mkdir beat-server
   tar -xf $RPIZ_BEATSERVER_TGZ -C beat-server
   rm $RPIZ_BEATSERVER_TGZ
+  ./beat-server/scripts/reload-service.sh
+  systemctl status beat-server.service
 EOF
 
 rm $RPIZ_BEATSERVER_TGZ

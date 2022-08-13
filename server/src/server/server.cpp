@@ -43,6 +43,9 @@ Server::Server(std::size_t thread_pool_size,
 void Server::run() {
   // Create a pool of threads to run all of the io_contexts.
   std::vector<std::shared_ptr<asio::thread>> threads;
+  std::cout << "Starting " << thread_pool_size_ << " network worker threads"
+            << std::endl;
+
   for (std::size_t i = 0; i < thread_pool_size_; ++i) {
     std::shared_ptr<asio::thread> thread(
         new asio::thread([this]() { io_context_.run(); }));
@@ -53,11 +56,8 @@ void Server::run() {
 
   HTTPServer(io_context_, http_server_parameters_);
 
-  std::cout << "Waiting for threads" << std::endl;
-
+  std::cout << "Waiting for threads to join" << std::endl;
   // Wait for all threads in the pool to exit.
   for (std::size_t i = 0; i < threads.size(); ++i)
     threads[i]->join();
 }
-
-void Server::handle_stop() {}
