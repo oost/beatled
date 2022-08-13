@@ -96,13 +96,17 @@
     "source_location": "cpp",
     "utility": "cpp",
     "stop_token": "cpp",
-    "cinttypes": "cpp"
+    "cinttypes": "cpp",
+    "__std_stream": "cpp",
+    "span": "cpp",
+    "strstream": "cpp",
+    "unordered_set": "cpp"
   },
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "[javascript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "[cpp]": {
-    "editor.defaultFormatter": "ms-vscode.cpptools"
+    "editor.defaultFormatter": "xaver.clang-format"
   }
 }
