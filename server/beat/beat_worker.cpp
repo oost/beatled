@@ -2,11 +2,14 @@
 #include <chrono>
 #include <iostream>
 #include <thread>
+#include "udp_server.h"
 
 void start_beat_worker() {
   using namespace std::chrono_literals;
   std::cout << "Starting beat worker" << std::endl;
 
+  start_udp_server(9090);
+  
   while (1) {
     auto start = std::chrono::high_resolution_clock::now();
     std::this_thread::sleep_for(2000ms);

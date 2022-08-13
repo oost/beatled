@@ -1,4 +1,3 @@
-include_directories(${CMAKE_CURRENT_LISTS_DIR}/clara)
 
 include("link_threads_if_necessary.cmake")
 include("link_atomic_if_necessary.cmake")
@@ -12,4 +11,5 @@ add_subdirectory(fmt)
 add_subdirectory(restinio)
 add_subdirectory(json)
 add_subdirectory(clara)
+add_subdirectory(asio)
 

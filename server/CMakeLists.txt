@@ -1,16 +1,17 @@
 cmake_minimum_required(VERSION 3.10)
 
 project(RPIZBeatServer VERSION 0.1)
+set (CMAKE_CXX_STANDARD 17)
+set(BEAT_SERVER beat_server)
 
 add_executable(hello_world hello_world.cpp)
 
 add_subdirectory(lib)
-
 add_subdirectory(http)
 add_subdirectory(beat)
 
-set(BEAT_SERVER beat_server)
 add_executable(${BEAT_SERVER} main.cpp)
+
 
 string(TIMESTAMP RPIZ_BS_BUILDTIME "%Y-%m-%d %H:%M")
 configure_file(build_constants.h.in build_constants.h)

@@ -4,3 +4,6 @@
 [submodule "lib/restinio"]
 	path = lib/restinio
 	url = https://github.com/stiffstream/restinio
+[submodule "lib/CppServer"]
+	path = lib/CppServer
+	url = https://github.com/chronoxor/CppServer.git
