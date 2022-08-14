@@ -5,8 +5,8 @@
 #include <iostream>
 #include <string>
 
-#include "server_parameters.h"
-#include "udp_server.h"
+#include "server_parameters.hpp"
+#include "udp_server.hpp"
 
 using namespace server;
 using asio::ip::udp;

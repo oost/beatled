@@ -16,7 +16,7 @@
 #include <string>
 #include <vector>
 
-#include "server_parameters.h"
+#include "server_parameters.hpp"
 
 namespace server {
 /// The top-level class of the HTTP server.

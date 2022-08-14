@@ -1,0 +1,2 @@
+add_library(beat_detector beat_detector.cpp)
+target_link_libraries(beat_detector asio)

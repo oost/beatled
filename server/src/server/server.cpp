@@ -8,13 +8,15 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
+#include <chrono>
 #include <iostream>
 #include <memory>
 #include <vector>
 
-#include "http/http_server.h"
-#include "server.h"
-#include "udp/udp_server.h"
+#include "http/http_server.hpp"
+#include "server.hpp"
+#include "tempo_broadcaster/tempo_broadcaster.hpp"
+#include "udp/udp_server.hpp"
 
 using namespace server;
 
@@ -24,6 +26,7 @@ Server::Server(std::size_t thread_pool_size,
     : thread_pool_size_(thread_pool_size), signals_(io_context_),
       http_server_parameters_(http_server_parameters),
       udp_server_parameters_(udp_server_parameters) {
+
   // Register to handle the signals that indicate when the server should exit.
   // It is safe to register for the same signal multiple times in a program,
   // provided all registration for the specified signal is made through Asio.
@@ -52,8 +55,9 @@ void Server::run() {
     threads.push_back(thread);
   }
 
-  UDPServer udp_server(io_context_, udp_server_parameters_);
-
+  // UDPServer udp_server(io_context_, udp_server_parameters_);
+  TempoBroadcaster tempo_broadcaster(io_context_, std::chrono::seconds(2),
+                                     udp_server_parameters_.port);
   HTTPServer(io_context_, http_server_parameters_);
 
   std::cout << "Waiting for threads to join" << std::endl;

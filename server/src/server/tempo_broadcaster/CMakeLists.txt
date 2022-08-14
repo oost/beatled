@@ -1,0 +1,2 @@
+add_library(tempo_broadcaster tempo_broadcaster.cpp)
+target_link_libraries(tempo_broadcaster asio)

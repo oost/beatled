@@ -2,10 +2,13 @@
 #include <iostream>
 #include <lyra/lyra.hpp>
 #include <map>
+#include <memory>
 #include <thread>
 
+#include "beat_detector/beat_detector.hpp"
 #include "build_constants.h"
-#include "server/server.h"
+#include "server/server.hpp"
+#include "state_manager/state_manager.hpp"
 
 struct app_args_t {
   bool m_help{false};
@@ -54,12 +57,21 @@ void print_version(const char *command) {
 int main(int argc, char const *argv[]) {
 
   try {
-
     print_version(argv[0]);
 
     const auto args = app_args_t::parse(argc, argv);
 
     if (!args.m_help) {
+
+      // Initialize our singleton in the main thread
+      StateManager::initialize();
+
+      // Let's start the beat detector thread.
+      asio::thread bd_thread([]() {
+        BeatDetector bd;
+        bd.run();
+      });
+
       server::http_server_parameters_t http_server_parameters = {
           args.m_address, // address
           args.m_port,    // port
@@ -69,6 +81,8 @@ int main(int argc, char const *argv[]) {
       server::Server server(args.m_pool_size, http_server_parameters,
                             udp_server_parameters);
       server.run();
+
+      bd_thread.join();
     }
   } catch (const std::exception &ex) {
     std::cerr << "Error: " << ex.what() << std::endl;

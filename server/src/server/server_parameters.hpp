@@ -2,7 +2,7 @@
 #define SERVER_ARGUMENTS_H
 
 // #include <cstdint>
-#include "http/server_parameters.h"
-#include "udp/server_parameters.h"
+#include "http/server_parameters.hpp"
+#include "udp/server_parameters.hpp"
 
 #endif // SERVER_ARGUMENTS_H

@@ -1,9 +1,9 @@
-#include "udp_server.h"
+#include "udp_server.hpp"
 #include <chrono>
 #include <iostream>
 #include <thread>
 
-#include "beat_worker.h"
+#include "beat_worker.hpp"
 
 namespace server {
 void start_beat_worker() {

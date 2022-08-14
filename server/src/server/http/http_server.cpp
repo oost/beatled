@@ -5,8 +5,8 @@
 #include <nlohmann/json.hpp>
 #include <restinio/all.hpp>
 
-#include "file_extensions.h"
-#include "http_server.h"
+#include "file_extensions.hpp"
+#include "http_server.hpp"
 
 using namespace server;
 

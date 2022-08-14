@@ -5,7 +5,7 @@
 #include <memory>
 #include <string>
 
-#include "server_parameters.h"
+#include "server_parameters.hpp"
 
 namespace server {
 
