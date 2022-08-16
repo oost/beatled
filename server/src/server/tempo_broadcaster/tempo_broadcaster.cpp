@@ -19,15 +19,15 @@ TempoBroadcaster::TempoBroadcaster(asio::io_context &io_context,
   socket_.set_option(udp::socket::reuse_address(true));
   socket_.set_option(asio::socket_base::broadcast(true));
 
-  // do_broadcast();
+  do_broadcast();
 }
 
 void TempoBroadcaster::do_broadcast() {
   count_++;
   precise_time_t time_ref; //= StateManager::get_instance()->get_time_ref();
   float tempo;             //= StateManager::get_instance()->get_tempo();
-  std::cout << "Broadcasting tempo: " << tempo << " timeref " << time_ref.tv_sec
-            << std::endl;
+  std::cout << "Broadcasting tempo: " << tempo
+            << " timeref: " << time_ref.tv_sec << std::endl;
 
   std::shared_ptr<std::uint8_t[]> sendBuf(new std::uint8_t[9]);
   sendBuf[0] = 2;

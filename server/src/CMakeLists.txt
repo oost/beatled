@@ -16,4 +16,4 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 target_link_libraries(${BEAT_SERVER} PRIVATE Threads::Threads)
 
-target_link_libraries(${BEAT_SERVER} PRIVATE asio fmt::fmt-header-only lyra)
+target_link_libraries(${BEAT_SERVER} PRIVATE asio fmt::fmt-header-only lyra spdlog::spdlog)

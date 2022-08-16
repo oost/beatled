@@ -28,8 +28,11 @@ public:
 
   asio::strand<asio::any_io_executor> &strand();
 
+  StateManager() {
+    strand_ = std::move(asio::make_strand(asio::system_executor()));
+  }
+
 private:
-  StateManager() = default;
   ~StateManager() = default;
   StateManager(const StateManager &) = delete;
   StateManager &operator=(const StateManager &) = delete;

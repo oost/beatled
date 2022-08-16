@@ -13,3 +13,9 @@
 [submodule "server/external/kissfft"]
 	path = server/external/kissfft
 	url = https://github.com/mborgerding/kissfft.git
+[submodule "server/external/fmtlog"]
+	path = server/external/fmtlog
+	url = https://github.com/MengRao/fmtlog.git
+[submodule "server/external/spdlog"]
+	path = server/external/spdlog
+	url = https://github.com/gabime/spdlog.git

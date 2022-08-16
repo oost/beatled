@@ -22,10 +22,12 @@ using namespace server;
 
 Server::Server(std::size_t thread_pool_size,
                const http_server_parameters_t &http_server_parameters,
-               const udp_server_parameters_t &udp_server_parameters)
+               const udp_server_parameters_t &udp_server_parameters,
+               std::uint16_t broadcasting_port)
     : thread_pool_size_(thread_pool_size), signals_(io_context_),
       http_server_parameters_(http_server_parameters),
-      udp_server_parameters_(udp_server_parameters) {
+      udp_server_parameters_(udp_server_parameters),
+      broadcasting_port_(broadcasting_port) {
 
   // Register to handle the signals that indicate when the server should exit.
   // It is safe to register for the same signal multiple times in a program,
@@ -55,9 +57,9 @@ void Server::run() {
     threads.push_back(thread);
   }
 
-  // UDPServer udp_server(io_context_, udp_server_parameters_);
+  UDPServer udp_server(io_context_, udp_server_parameters_);
   TempoBroadcaster tempo_broadcaster(io_context_, std::chrono::seconds(2),
-                                     udp_server_parameters_.port);
+                                     broadcasting_port_);
   HTTPServer(io_context_, http_server_parameters_);
 
   std::cout << "Waiting for threads to join" << std::endl;

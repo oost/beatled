@@ -26,7 +26,8 @@ public:
   /// serve up files from the given directory.
   explicit Server(std::size_t thread_pool_size,
                   const http_server_parameters_t &http_server_parameters,
-                  const udp_server_parameters_t &udp_server_parameters);
+                  const udp_server_parameters_t &udp_server_parameters,
+                  std::uint16_t broadcasting_port);
 
   Server &operator=(const Server &) = delete;
 
@@ -45,6 +46,7 @@ private:
 
   http_server_parameters_t http_server_parameters_;
   udp_server_parameters_t udp_server_parameters_;
+  std::uint16_t broadcasting_port_;
 };
 } // namespace server
 

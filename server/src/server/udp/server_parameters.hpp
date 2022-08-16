@@ -4,7 +4,7 @@
 namespace server {
 
 struct udp_server_parameters_t {
-  short port;
+  std::uint16_t port;
 };
 
 } // namespace server
