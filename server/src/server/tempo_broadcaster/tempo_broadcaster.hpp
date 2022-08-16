@@ -5,6 +5,7 @@
 #include <chrono>
 
 // #include "../../state_manager/state_manager.hpp"
+#include "broadcast_loop.hpp"
 #include "server_parameters.hpp"
 
 namespace server {
@@ -18,20 +19,25 @@ public:
 private:
   void do_broadcast_beat();
   void do_broadcast_program();
-  void do_broadcast();
-
+  void do_broadcast(const char *sendBuf, uint16_t sendBuf_l,
+                    asio::high_resolution_timer &timer,
+                    const std::chrono::nanoseconds &alarm_period,
+                    std::function<void(void)> callback);
   asio::io_context &io_context_;
 
   asio::high_resolution_timer timer_;
   std::chrono::nanoseconds alarm_period_;
+
   asio::high_resolution_timer program_timer_;
   std::chrono::nanoseconds program_alarm_period_;
 
-  asio::ip::udp::socket socket_;
+  std::shared_ptr<asio::ip::udp::socket> socket_;
   asio::ip::address_v4 broadcast_address_;
   int count_;
   std::uint16_t port_;
   std::uint8_t led_program;
+
+  std::vector<std::unique_ptr<BroadcastLoop>> loops_;
 };
 } // namespace server
 
