@@ -120,7 +120,7 @@ HTTPServer::HTTPServer(asio::io_context &io_context,
                        const http_server_parameters_t &http_server_parameters) {
   using namespace std::chrono;
 
-  std::cout << "Starting UDP server, listening on: "
+  std::cout << "Starting HTTP server, listening on: "
             << http_server_parameters.address << ":"
             << http_server_parameters.port << std::endl;
 

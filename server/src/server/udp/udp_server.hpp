@@ -17,8 +17,7 @@ public:
 private:
   void do_receive();
 
-  void do_send(size_t length);
-
+  void do_send(std::size_t length, char *recv_buf);
   asio::ip::udp::socket socket_;
   asio::ip::udp::endpoint remote_endpoint_;
   enum { max_length = 1024 };

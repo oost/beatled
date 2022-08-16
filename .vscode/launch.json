@@ -3,11 +3,15 @@
   "configurations": [
     {
       "name": "(gdb) Launch",
-      "type": "cppdbg",
+      // "type": "cppdbg",
+      "type": "lldb-mi",
       "request": "launch",
       // Resolved by CMake Tools:
       "program": "${command:cmake.launchTargetPath}",
-      "args": [],
+      "args": [
+        "-a",
+        "192.168.86.20"
+      ],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [

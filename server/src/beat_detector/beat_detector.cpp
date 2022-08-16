@@ -28,23 +28,23 @@ BeatDetector::BeatDetector()
 void BeatDetector::run() {
 
   std::cout << "Starting Beat Detector" << std::endl;
-  post(io_context_, [this]() { do_detect_tempo(); });
-  io_context_.run();
+  // post(io_context_, [this]() { do_detect_tempo(); });
+  // io_context_.run();
 }
 
-void BeatDetector::do_detect_tempo() {
-  std::cout << "Detecting tempo" << std::endl;
+// void BeatDetector::do_detect_tempo() {
+//   std::cout << "Detecting tempo" << std::endl;
 
-  timespec ts;
-  clock_gettime(CLOCK_REALTIME, &ts);
-  precise_time_t timeref = {ts.tv_sec, ts.tv_nsec};
-  float tempo = 124.5;
-  std::cout << "Detected tempo" << tempo << " and timeref " << timeref.tv_sec
-            << std::endl;
+//   timespec ts;
+//   clock_gettime(CLOCK_REALTIME, &ts);
+//   precise_time_t timeref = {ts.tv_sec, ts.tv_nsec};
+//   float tempo = 124.5;
+//   std::cout << "Detected tempo" << tempo << " and timeref " << timeref.tv_sec
+//             << std::endl;
 
-  // StateManager::get_instance().->update_tempo(tempo, timeref);
+//   // StateManager::get_instance().->update_tempo(tempo, timeref);
 
-  timer_.expires_at(std::chrono::high_resolution_clock::now() +
-                    std::chrono::seconds(3));
-  timer_.async_wait([this](auto) { do_detect_tempo(); });
-}
+//   timer_.expires_at(std::chrono::high_resolution_clock::now() +
+//                     std::chrono::seconds(3));
+//   timer_.async_wait([this](auto) { do_detect_tempo(); });
+// }

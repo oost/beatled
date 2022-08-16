@@ -16,8 +16,9 @@ struct app_args_t {
   bool m_help{false};
   std::string m_address{"localhost"};
   std::uint16_t m_http_port{8080};
-  std::uint16_t m_udp_port{8765};
-  std::uint16_t m_broadcasting_port{9090};
+  std::uint16_t m_udp_port{9090};
+  std::string m_broadcasting_address{"192.168.86.255"};
+  std::uint16_t m_broadcasting_port{8765};
   std::size_t m_pool_size{2};
   std::string m_root_dir{"."};
 
@@ -33,6 +34,10 @@ struct app_args_t {
             fmt::format("port to listen (default: {})", result.m_http_port)) |
         lyra::opt(result.m_udp_port, "udp port")["-u"]["--udp-port"](
             fmt::format("port to listen (default: {})", result.m_udp_port)) |
+        lyra::opt(result.m_broadcasting_address,
+                  "broadcasting address")["-c"]["--m_broadcasting-address"](
+            fmt::format("port to listen (default: {})",
+                        result.m_broadcasting_address)) |
         lyra::opt(result.m_broadcasting_port,
                   "broadcasting port")["-b"]["--broadcasting-port"](fmt::format(
             "port to listen (default: {})", result.m_broadcasting_port)) |
@@ -65,44 +70,48 @@ void print_version(const char *command) {
 
 int main(int argc, char const *argv[]) {
 
-  try {
-    // create color multi threaded logger
-    auto console = spdlog::stdout_color_mt("console");
-    auto err_logger = spdlog::stderr_color_mt("stderr");
-    spdlog::get("console")->info("Starting beat log ! ");
-    spdlog::flush_every(std::chrono::seconds(1));
+  // try {
+  // // create color multi threaded logger
+  // auto console = spdlog::stdout_color_mt("console");
+  // auto err_logger = spdlog::stderr_color_mt("stderr");
+  // spdlog::get("console")->info("Starting beat log ! ");
+  // spdlog::flush_every(std::chrono::seconds(1));
 
-    print_version(argv[0]);
+  print_version(argv[0]);
 
-    const auto args = app_args_t::parse(argc, argv);
+  const auto args = app_args_t::parse(argc, argv);
 
-    if (!args.m_help) {
+  if (!args.m_help) {
 
-      // // Initialize our singleton in the main thread
-      // StateManager::initialize();
+    // // Initialize our singleton in the main thread
+    // StateManager::initialize();
 
-      // // Let's start the beat detector thread.
-      // asio::thread bd_thread([]() {
-      //   BeatDetector bd;
-      //   bd.run();
-      // });
+    // // Let's start the beat detector thread.
+    // asio::thread bd_thread([]() {
+    //   BeatDetector bd;
+    //   bd.run();
+    // });
 
-      server::http_server_parameters_t http_server_parameters = {
-          args.m_address,   // address
-          args.m_http_port, // port
-          args.m_root_dir   // root_dir
-      };
-      server::udp_server_parameters_t udp_server_parameters = {args.m_udp_port};
-      server::Server server(args.m_pool_size, http_server_parameters,
-                            udp_server_parameters, args.m_broadcasting_port);
-      server.run();
+    server::http_server_parameters_t http_server_parameters = {
+        args.m_address,   // address
+        args.m_http_port, // port
+        args.m_root_dir   // root_dir
+    };
 
-      // bd_thread.join();
-    }
-  } catch (const std::exception &ex) {
-    std::cerr << "Error: " << ex.what() << std::endl;
-    return 1;
+    server::udp_server_parameters_t udp_server_parameters = {args.m_udp_port};
+
+    server::broadcasting_server_parameters_t broadcasting_parameters{
+        args.m_broadcasting_address, args.m_broadcasting_port};
+    server::Server server(args.m_pool_size, http_server_parameters,
+                          udp_server_parameters, broadcasting_parameters);
+    server.run();
+
+    // bd_thread.join();
   }
+  // } catch (const std::exception &ex) {
+  //   std::cerr << "Error: " << ex.what() << std::endl;
+  //   return 1;
+  // }
 
   return 0;
 }

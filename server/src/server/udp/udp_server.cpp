@@ -23,20 +23,23 @@ UDPServer::UDPServer(asio::io_context &io_context,
 void UDPServer::do_receive() {
   std::cout << "do_receive" << std::endl;
 
+  char *recv_buf = new char[max_length];
   socket_.async_receive_from(
-      asio::buffer(data_, max_length), remote_endpoint_,
-      [this](std::error_code ec, std::size_t bytes_recvd) {
+      asio::buffer(recv_buf, max_length), remote_endpoint_,
+      [this, recv_buf](std::error_code ec, std::size_t bytes_recvd) {
         if (!ec && bytes_recvd > 0) {
-          std::cout << "Received: " << data_ << std::endl;
-          do_send(bytes_recvd);
+          std::cout << "Received: " << recv_buf << std::endl;
+          do_send(bytes_recvd, recv_buf);
         } else {
           do_receive();
         }
       });
 }
 
-void UDPServer::do_send(std::size_t length) {
-  socket_.async_send_to(asio::buffer(data_, length), remote_endpoint_,
-                        [this](std::error_code /*ec*/,
-                               std::size_t /*bytes_sent*/) { do_receive(); });
+void UDPServer::do_send(std::size_t length, char *recv_buf) {
+  socket_.async_send_to(
+      asio::buffer(recv_buf, length), remote_endpoint_,
+      [this, recv_buf](std::error_code /*ec*/, std::size_t /*bytes_sent*/) {
+        delete[] recv_buf, do_receive();
+      });
 }
