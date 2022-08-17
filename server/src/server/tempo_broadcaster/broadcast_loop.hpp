@@ -12,8 +12,7 @@ public:
   BroadcastLoop(
       std::shared_ptr<asio::ip::udp::socket>,
       std::chrono::nanoseconds alarm_period,
-      std::function<char *(void)> prepare_buffer,
-      std::function<void(char *)> dispose_buffer,
+      std::function<std::string(void)> prepare_buffer,
       const broadcasting_server_parameters_t &broadcasting_server_parameters);
 
 private:
@@ -22,11 +21,8 @@ private:
   std::shared_ptr<asio::ip::udp::socket> socket_;
   asio::high_resolution_timer timer_;
   std::chrono::nanoseconds alarm_period_;
-  std::function<char *(void)> prepare_buffer_;
-  std::function<void(char *)> dispose_buffer_;
-
-  asio::ip::address_v4 broadcast_address_;
-  std::uint16_t port_;
+  std::function<std::string(void)> prepare_buffer_;
+  asio::ip::udp::endpoint broadcast_address_;
 };
 
 } // namespace server

@@ -21,7 +21,7 @@ TempoBroadcaster::TempoBroadcaster(
       socket_(std::make_shared<asio::ip::udp::socket>(io_context)),
       broadcast_address_(
           asio::ip::make_address_v4(broadcasting_server_parameters.address)),
-      port_(broadcasting_server_parameters.port) {
+      port_(broadcasting_server_parameters.port), program_idx_(0) {
 
   std::cout << "Starting TempoBroadcaster " << std::endl;
 
@@ -41,19 +41,18 @@ TempoBroadcaster::TempoBroadcaster(
   loops_.push_back(std::make_unique<BroadcastLoop>(
       socket_, alarm_period,
       []() {
-        char *sendBuf = new char[1];
-        sendBuf[0] = 4;
-        return sendBuf;
+        std::string sendBuf("d");
+        return std::move(sendBuf);
       },
-      [](char *buf) { delete[] buf; }, broadcasting_server_parameters));
+      broadcasting_server_parameters));
 
   loops_.push_back(std::make_unique<BroadcastLoop>(
       socket_, program_alarm_period,
-      []() {
-        char *sendBuf = new char[2];
-        sendBuf[0] = 2;
-        sendBuf[1] = 1;
-        return sendBuf;
+      [this]() {
+        std::string sendBuf{"ca"};
+        sendBuf[1] = char(program_idx_++ % 7);
+        std::cout << int(sendBuf[1]) << std::endl;
+        return std::move(sendBuf);
       },
-      [](char *buf) { delete[] buf; }, broadcasting_server_parameters));
+      broadcasting_server_parameters));
 }

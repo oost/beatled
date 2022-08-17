@@ -38,6 +38,7 @@ private:
   std::uint8_t led_program;
 
   std::vector<std::unique_ptr<BroadcastLoop>> loops_;
+  int program_idx_;
 };
 } // namespace server
 

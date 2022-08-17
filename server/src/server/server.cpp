@@ -61,8 +61,7 @@ void Server::run() {
   // UDPServer udp_server(io_context_, udp_server_parameters_);
   TempoBroadcaster tempo_broadcaster(
       io_context_, std::chrono::milliseconds((60 * 1000) / 120),
-      std::chrono::milliseconds((60 * 1000) / 120),
-      broadcasting_server_parameters_);
+      std::chrono::seconds(2), broadcasting_server_parameters_);
   HTTPServer(io_context_, http_server_parameters_);
 
   std::cout << "Waiting for threads to join" << std::endl;
