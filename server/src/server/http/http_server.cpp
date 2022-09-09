@@ -45,6 +45,25 @@ auto server_handler(const std::string &root_dir) {
     return restinio::request_accepted();
   });
 
+  router->http_post(
+      "/api/update-program", [](const auto &req, const auto &params) {
+        // create an empty structure (null)
+        json body = json::parse(req->body());
+
+        json resp_body;
+        // to an object)
+        resp_body["message"] =
+            "Update program to " + body["programId"].get<std::string>();
+
+        init_resp(req->create_response())
+            .append_header(restinio::http_field::content_type,
+                           "text/json; charset=utf-8")
+            .set_body(resp_body.dump())
+            .done();
+
+        return restinio::request_accepted();
+      });
+
   // GET request to homepage.
   router->http_get(
       R"(/:path(.*)\.:ext(.*))", restinio::path2regex::options_t{}.strict(true),

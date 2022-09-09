@@ -72,10 +72,10 @@ int main(int argc, char const *argv[]) {
 
   // try {
   // // create color multi threaded logger
-  // auto console = spdlog::stdout_color_mt("console");
-  // auto err_logger = spdlog::stderr_color_mt("stderr");
-  // spdlog::get("console")->info("Starting beat log ! ");
-  // spdlog::flush_every(std::chrono::seconds(1));
+  auto console = spdlog::stdout_color_mt("console");
+  auto err_logger = spdlog::stderr_color_mt("stderr");
+  spdlog::get("console")->info("Starting beat log ! ");
+  spdlog::flush_every(std::chrono::seconds(1));
 
   print_version(argv[0]);
 

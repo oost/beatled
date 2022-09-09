@@ -17,11 +17,10 @@ public:
 private:
   void do_receive();
 
-  void do_send(std::size_t length, char *recv_buf);
+  void do_send(std::size_t length, const std::string &sendBuf);
   asio::ip::udp::socket socket_;
   asio::ip::udp::endpoint remote_endpoint_;
-  enum { max_length = 1024 };
-  char data_[max_length];
+  int max_length_ = 1024;
 };
 } // namespace server
 #endif // UDP_SERVER_H

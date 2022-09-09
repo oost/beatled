@@ -2,39 +2,55 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "(gdb) Launch",
-      // "type": "cppdbg",
       "type": "lldb-mi",
       "request": "launch",
-      // Resolved by CMake Tools:
-      "program": "${command:cmake.launchTargetPath}",
-      "args": [
-        "-a",
-        "192.168.86.20"
-      ],
-      "stopAtEntry": false,
-      "cwd": "${workspaceFolder}",
-      "environment": [
-        {
-          // add the directory where our target was built to the PATHs
-          // it gets resolved by CMake Tools:
-          "name": "PATH",
-          "value": "$PATH:${command:cmake.launchTargetDirectory}"
-        },
-        {
-          "name": "OTHER_VALUE",
-          "value": "Something something"
-        }
-      ],
-      "externalConsole": true,
-      "MIMode": "gdb",
-      "setupCommands": [
-        {
-          "description": "Enable pretty-printing for gdb",
-          "text": "-enable-pretty-printing",
-          "ignoreFailures": true
-        }
-      ]
+      "name": "Launch Program",
+      "target": "./build/src/beat-server",
+      "cwd": "${workspaceRoot}",
+      "valuesFormatting": "parseText"
+    },
+    {
+      "name": "Debug",
+      "type": "cppgdb",
+      "request": "launch",
+      "target": "./Debug/bin/CHIP8",
+      "cwd": "${workspaceRoot}",
+      "preLaunchTask": "build"
     }
+    // {
+    //   "name": "(gdb) Launch",
+    //   // "type": "cppdbg",
+    //   "type": "lldb-mi",
+    //   "request": "launch",
+    //   // Resolved by CMake Tools:
+    //   "program": "${command:cmake.launchTargetPath}",
+    //   "args": [
+    //     "-a",
+    //     "192.168.86.20"
+    //   ],
+    //   "stopAtEntry": false,
+    //   "cwd": "${workspaceFolder}",
+    //   "environment": [
+    //     {
+    //       // add the directory where our target was built to the PATHs
+    //       // it gets resolved by CMake Tools:
+    //       "name": "PATH",
+    //       "value": "$PATH:${command:cmake.launchTargetDirectory}"
+    //     },
+    //     {
+    //       "name": "OTHER_VALUE",
+    //       "value": "Something something"
+    //     }
+    //   ],
+    //   "externalConsole": true,
+    //   "MIMode": "gdb",
+    //   "setupCommands": [
+    //     {
+    //       "description": "Enable pretty-printing for gdb",
+    //       "text": "-enable-pretty-printing",
+    //       "ignoreFailures": true
+    //     }
+    //   ]
+    // }
   ]
 }

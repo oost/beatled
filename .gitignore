@@ -1,6 +1,7 @@
 build/
 lib/restinio-0.6.16
 lib/restinio.tar.bz2
+lib/fftw*
 out/
 test-conan/out/
 

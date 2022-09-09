@@ -1,5 +1,6 @@
 import { Container } from "react-bootstrap";
 import { ServerStatus } from "./actions/ServerStatus";
+import { UpdateProgramControl } from "./actions/UpdateProgramControl";
 import Header from "./layout/Header";
 
 function App() {
@@ -10,6 +11,7 @@ function App() {
         <h1 className="header">Welcome To Beat Server</h1>
       </Container>
       <ServerStatus />
+      <UpdateProgramControl />
     </Container>
   );
 }
