@@ -26,6 +26,7 @@ Server::Server(
     const udp_server_parameters_t &udp_server_parameters,
     const broadcasting_server_parameters_t &broadcasting_server_parameters)
     : thread_pool_size_(thread_pool_size), signals_(io_context_),
+      state_manager_(io_context_),
       http_server_parameters_(http_server_parameters),
       udp_server_parameters_(udp_server_parameters),
       broadcasting_server_parameters_(broadcasting_server_parameters) {
