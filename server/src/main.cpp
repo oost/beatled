@@ -92,18 +92,20 @@ int main(int argc, char const *argv[]) {
     //   bd.run();
     // });
 
-    server::http_server_parameters_t http_server_parameters = {
-        args.m_address,   // address
-        args.m_http_port, // port
-        args.m_root_dir   // root_dir
+    server::server_parameters_t server_parameters{
+        .udp = {args.m_udp_port},
+        .http =
+            {
+                args.m_address,   // address
+                args.m_http_port, // port
+                args.m_root_dir   // root_dir
+            },
+        .broadcasting = {args.m_broadcasting_address, args.m_broadcasting_port},
+        .logger = {20},
+        .thread_pool_size = args.m_pool_size,
     };
 
-    server::udp_server_parameters_t udp_server_parameters = {args.m_udp_port};
-
-    server::broadcasting_server_parameters_t broadcasting_parameters{
-        args.m_broadcasting_address, args.m_broadcasting_port};
-    server::Server server(args.m_pool_size, http_server_parameters,
-                          udp_server_parameters, broadcasting_parameters);
+    server::Server server(server_parameters);
     server.run();
 
     // bd_thread.join();

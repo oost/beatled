@@ -20,20 +20,15 @@
 
 using namespace server;
 
-Server::Server(
-    std::size_t thread_pool_size,
-    const http_server_parameters_t &http_server_parameters,
-    const udp_server_parameters_t &udp_server_parameters,
-    const broadcasting_server_parameters_t &broadcasting_server_parameters)
-    : thread_pool_size_(thread_pool_size), signals_(io_context_),
-      state_manager_(io_context_),
-      http_server_parameters_(http_server_parameters),
-      udp_server_parameters_(udp_server_parameters),
-      broadcasting_server_parameters_(broadcasting_server_parameters) {
+Server::Server(const server_parameters_t &server_parameters)
+    : signals_{io_context_}, state_manager_{io_context_},
+      server_parameters_{server_parameters}, logger_(server_parameters.logger) {
 
-  // Register to handle the signals that indicate when the server should exit.
-  // It is safe to register for the same signal multiple times in a program,
-  // provided all registration for the specified signal is made through Asio.
+  logger_.log_message("INFO", "Initializing server");
+  // Register to handle the signals that indicate when the server should
+  // exit. It is safe to register for the same signal multiple times in a
+  // program, provided all registration for the specified signal is made
+  // through Asio.
   signals_.add(SIGINT);
   signals_.add(SIGTERM);
 #if defined(SIGQUIT)
@@ -48,6 +43,8 @@ Server::Server(
 }
 
 void Server::run() {
+  logger_.log_message("INFO", "Starting server");
+
   std::exception_ptr exception_caught;
 
   // Create a pool of threads to run all of the io_contexts.
@@ -55,7 +52,7 @@ void Server::run() {
   std::cout << "Starting " << thread_pool_size_ << " network worker threads"
             << std::endl;
 
-  for (std::size_t i = 0; i < thread_pool_size_; ++i) {
+  for (std::size_t i = 0; i < server_parameters_.thread_pool_size; ++i) {
     std::shared_ptr<asio::thread> thread(
         new asio::thread([this, &exception_caught]() {
           try {
@@ -67,11 +64,11 @@ void Server::run() {
     threads.push_back(thread);
   }
 
-  UDPServer udp_server(io_context_, udp_server_parameters_);
-  // TempoBroadcaster tempo_broadcaster(
-  // io_context_, std::chrono::milliseconds((60 * 1000) / 120),
-  // std::chrono::seconds(2), broadcasting_server_parameters_);
-  HTTPServer(io_context_, http_server_parameters_);
+  UDPServer udp_server(io_context_, server_parameters_.udp, state_manager_);
+  TempoBroadcaster tempo_broadcaster(
+      io_context_, std::chrono::milliseconds((60 * 1000) / 120),
+      std::chrono::seconds(2), server_parameters_.broadcasting);
+  HTTPServer(io_context_, server_parameters_.http, state_manager_, logger_);
 
   std::cout << "Waiting for threads to join" << std::endl;
   // Wait for all threads in the pool to exit.

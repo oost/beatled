@@ -1,7 +1,9 @@
 import { Container } from "react-bootstrap";
 import { ServerStatus } from "./actions/ServerStatus";
 import { UpdateProgramControl } from "./actions/UpdateProgramControl";
+import { TempoControl } from "./actions/TempoControl";
 import Header from "./layout/Header";
+import { LogControl } from "./actions/LogControl";
 
 function App() {
   return (
@@ -12,6 +14,8 @@ function App() {
       </Container>
       <ServerStatus />
       <UpdateProgramControl />
+      <TempoControl />
+      <LogControl />
     </Container>
   );
 }

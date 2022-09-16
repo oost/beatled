@@ -23,6 +23,8 @@ public:
   // asio::strand<asio::any_io_executor> &strand();
 
 private:
+  StateManager(const StateManager &) = delete;
+  StateManager &operator=(const StateManager &) = delete;
   float tempo_;
   precise_time_t time_ref_;
   asio::strand<asio::io_context::executor_type> strand_;

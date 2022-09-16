@@ -13,12 +13,12 @@ BroadcastLoop::BroadcastLoop(
     std::chrono::nanoseconds alarm_period,
     std::function<std::string(void)> prepare_buffer,
     const broadcasting_server_parameters_t &broadcasting_server_parameters)
-    : alarm_period_(alarm_period), count_(0),
-      timer_(asio::high_resolution_timer(socket->get_executor(), alarm_period)),
-      socket_(socket), prepare_buffer_(prepare_buffer),
-      broadcast_address_(udp::endpoint(
+    : alarm_period_{alarm_period}, count_{0},
+      timer_{asio::high_resolution_timer(socket->get_executor(), alarm_period)},
+      socket_{socket}, prepare_buffer_{prepare_buffer},
+      broadcast_address_{udp::endpoint(
           asio::ip::make_address_v4(broadcasting_server_parameters.address),
-          broadcasting_server_parameters.port)) {
+          broadcasting_server_parameters.port)} {
   std::cout << "Starting Broadcast loop " << std::endl;
 
   do_broadcast();

@@ -50,8 +50,8 @@ TempoBroadcaster::TempoBroadcaster(
       socket_, program_alarm_period,
       [this]() {
         std::string sendBuf{"ca"};
-        sendBuf[1] = char(program_idx_++ % 7);
-        std::cout << int(sendBuf[1]) << std::endl;
+        // sendBuf[1] = char(program_idx_++ % 7);
+        // std::cout << int(sendBuf[1]) << std::endl;
         return std::move(sendBuf);
       },
       broadcasting_server_parameters));

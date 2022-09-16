@@ -16,7 +16,7 @@ using namespace server;
 namespace rr = restinio::router;
 using router_t = rr::express_router_t<>;
 
-auto server_handler(const std::string &root_dir) {
+auto HTTPServer::server_handler(const std::string &root_dir) {
   auto router = std::make_unique<router_t>();
 
   std::string server_root_dir;
@@ -28,6 +28,8 @@ auto server_handler(const std::string &root_dir) {
   } else {
     server_root_dir = root_dir;
   }
+
+  // router->add_handler(http_method_head(), route_path, std::move(handler));
 
   router->http_get("/api/status", [](auto req, auto) {
     // create an empty structure (null)
@@ -41,6 +43,27 @@ auto server_handler(const std::string &root_dir) {
                        "text/json; charset=utf-8")
         .set_body(j.dump())
         .done();
+
+    return restinio::request_accepted();
+  });
+
+  router->http_get("/api/tempo", [this](auto req, auto) {
+    // create an empty structure (null)
+    state_manager_.post_tempo(
+        [req](float tempo, uint64_t tv_sec, uint32_t tv_nsec) {
+          json j;
+
+          // to an object)
+          j["tempo"] = tempo;
+          j["tv_sec"] = tv_sec;
+          j["tv_nsec"] = tv_nsec;
+
+          init_resp(req->create_response())
+              .append_header(restinio::http_field::content_type,
+                             "text/json; charset=utf-8")
+              .set_body(j.dump())
+              .done();
+        });
 
     return restinio::request_accepted();
   });
@@ -63,6 +86,16 @@ auto server_handler(const std::string &root_dir) {
 
         return restinio::request_accepted();
       });
+
+  router->http_get("/api/log", [this](const auto &req, const auto &params) {
+    init_resp(req->create_response())
+        .append_header(restinio::http_field::content_type,
+                       "text/json; charset=utf-8")
+        .set_body(logger_.log_tail().dump())
+        .done();
+
+    return restinio::request_accepted();
+  });
 
   // GET request to homepage.
   router->http_get(
@@ -136,7 +169,9 @@ auto server_handler(const std::string &root_dir) {
 }
 
 HTTPServer::HTTPServer(asio::io_context &io_context,
-                       const http_server_parameters_t &http_server_parameters) {
+                       const http_server_parameters_t &http_server_parameters,
+                       StateManager &state_manager, Logger &logger)
+    : state_manager_{state_manager}, logger_{logger} {
   using namespace std::chrono;
 
   std::cout << "Starting HTTP server, listening on: "

@@ -12,8 +12,10 @@ using namespace server;
 using asio::ip::udp;
 
 UDPServer::UDPServer(asio::io_context &io_context,
-                     const udp_server_parameters_t &server_parameters)
-    : socket_(io_context, udp::endpoint(udp::v4(), server_parameters.port)) {
+                     const udp_server_parameters_t &server_parameters,
+                     StateManager &state_manager)
+    : socket_{io_context, udp::endpoint(udp::v4(), server_parameters.port)},
+      state_manager_{state_manager} {
   std::cout << "Starting UDP server, listening on: " << socket_.local_endpoint()
             << std::endl;
 

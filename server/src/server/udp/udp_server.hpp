@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 
+#include "../../state_manager/state_manager.hpp"
 #include "server_parameters.hpp"
 
 namespace server {
@@ -12,7 +13,8 @@ namespace server {
 class UDPServer {
 public:
   UDPServer(asio::io_context &io_context,
-            const udp_server_parameters_t &server_parameters);
+            const udp_server_parameters_t &server_parameters,
+            StateManager &state_manager);
 
 private:
   void do_receive();
@@ -21,6 +23,8 @@ private:
   asio::ip::udp::socket socket_;
   asio::ip::udp::endpoint remote_endpoint_;
   int max_length_ = 1024;
+
+  StateManager &state_manager_;
 };
 } // namespace server
 #endif // UDP_SERVER_H

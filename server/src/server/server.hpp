@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "../state_manager/state_manager.hpp"
+#include "logger/logger.hpp"
 #include "server_parameters.hpp"
 
 namespace server {
@@ -25,11 +26,7 @@ class Server {
 public:
   /// Construct the server to listen on the specified TCP address and port, and
   /// serve up files from the given directory.
-  explicit Server(
-      std::size_t thread_pool_size,
-      const http_server_parameters_t &http_server_parameters,
-      const udp_server_parameters_t &udp_server_parameters,
-      const broadcasting_server_parameters_t &broadcasting_server_parameters);
+  explicit Server(const server_parameters_t &server_parameters);
 
   Server &operator=(const Server &) = delete;
 
@@ -37,6 +34,8 @@ public:
   void run();
 
 private:
+  server_parameters_t server_parameters_;
+
   /// The number of threads that will call io_context::run().
   std::size_t thread_pool_size_;
 
@@ -47,10 +46,7 @@ private:
   asio::signal_set signals_;
 
   StateManager state_manager_;
-
-  http_server_parameters_t http_server_parameters_;
-  udp_server_parameters_t udp_server_parameters_;
-  broadcasting_server_parameters_t broadcasting_server_parameters_;
+  Logger logger_;
 };
 } // namespace server
 
