@@ -1,6 +1,7 @@
 #ifndef BEATDETECTOR_AUDIOINPUT_H
 #define BEATDETECTOR_AUDIOINPUT_H
 
+#include <exception>
 #include <filesystem>
 #include <iostream>
 #include <math.h>
@@ -23,6 +24,20 @@
 namespace fs = std::filesystem;
 
 namespace beat_detector {
+
+class AudioInputException : public std::runtime_error {
+public:
+  // std::runtime_error takes a const char* null-terminated string.
+  // std::string_view may not be null-terminated, so it's not a good choice
+  // here. Our ArrayException will take a const std::string& instead, which is
+  // guaranteed to be null-terminated, and can be converted to a const char*.
+  AudioInputException(const std::string &error)
+      : std::runtime_error{error.c_str()}
+  // std::runtime_error will handle the string
+  {}
+
+  // no need to override what() since we can just use std::runtime_error::what()
+};
 
 class AudioInput {
 public:
@@ -122,7 +137,7 @@ public:
     return (err == paNoError);
   }
 
-  bool save_to_disk(const std::string &file_name) {
+  std::string save_to_disk(const std::string &file_name) {
     // 1. Create an AudioBuffer
     // (BTW, AudioBuffer is just a vector of vectors)
 
@@ -150,12 +165,22 @@ public:
 
     AudioFile<float> audioFile;
     // 5. Put into the AudioFile object
-    bool ok = audioFile.setAudioBuffer(buffer);
+    if (!audioFile.setAudioBuffer(buffer)) {
+      throw AudioInputException("Error handling audio buffer.");
+    }
 
-    fs::path audio_file_path = fs::current_path() / file_name;
+    fs::path audio_file_path = file_name;
+
+    if (audio_file_path.is_relative()) {
+      audio_file_path = fs::current_path() / file_name;
+    }
+
     std::cout << "Saving audio file to: " << audio_file_path << std::endl;
     // Wave file (explicit)
-    return audioFile.save(audio_file_path, AudioFileFormat::Wave);
+    if (audioFile.save(audio_file_path, AudioFileFormat::Wave)) {
+      return audio_file_path;
+    }
+    throw AudioInputException("Error saving file.");
   }
 
   std::vector<float> &&get_audio_data() {
