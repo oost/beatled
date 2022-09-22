@@ -28,3 +28,7 @@ target_link_libraries(hello_world_fftw FFTW3::fftw3)
 
 add_executable(hw_portaudio hello_world_portaudio.cpp)
 target_link_libraries(hw_portaudio portaudio_static FFTW3::fftw3)
+
+
+add_executable(audio_beat audio_beat.cpp)
+target_link_libraries(audio_beat PUBLIC beat_detector portaudio_static bfg::lyra fmt::fmt-header-only )

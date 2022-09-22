@@ -106,7 +106,8 @@
     "unordered_set": "cpp",
     "charconv": "cpp",
     "format": "cpp",
-    "__functional_base": "cpp"
+    "__functional_base": "cpp",
+    "filesystem": "cpp"
   },
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "[javascript]": {

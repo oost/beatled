@@ -8,7 +8,6 @@
 using namespace beat_detector;
 
 /*******************************************************************/
-int main(void);
 int main(void) {
 
   ScopedPaHandler paInit;
@@ -41,7 +40,7 @@ int main(void) {
 
   std::cout << "Audio input active: " << audio_input.is_active() << std::endl;
 
-  audio_input.save_to_disk();
+  audio_input.save_to_disk("audioFile.wav");
 
   std::vector<float> ad = audio_input.get_audio_data();
 

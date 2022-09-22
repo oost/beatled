@@ -2,6 +2,7 @@
 #define BEATDETECTOR_AUDIOOUTPUT_H
 
 #include "portaudio.h"
+#include <filesystem>
 #include <math.h>
 #include <stdio.h>
 #include <vector>
@@ -114,39 +115,68 @@ public:
     return (err == paNoError);
   }
 
-  bool save_to_disk() {
-    // 1. Create an AudioBuffer
-    // (BTW, AudioBuffer is just a vector of vectors)
-
-    AudioFile<float>::AudioBuffer buffer;
-
-    // 2. Set to (e.g.) two channels
-    buffer.resize(1);
-
-    // 3. Set number of samples per channel
-    buffer[0].resize(audio_data_.size());
-
-    // 4. do something here to fill the buffer with samples, e.g.
-
-    // then...
-
-    int numChannels = 1;
-    int numSamplesPerChannel = audio_data_.size();
-    float sampleRate = 44100.f;
-    float frequency = 440.f;
-
-    for (int i = 0; i < numSamplesPerChannel; i++) {
-      for (int channel = 0; channel < numChannels; channel++)
-        buffer[0][i] = audio_data_[i];
-    }
+  bool load_from_disk(const std::filesystem::path &file_path) {
 
     AudioFile<float> audioFile;
-    // 5. Put into the AudioFile object
-    bool ok = audioFile.setAudioBuffer(buffer);
 
-    // Wave file (explicit)
-    return audioFile.save("audioFile.wav", AudioFileFormat::Wave);
+    audioFile.load(file_path);
+
+    int sampleRate = audioFile.getSampleRate();
+    int bitDepth = audioFile.getBitDepth();
+
+    int numSamples = audioFile.getNumSamplesPerChannel();
+    double lengthInSeconds = audioFile.getLengthInSeconds();
+
+    int numChannels = audioFile.getNumChannels();
+    bool isMono = audioFile.isMono();
+    bool isStereo = audioFile.isStereo();
+
+    // or, just use this quick shortcut to print a summary to the console
+    audioFile.printSummary();
+
+    int channel = 0;
+    // int numSamples = audioFile.getNumSamplesPerChannel();
+
+    for (int i = 0; i < numSamples; i++) {
+      double currentSample = audioFile.samples[channel][i];
+    }
+    return true;
   }
+
+  // bool save_to_disk(const std::string &file_name) {
+  //   // 1. Create an AudioBuffer
+  //   // (BTW, AudioBuffer is just a vector of vectors)
+
+  //   AudioFile<float>::AudioBuffer buffer;
+
+  //   // 2. Set to (e.g.) two channels
+  //   buffer.resize(1);
+
+  //   // 3. Set number of samples per channel
+  //   buffer[0].resize(audio_data_.size());
+
+  //   // 4. do something here to fill the buffer with samples, e.g.
+
+  //   // then...
+
+  //   int numChannels = 1;
+  //   int numSamplesPerChannel = audio_data_.size();
+  //   float sampleRate = 44100.f;
+  //   float frequency = 440.f;
+
+  //   for (int i = 0; i < numSamplesPerChannel; i++) {
+  //     for (int channel = 0; channel < numChannels; channel++)
+  //       buffer[0][i] = audio_data_[i];
+  //   }
+
+  //   AudioFile<float> audioFile;
+  //   // 5. Put into the AudioFile object
+  //   bool ok = audioFile.setAudioBuffer(buffer);
+
+  //   fs::path audio_file_path = fs::current_path() / file_name;
+  //   // Wave file (explicit)
+  //   return audioFile.save(audio_file_path, AudioFileFormat::Wave);
+  // }
 
   std::vector<float> &&get_audio_data() { return std::move(audio_data_); }
 
