@@ -93,13 +93,13 @@ int main(int argc, char const *argv[]) {
     // });
 
     server::server_parameters_t server_parameters{
-        .udp = {args.m_udp_port},
         .http =
             {
                 args.m_address,   // address
                 args.m_http_port, // port
                 args.m_root_dir   // root_dir
             },
+        .udp = {args.m_udp_port},
         .broadcasting = {args.m_broadcasting_address, args.m_broadcasting_port},
         .logger = {20},
         .thread_pool_size = args.m_pool_size,

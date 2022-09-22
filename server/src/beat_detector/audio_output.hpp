@@ -1,14 +1,12 @@
-#ifndef BEATDETECTOR_AUDIOINPUT_H
-#define BEATDETECTOR_AUDIOINPUT_H
+#ifndef BEATDETECTOR_AUDIOOUTPUT_H
+#define BEATDETECTOR_AUDIOOUTPUT_H
 
-#include <iostream>
+#include "portaudio.h"
 #include <math.h>
 #include <stdio.h>
 #include <vector>
 
-#include "AudioFile.h"
-#include "portaudio.h"
-
+#include "audiofile.h"
 // #define NUM_SECONDS (5)
 // #define SAMPLE_RATE (44100)
 // #define FRAMES_PER_BUFFER (64)
@@ -21,46 +19,43 @@
 
 namespace beat_detector {
 
-class AudioInput {
+class AudioOutput {
 public:
-  AudioInput(std::size_t data_length, double sample_rate,
-             unsigned long frames_per_buffer)
-      : stream_(0), data_length_{data_length},
-        audio_data_(data_length, 0.0), write_idx_{0}, sample_rate_{sample_rate},
-        frames_per_buffer_{frames_per_buffer} {
+  AudioOutput(std::vector<float> &&audio_data, double sample_rate,
+              unsigned long frames_per_buffer)
+      : stream_{0}, audio_data_{std::move(audio_data)}, read_index_{0},
+        sample_rate_{sample_rate}, frames_per_buffer_{frames_per_buffer} {}
 
-    std::cout << "audio_data.length: " << audio_data_.size() << std::endl;
-  }
-
-  ~AudioInput() {
+  ~AudioOutput() {
     stop();
     close();
   }
 
   bool open() {
-    PaStreamParameters inputParameters;
+    PaStreamParameters outputParameters;
 
-    inputParameters.device =
-        Pa_GetDefaultInputDevice(); /* default input device */
-    if (inputParameters.device == paNoDevice) {
-      fprintf(stderr, "Error: No default input device.\n");
+    outputParameters.device =
+        Pa_GetDefaultOutputDevice(); /* default output device */
+    if (outputParameters.device == paNoDevice) {
+      fprintf(stderr, "Error: No default output device.\n");
       return false;
     }
 
-    inputParameters.channelCount = 1;         /* stereo output */
-    inputParameters.sampleFormat = paFloat32; /* 32 bit floating point output */
-    inputParameters.suggestedLatency =
-        Pa_GetDeviceInfo(inputParameters.device)->defaultLowInputLatency;
+    outputParameters.channelCount = 1; /* stereo output */
+    outputParameters.sampleFormat =
+        paFloat32; /* 32 bit floating point output */
+    outputParameters.suggestedLatency =
+        Pa_GetDeviceInfo(outputParameters.device)->defaultLowInputLatency;
 
-    inputParameters.hostApiSpecificStreamInfo = NULL;
+    outputParameters.hostApiSpecificStreamInfo = NULL;
 
     PaError err = Pa_OpenStream(
-        &stream_, &inputParameters, NULL, /* &outputParameters, */
+        &stream_, NULL, &outputParameters, /* &outputParameters, */
         sample_rate_, frames_per_buffer_,
         paClipOff, /* we won't output out of range samples so don't bother
                       clipping them */
-        &AudioInput::paCallback, this /* Using 'this' for userData so we can
-                                   cast to AudioInput* in paCallback method */
+        &AudioOutput::paCallback, this /* Using 'this' for userData so we can
+                                   cast to AudioOutput* in paCallback method */
     );
 
     if (err != paNoError) {
@@ -68,7 +63,7 @@ public:
       return false;
     }
 
-    err = Pa_SetStreamFinishedCallback(stream_, &AudioInput::paStreamFinished);
+    err = Pa_SetStreamFinishedCallback(stream_, &AudioOutput::paStreamFinished);
 
     if (err != paNoError) {
       Pa_CloseStream(stream_);
@@ -153,10 +148,7 @@ public:
     return audioFile.save("audioFile.wav", AudioFileFormat::Wave);
   }
 
-  std::vector<float> &&get_audio_data() {
-    std::cout << "audio_data.length: " << audio_data_.size() << std::endl;
-    return std::move(audio_data_);
-  }
+  std::vector<float> &&get_audio_data() { return std::move(audio_data_); }
 
 private:
   /* The instance callback, where we have access to every method/variable in
@@ -166,21 +158,23 @@ private:
                        const PaStreamCallbackTimeInfo *timeInfo,
                        PaStreamCallbackFlags statusFlags) {
 
-    float *input = (float *)inputBuffer;
-    std::size_t elements_writeable = data_length_ - write_idx_;
+    float *out = (float *)outputBuffer;
 
-    bool last_segment = (elements_writeable < framesPerBuffer);
-    int elements_to_write = last_segment ? elements_writeable : framesPerBuffer;
+    std::size_t elements_readable = audio_data_.size() - read_index_;
+    bool last_segment = (elements_readable < framesPerBuffer);
+    int elements_to_read = last_segment ? elements_readable : framesPerBuffer;
 
-    for (int i = 0; i < elements_to_write; i++) {
-      audio_data_[write_idx_ + i] = input[i];
+    for (int i = 0; i < elements_to_read; i++) {
+      out[i] = audio_data_[read_index_ + i];
     }
+    // printf("Writing at %d, %d (frames %lu)", read_index_, elements_to_read,
+    //        framesPerBuffer);
 
-    write_idx_ += elements_to_write;
+    read_index_ = read_index_ + elements_to_read;
 
-    (void)outputBuffer;
     (void)timeInfo; /* Prevent unused variable warnings. */
     (void)statusFlags;
+    (void)inputBuffer;
 
     if (last_segment) {
       return paComplete;
@@ -200,7 +194,7 @@ private:
     /* Here we cast userData to Sine* type so we can call the instance method
        paCallbackMethod, we can do that since we called Pa_OpenStream with
        'this' for userData */
-    return ((AudioInput *)userData)
+    return ((AudioOutput *)userData)
         ->paCallbackMethod(inputBuffer, outputBuffer, framesPerBuffer, timeInfo,
                            statusFlags);
   }
@@ -211,12 +205,12 @@ private:
    * This routine is called by portaudio when playback is done.
    */
   static void paStreamFinished(void *userData) {
-    return ((AudioInput *)userData)->paStreamFinishedMethod();
+    return ((AudioOutput *)userData)->paStreamFinishedMethod();
   }
 
   PaStream *stream_;
   std::vector<float> audio_data_;
-  int write_idx_ = 0;
+  int read_index_ = 0;
   std::size_t data_length_;
   double sample_rate_;
   unsigned long frames_per_buffer_;
@@ -309,7 +303,8 @@ private:
 //   }
 
 // private:
-//   /* The instance callback, where we have access to every method/variable in
+//   /* The instance callback, where we have access to every method/variable
+//   in
 //    * object of class Sine */
 //   int paCallbackMethod(const void *inputBuffer, void *outputBuffer,
 //                        unsigned long framesPerBuffer,
@@ -328,7 +323,8 @@ private:
 //       left_phase += 1;
 //       if (left_phase >= TABLE_SIZE)
 //         left_phase -= TABLE_SIZE;
-//       right_phase += 3; /* higher pitch so we can distinguish left and right.
+//       right_phase += 3; /* higher pitch so we can distinguish left and
+//       right.
 //       */ if (right_phase >= TABLE_SIZE)
 //         right_phase -= TABLE_SIZE;
 //     }
@@ -344,8 +340,10 @@ private:
 //   static int paCallback(const void *inputBuffer, void *outputBuffer,
 //                         unsigned long framesPerBuffer,
 //                         const PaStreamCallbackTimeInfo *timeInfo,
-//                         PaStreamCallbackFlags statusFlags, void *userData) {
-//     /* Here we cast userData to Sine* type so we can call the instance method
+//                         PaStreamCallbackFlags statusFlags, void *userData)
+//                         {
+//     /* Here we cast userData to Sine* type so we can call the instance
+//     method
 //        paCallbackMethod, we can do that since we called Pa_OpenStream with
 //        'this' for userData */
 //     return ((Sine *)userData)
@@ -354,7 +352,8 @@ private:
 //                            statusFlags);
 //   }
 
-//   void paStreamFinishedMethod() { printf("Stream Completed: %s\n", message);
+//   void paStreamFinishedMethod() { printf("Stream Completed: %s\n",
+//   message);
 //   }
 
 //   /*
@@ -373,4 +372,4 @@ private:
 
 } // namespace beat_detector
 
-#endif // BEATDETECTOR_AUDIOINPUT_H
+#endif // BEATDETECTOR_AUDIOOUTPUT_H

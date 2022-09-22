@@ -17,23 +17,18 @@ find_package(restinio CONFIG REQUIRED)
 find_package(asio CONFIG REQUIRED)
 find_package(date CONFIG REQUIRED)
 find_package(portaudio CONFIG REQUIRED)
-find_package(FFTW3 CONFIG REQUIRED)
+# find_package(FFTW3 CONFIG REQUIRED)
+find_package(AudioFile CONFIG REQUIRED)
 
-# target_link_libraries(main PRIVATE portaudio_static)
-# target_link_libraries(main PRIVATE FFTW3::fftw3)
 
-# find_package(FFTW3f CONFIG REQUIRED)
-# target_link_libraries(main PRIVATE FFTW3::fftw3f)
-
-# find_package(FFTW3l CONFIG REQUIRED)
-# target_link_libraries(main PRIVATE FFTW3::fftw3l)
-
-# add_subdirectory(external)
+add_subdirectory(external)
 # add_subdirectory(lib)
 
 add_subdirectory(src)
 add_subdirectory(tests)
 
+enable_testing ()
+add_test (NAME TestFactorials COMMAND test_factorials)
 
 set(BINARY_INSTALL_DIR ${PROJECT_BINARY_DIR}/target)
 set(INSTALL_TARGETS 

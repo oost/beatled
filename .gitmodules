@@ -19,3 +19,12 @@
 [submodule "server/external/spdlog"]
 	path = server/external/spdlog
 	url = https://github.com/gabime/spdlog.git
+[submodule "server/external/aubio"]
+	path = server/external/aubio
+	url = https://github.com/aubio/aubio.git
+[submodule "server/external/minibpm"]
+	path = server/external/minibpm
+	url = https://github.com/breakfastquay/minibpm.git
+[submodule "server/external/BTrack"]
+	path = server/external/BTrack
+	url = git@github.com:oost/BTrack.git

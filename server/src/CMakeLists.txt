@@ -27,5 +27,4 @@ target_link_libraries(hello_world_fftw FFTW3::fftw3)
 
 
 add_executable(hw_portaudio hello_world_portaudio.cpp)
-target_include_directories(hw_portaudio PUBLIC "${PROJECT_BINARY_DIR}/src")
 target_link_libraries(hw_portaudio portaudio_static FFTW3::fftw3)
