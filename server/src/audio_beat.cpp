@@ -2,6 +2,7 @@
 #include <iostream>
 #include <lyra/lyra.hpp>
 
+#include "commands/play.hpp"
 #include "commands/record.hpp"
 
 int main(int argc, const char **argv) {
@@ -10,6 +11,8 @@ int main(int argc, const char **argv) {
   cli.add_argument(lyra::help(show_help));
 
   record_audio_command record{cli};
+  play_audio_command play{cli};
+
   try {
     auto result = cli.parse({argc, argv});
     if (show_help) {

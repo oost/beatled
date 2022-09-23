@@ -1,43 +1,23 @@
 #ifndef BEATDETECTOR_AUDIOINPUT_H
 #define BEATDETECTOR_AUDIOINPUT_H
 
+#include <AudioFile.h>
 #include <exception>
 #include <filesystem>
 #include <iostream>
 #include <math.h>
+#include <portaudio.h>
 #include <stdio.h>
 #include <vector>
 
-#include "AudioFile.h"
-#include "portaudio.h"
-
-// #define NUM_SECONDS (5)
-// #define SAMPLE_RATE (44100)
-// #define FRAMES_PER_BUFFER (64)
-
-#ifndef M_PI
-#define M_PI (3.14159265)
-#endif
+#include "../config.h"
+#include "audio_exception.hpp"
 
 #define TABLE_SIZE (200)
 
 namespace fs = std::filesystem;
 
 namespace beat_detector {
-
-class AudioInputException : public std::runtime_error {
-public:
-  // std::runtime_error takes a const char* null-terminated string.
-  // std::string_view may not be null-terminated, so it's not a good choice
-  // here. Our ArrayException will take a const std::string& instead, which is
-  // guaranteed to be null-terminated, and can be converted to a const char*.
-  AudioInputException(const std::string &error)
-      : std::runtime_error{error.c_str()}
-  // std::runtime_error will handle the string
-  {}
-
-  // no need to override what() since we can just use std::runtime_error::what()
-};
 
 class AudioInput {
 public:
@@ -141,7 +121,7 @@ public:
     // 1. Create an AudioBuffer
     // (BTW, AudioBuffer is just a vector of vectors)
 
-    AudioFile<float>::AudioBuffer buffer;
+    AudioFile<audio_buffer_t>::AudioBuffer buffer;
 
     // 2. Set to (e.g.) two channels
     buffer.resize(1);
@@ -163,7 +143,7 @@ public:
         buffer[0][i] = audio_data_[i];
     }
 
-    AudioFile<float> audioFile;
+    AudioFile<audio_buffer_t> audioFile;
     // 5. Put into the AudioFile object
     if (!audioFile.setAudioBuffer(buffer)) {
       throw AudioInputException("Error handling audio buffer.");
@@ -177,13 +157,13 @@ public:
 
     std::cout << "Saving audio file to: " << audio_file_path << std::endl;
     // Wave file (explicit)
-    if (audioFile.save(audio_file_path, AudioFileFormat::Wave)) {
-      return audio_file_path;
+    if (!audioFile.save(audio_file_path, AudioFileFormat::Wave)) {
+      throw AudioFileException("Error saving file.");
     }
-    throw AudioInputException("Error saving file.");
+    return audio_file_path;
   }
 
-  std::vector<float> &&get_audio_data() {
+  std::vector<audio_buffer_t> &&get_audio_data() {
     std::cout << "audio_data.length: " << audio_data_.size() << std::endl;
     return std::move(audio_data_);
   }
@@ -245,7 +225,7 @@ private:
   }
 
   PaStream *stream_;
-  std::vector<float> audio_data_;
+  std::vector<audio_buffer_t> audio_data_;
   int write_idx_ = 0;
   std::size_t data_length_;
   double sample_rate_;

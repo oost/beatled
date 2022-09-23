@@ -26,22 +26,29 @@ struct record_audio_command {
                       [this](const lyra::group &g) { this->do_command(g); })
             .help("Record audio.")
             .add_argument(lyra::help(show_help))
-            .add_argument(lyra::opt(sample_rate, "sample_rate")
-                              .name("-s")
-                              .name("--sample-rate")
-                              .help("Sample at which rate?"))
+            .add_argument(
+                lyra::opt(sample_rate, "sample_rate")
+                    .name("-s")
+                    .name("--sample-rate")
+                    .help(fmt::format("Sample at which rate? (default: {})",
+                                      sample_rate)))
             .add_argument(lyra::opt(frames_per_buffer, "frames_per_buffer")
                               .name("-f")
                               .name("--frames-per-buffer")
-                              .help("How many frames per buffer?"))
+                              .help(fmt::format(
+                                  "How many frames per buffer? (default: {})",
+                                  frames_per_buffer)))
             .add_argument(lyra::opt(duration, "duration")
                               .name("-d")
                               .name("--duration")
-                              .help("Which duration?"))
-            .add_argument(lyra::opt(audioFileName, "audio file name")
-                              .name("-o")
-                              .name("--output")
-                              .help("Where do we save the audio"))
+                              .help(fmt::format("Which duration? (default: {})",
+                                                duration)))
+            .add_argument(
+                lyra::opt(audioFileName, "audio file name")
+                    .name("-o")
+                    .name("--output")
+                    .help(fmt::format("Where do we save the audio(default: {})",
+                                      audioFileName)))
             .add_argument(
                 lyra::opt(verbose)
                     .name("-v")
@@ -76,7 +83,7 @@ struct record_audio_command {
                 << std::endl;
 
       while (audio_input.is_active()) {
-        Pa_Sleep(1000);
+        Pa_Sleep(50);
       }
       // Add thread syncronization
 

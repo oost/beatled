@@ -22,12 +22,12 @@ target_link_libraries(${BEAT_SERVER} PRIVATE asio asio::asio fmt::fmt-header-onl
 
 
 add_executable(hello_world_fftw hello_world_fftw.cpp)
-target_link_libraries(hello_world_fftw FFTW3::fftw3)
+target_link_libraries(hello_world_fftw FFTW3::fftw3l)
 
 
 
 add_executable(hw_portaudio hello_world_portaudio.cpp)
-target_link_libraries(hw_portaudio portaudio_static FFTW3::fftw3)
+target_link_libraries(hw_portaudio portaudio_static FFTW3::fftw3l)
 
 
 add_executable(audio_beat audio_beat.cpp)

@@ -7,8 +7,8 @@ set(BEAT_SERVER beat_server)
 set(BUILD_SHARED_LIBS OFF)
 
 find_package(FFTW3 CONFIG REQUIRED)
+find_package(FFTW3l CONFIG REQUIRED)
 find_package(unofficial-http-parser CONFIG REQUIRED)
-
 find_package(lyra CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
@@ -17,7 +17,6 @@ find_package(restinio CONFIG REQUIRED)
 find_package(asio CONFIG REQUIRED)
 find_package(date CONFIG REQUIRED)
 find_package(portaudio CONFIG REQUIRED)
-# find_package(FFTW3 CONFIG REQUIRED)
 find_package(AudioFile CONFIG REQUIRED)
 
 

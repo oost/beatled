@@ -1,7 +1,7 @@
 #include "beat_detector/audio_input.hpp"
 #include "beat_detector/audio_output.hpp"
 #include "beat_detector/portaudio_handler.hpp"
-#include "portaudio.h"
+#include <portaudio.h>
 
 #include <iostream>
 
@@ -42,7 +42,7 @@ int main(void) {
 
   audio_input.save_to_disk("audioFile.wav");
 
-  std::vector<float> ad = audio_input.get_audio_data();
+  std::vector<audio_buffer_t> ad = audio_input.get_audio_data();
 
   if (!audio_input.stop()) {
     std::cout << "Couldn't stop stream." << std::endl;
