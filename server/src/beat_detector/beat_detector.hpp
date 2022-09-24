@@ -4,6 +4,9 @@
 #include <asio.hpp>
 #include <memory>
 
+#include "audio_buffer_pool.hpp"
+
+namespace beat_detector {
 class BeatDetector {
 public:
   BeatDetector();
@@ -22,5 +25,9 @@ private:
   asio::thread *thread_;
   asio::high_resolution_timer timer_;
   std::chrono::nanoseconds alarm_period_;
+
+  AudioBufferPool audio_buffer_pool_;
 };
+
+} // namespace beat_detector
 #endif // BEAT_DETECTOR_BEAT_DETECTOR_H

@@ -1,8 +1,10 @@
 #ifndef BEATDETECTOR_AUDIOOUTPUT_H
 #define BEATDETECTOR_AUDIOOUTPUT_H
 
+#include <BTrack.h>
 #include <audiofile.h>
 #include <filesystem>
+#include <iostream>
 #include <math.h>
 #include <portaudio.h>
 #include <stdio.h>
@@ -19,12 +21,15 @@ namespace beat_detector {
 
 class AudioOutput {
 public:
-  AudioOutput() : stream_{0}, frames_per_buffer_{1024} {}
+  AudioOutput()
+      : stream_{0}, frames_per_buffer_{512}, beat_tracker_{frames_per_buffer_} {
+  }
 
   AudioOutput(std::vector<audio_buffer_t> &&audio_data, double sample_rate,
-              unsigned long frames_per_buffer)
+              int frames_per_buffer)
       : stream_{0}, audio_data_{std::move(audio_data)}, read_index_{0},
-        sample_rate_{sample_rate}, frames_per_buffer_{frames_per_buffer} {}
+        sample_rate_{sample_rate}, frames_per_buffer_{frames_per_buffer},
+        beat_tracker_{frames_per_buffer_} {}
 
   ~AudioOutput() {
     stop();
@@ -171,6 +176,13 @@ private:
     for (int i = 0; i < elements_to_read; i++) {
       out[i] = audio_data_[read_index_ + i];
     }
+    double *hop_data = audio_data_.data();
+    beat_tracker_.processAudioFrame(hop_data + read_index_);
+
+    if (beat_tracker_.beatDueInCurrentFrame()) {
+      // do something on the beat
+      std::cout << "Beat --- " << std::endl;
+    }
     // printf("Writing at %d, %d (frames %lu)", read_index_, elements_to_read,
     //        framesPerBuffer);
 
@@ -217,7 +229,8 @@ private:
   int read_index_ = 0;
   std::size_t data_length_;
   double sample_rate_;
-  unsigned long frames_per_buffer_;
+  int frames_per_buffer_;
+  BTrack beat_tracker_;
 };
 
 } // namespace beat_detector

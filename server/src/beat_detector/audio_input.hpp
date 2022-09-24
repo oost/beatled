@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "../config.h"
+#include "audio_buffer_pool.hpp"
 #include "audio_exception.hpp"
 
 #define TABLE_SIZE (200)

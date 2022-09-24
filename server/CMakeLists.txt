@@ -7,7 +7,7 @@ set(BEAT_SERVER beat_server)
 set(BUILD_SHARED_LIBS OFF)
 
 find_package(FFTW3 CONFIG REQUIRED)
-find_package(FFTW3l CONFIG REQUIRED)
+# find_package(FFTW3l CONFIG REQUIRED)
 find_package(unofficial-http-parser CONFIG REQUIRED)
 find_package(lyra CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)

@@ -5,6 +5,8 @@
 #include "../state_manager/state_manager.hpp"
 #include "beat_detector.hpp"
 
+using namespace beat_detector;
+
 BeatDetector::BeatDetector()
     : signals_(io_context_), timer_(asio::high_resolution_timer(
                                  io_context_, std::chrono::seconds(3))) {
