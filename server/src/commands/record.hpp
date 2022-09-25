@@ -6,6 +6,7 @@
 
 #include "../beat_detector/audio_input.hpp"
 #include "../beat_detector/audio_output.hpp"
+#include "../beat_detector/audio_recorder.hpp"
 #include "../beat_detector/portaudio_handler.hpp"
 
 using namespace beat_detector;
@@ -60,80 +61,87 @@ struct record_audio_command {
     if (show_help)
       std::cout << g;
     else {
-      const unsigned long TOTAL_BUFFER_SIZE = sample_rate * duration;
 
-      ScopedPaHandler paInit;
-      if (paInit.result() != paNoError) {
-        throw AudioInputException("Couldn't start pa handler.");
-      }
+      AudioRecorder recorder{audioFileName, duration, sample_rate,
+                             static_cast<double>(frames_per_buffer)};
 
-      std::cout << "Total buffer size: " << TOTAL_BUFFER_SIZE << std::endl;
+      std::string audio_file_path = recorder.record();
+      // const unsigned long TOTAL_BUFFER_SIZE = sample_rate * duration;
 
-      AudioBufferPool audio_buffer_pool{constants::audio_buffer_size};
+      // ScopedPaHandler paInit;
+      // if (paInit.result() != paNoError) {
+      //   throw AudioInputException("Couldn't start pa handler.");
+      // }
 
-      AudioInput audio_input(audio_buffer_pool, sample_rate, frames_per_buffer);
+      // std::cout << "Total buffer size: " << TOTAL_BUFFER_SIZE << std::endl;
 
-      if (!audio_input.open()) {
-        throw AudioInputException("Couldn't open device.");
-      }
+      // AudioBufferPool audio_buffer_pool{constants::audio_buffer_size};
 
-      if (!audio_input.start()) {
-        throw AudioInputException("Couldn't start stream.");
-      }
+      // AudioInput audio_input(audio_buffer_pool, sample_rate,
+      // frames_per_buffer);
 
-      std::cout << "Audio input active: " << audio_input.is_active()
-                << std::endl;
+      // if (!audio_input.open()) {
+      //   throw AudioInputException("Couldn't open device.");
+      // }
 
-      AudioFile<audio_buffer_t> audio_file;
-      audio_file.samples.resize(1);
-      auto &audio_data = audio_file.samples[0];
-      audio_data.reserve(TOTAL_BUFFER_SIZE);
-      float sampleRate = 44100.f;
-      float frequency = 440.f;
+      // if (!audio_input.start()) {
+      //   throw AudioInputException("Couldn't start stream.");
+      // }
 
-      int audio_data_remaining_capacity = audio_data.capacity();
-      int idx = 0;
-      const int cycle_per_second =
-          static_cast<int>(sampleRate) / constants::audio_buffer_size;
-      while (1) {
-        AudioBuffer_ptr buffer = audio_buffer_pool.dequeue_blocking();
-        int elements_to_copy = (buffer->size() > audio_data_remaining_capacity)
-                                   ? audio_data_remaining_capacity
-                                   : buffer->size();
+      // std::cout << "Audio input active: " << audio_input.is_active()
+      //           << std::endl;
 
-        const audio_buffer_data_t &buffer_data = buffer->data();
-        for (int i = 0; i < elements_to_copy; i++) {
-          audio_data.push_back(buffer_data[i]);
-        }
-        audio_buffer_pool.release_buffer(std::move(buffer));
-        audio_data_remaining_capacity -= elements_to_copy;
-        if (audio_data_remaining_capacity == 0) {
-          audio_input.stop();
-          break;
-        }
+      // AudioFile<audio_buffer_t> audio_file;
+      // audio_file.samples.resize(1);
+      // auto &audio_data = audio_file.samples[0];
+      // audio_data.reserve(TOTAL_BUFFER_SIZE);
+      // float sampleRate = 44100.f;
+      // float frequency = 440.f;
 
-        idx++;
-        if (idx % cycle_per_second == 0) {
-          std::cout << fmt::format("Recorded {} seconds",
-                                   idx * constants::audio_buffer_size /
-                                       sampleRate)
-                    << std::endl;
-        }
-      }
+      // int audio_data_remaining_capacity = audio_data.capacity();
+      // int idx = 0;
+      // const int cycle_per_second =
+      //     static_cast<int>(sampleRate) / constants::audio_buffer_size;
+      // while (1) {
+      //   AudioBuffer_ptr buffer = audio_buffer_pool.dequeue_blocking();
+      //   int elements_to_copy = (buffer->size() >
+      //   audio_data_remaining_capacity)
+      //                              ? audio_data_remaining_capacity
+      //                              : buffer->size();
 
-      fs::path audio_file_path = audioFileName;
-      if (audio_file_path.is_relative()) {
-        audio_file_path = fs::current_path() / audio_file_path;
-      }
+      //   const audio_buffer_data_t &buffer_data = buffer->data();
+      //   for (int i = 0; i < elements_to_copy; i++) {
+      //     audio_data.push_back(buffer_data[i]);
+      //   }
+      //   audio_buffer_pool.release_buffer(std::move(buffer));
+      //   audio_data_remaining_capacity -= elements_to_copy;
+      //   if (audio_data_remaining_capacity == 0) {
+      //     audio_input.stop();
+      //     break;
+      //   }
 
-      std::cout << "Saving audio file to: " << audio_file_path << std::endl;
-      // Wave file (explicit)
-      if (!audio_file.save(audio_file_path, AudioFileFormat::Wave)) {
-        throw AudioFileException("Error saving file.");
-      }
+      //   idx++;
+      //   if (idx % cycle_per_second == 0) {
+      //     std::cout << fmt::format("Recorded {} seconds",
+      //                              idx * constants::audio_buffer_size /
+      //                                  sampleRate)
+      //               << std::endl;
+      //   }
+      // }
 
-      std::cout << "Audio input active: " << audio_input.is_active()
-                << std::endl;
+      // fs::path audio_file_path = audioFileName;
+      // if (audio_file_path.is_relative()) {
+      //   audio_file_path = fs::current_path() / audio_file_path;
+      // }
+
+      // std::cout << "Saving audio file to: " << audio_file_path << std::endl;
+      // // Wave file (explicit)
+      // if (!audio_file.save(audio_file_path, AudioFileFormat::Wave)) {
+      //   throw AudioFileException("Error saving file.");
+      // }
+
+      // std::cout << "Audio input active: " << audio_input.is_active()
+      //           << std::endl;
 
       std::cout << "Saved audio to " << audio_file_path << std::endl;
     }

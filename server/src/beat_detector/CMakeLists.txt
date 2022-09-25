@@ -3,6 +3,7 @@ add_library(
     beat_detector.cpp
     audio_input.cpp
     audio_output.cpp
+    audio_recorder.cpp
 )
 
 target_link_libraries(
