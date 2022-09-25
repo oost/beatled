@@ -92,17 +92,15 @@ struct record_audio_command {
       float frequency = 440.f;
 
       int audio_data_remaining_capacity = audio_data.capacity();
+      int idx = 0;
+      const int cycle_per_second =
+          static_cast<int>(sampleRate) / constants::audio_buffer_size;
       while (1) {
-        std::cout << "Waiting for new buffer" << std::endl;
         AudioBuffer_ptr buffer = audio_buffer_pool.dequeue_blocking();
         int elements_to_copy = (buffer->size() > audio_data_remaining_capacity)
                                    ? audio_data_remaining_capacity
                                    : buffer->size();
-        std::cout << fmt::format("Copying {}. Remaining capacity {}. Size {}",
-                                 elements_to_copy,
-                                 audio_data_remaining_capacity,
-                                 audio_data.size())
-                  << std::endl;
+
         const audio_buffer_data_t &buffer_data = buffer->data();
         for (int i = 0; i < elements_to_copy; i++) {
           audio_data.push_back(buffer_data[i]);
@@ -112,6 +110,14 @@ struct record_audio_command {
         if (audio_data_remaining_capacity == 0) {
           audio_input.stop();
           break;
+        }
+
+        idx++;
+        if (idx % cycle_per_second == 0) {
+          std::cout << fmt::format("Recorded {} seconds",
+                                   idx * constants::audio_buffer_size /
+                                       sampleRate)
+                    << std::endl;
         }
       }
 

@@ -66,15 +66,21 @@ public:
   AudioBufferPool(std::size_t buffer_size) : buffer_size_{buffer_size} {
     pool_buffer_queue_.push(
         std::move(std::make_unique<AudioBuffer>(buffer_size_)));
+    total_pool_size_++;
   }
 
-  size_t pool_size() const { return pool_buffer_queue_.size(); }
-  size_t queue_size() const { return filled_buffer_queue_.size(); }
+  // TODO: Adding mutex not possible on const method?
+  inline size_t pool_size() const { return pool_buffer_queue_.size(); }
+  inline size_t queue_size() const { return filled_buffer_queue_.size(); }
+  inline size_t total_pool_size() const { return total_pool_size_; }
 
   AudioBuffer_ptr get_new_buffer() {
     std::unique_lock<std::mutex> L{pool_buffer_queue_mutex_};
     if (pool_buffer_queue_.empty()) {
-      std::cout << "Creating new AudioBuffer" << std::endl;
+      total_pool_size_++;
+      std::cout << "Creating new AudioBuffer. Total pool size: "
+                << total_pool_size_ << std::endl;
+
       return std::make_unique<AudioBuffer>(buffer_size_);
     }
     auto new_buffer = std::move(pool_buffer_queue_.front());
@@ -132,6 +138,7 @@ private:
   std::queue<std::unique_ptr<AudioBuffer>> pool_buffer_queue_;
 
   std::size_t buffer_size_;
+  std::size_t total_pool_size_ = 0;
 };
 
 } // namespace beat_detector
