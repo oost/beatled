@@ -31,6 +31,8 @@ add_executable(test_kissfft test_kissfft.cpp)
 target_link_libraries(test_kissfft PRIVATE kissfft)
 
 
+add_executable(test_audio_buffer_pool test_audio_buffer_pool.cpp)
+target_link_libraries(test_audio_buffer_pool PRIVATE Catch2::Catch2 Catch2::Catch2WithMain)
 # add_executable(test_tempo test-tempo.c)
 # target_link_libraries(test_tempo PRIVATE Aubio::aubio)
 

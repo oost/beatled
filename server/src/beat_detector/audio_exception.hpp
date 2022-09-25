@@ -3,8 +3,6 @@
 
 #include <exception>
 
-#define TABLE_SIZE (200)
-
 namespace beat_detector {
 
 class AudioException : public std::runtime_error {

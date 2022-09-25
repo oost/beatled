@@ -7,7 +7,7 @@
 
 #include "../beat_detector/audio_output.hpp"
 #include "../beat_detector/portaudio_handler.hpp"
-#include "../config.h"
+#include "../config.hpp"
 
 namespace fs = std::filesystem;
 

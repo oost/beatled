@@ -3,6 +3,15 @@
   "cmake.configureSettings": {
     "CMAKE_TOOLCHAIN_FILE": "/Users/oscarostlund/Programmation/projects/vcpkg/scripts/buildsystems/vcpkg.cmake"
   },
+  "cmake.debugConfig": {
+    "args": [
+      "record",
+      "-d",
+      "1",
+      "-o",
+      "audio2.wav"
+    ]
+  },
   "files.associations": {
     "**/*.h.in": "plaintext",
     "*.ipp": "cpp",

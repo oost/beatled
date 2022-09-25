@@ -8,8 +8,9 @@
 using namespace beat_detector;
 
 BeatDetector::BeatDetector()
-    : signals_(io_context_), timer_(asio::high_resolution_timer(
-                                 io_context_, std::chrono::seconds(3))) {
+    : signals_(io_context_),
+      timer_(asio::high_resolution_timer(io_context_, std::chrono::seconds(3))),
+      audio_buffer_pool_(constants::audio_buffer_size) {
 
   // Register to handle the signals that indicate when the server should exit.
   // It is safe to register for the same signal multiple times in a program,

@@ -6,7 +6,7 @@
 typedef double audio_buffer_t;
 
 namespace constants {
-inline constexpr int BUFFER_SIZE = 512;
+inline constexpr std::size_t audio_buffer_size = 512;
 
 }
 
