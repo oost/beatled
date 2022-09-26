@@ -5,7 +5,7 @@
 #include <portaudio.h>
 #include <string>
 
-#include "../beat_detector/audio_output.hpp"
+#include "../beat_detector/audio_player.hpp"
 #include "../beat_detector/portaudio_handler.hpp"
 #include "../config.hpp"
 
@@ -48,37 +48,39 @@ struct play_audio_command {
                 << std::endl;
       std::cout << "**********************" << std::endl << std::endl;
 
-      ScopedPaHandler paInit;
-      if (paInit.result() != paNoError) {
-        throw AudioInputException("Couldn't start pa handler.");
-      }
+      AudioPlayer audio_player_(audioFileName);
+      audio_player_.play();
+      // ScopedPaHandler paInit;
+      // if (paInit.result() != paNoError) {
+      //   throw AudioInputException("Couldn't start pa handler.");
+      // }
 
-      beat_detector::AudioOutput audio_output;
-      audio_output.load_from_disk(audioFileName);
+      // beat_detector::AudioOutput audio_output;
+      // audio_output.load_from_disk(audioFileName);
 
-      if (!audio_output.open()) {
-        throw AudioException("Couldn't open device.");
-      }
+      // if (!audio_output.open()) {
+      //   throw AudioException("Couldn't open device.");
+      // }
 
-      std::cout << "Output stream opened ! " << std::endl;
+      // std::cout << "Output stream opened ! " << std::endl;
 
-      if (!audio_output.start()) {
-        throw AudioException("Couldn't start stream.");
-      }
+      // if (!audio_output.start()) {
+      //   throw AudioException("Couldn't start stream.");
+      // }
 
-      std::cout << "Audio output active: " << audio_output.is_active()
-                << std::endl;
+      // std::cout << "Audio output active: " << audio_output.is_active()
+      //           << std::endl;
 
-      while (audio_output.is_active()) {
-        Pa_Sleep(100);
-      }
+      // while (audio_output.is_active()) {
+      //   Pa_Sleep(100);
+      // }
 
-      // Add thread syncronization
+      // // Add thread syncronization
 
-      std::cout << "Audio output active: " << audio_output.is_active()
-                << std::endl;
+      // std::cout << "Audio output active: " << audio_output.is_active()
+      //           << std::endl;
 
-      audio_output.close();
+      // audio_output.close();
     }
   };
 };

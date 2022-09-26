@@ -70,7 +70,7 @@ private:
   AudioBufferPool &audio_buffer_pool_;
   double sample_rate_;
   unsigned long frames_per_buffer_;
-  AudioBuffer_ptr current_buffer_;
+  AudioBuffer::Ptr current_buffer_;
 };
 
 } // namespace beat_detector

@@ -1,17 +1,18 @@
-#ifndef BEATDETECTOR_AUDIOOUTPUT_H
-#define BEATDETECTOR_AUDIOOUTPUT_H
+#ifndef BEAT_DETECTOR__AUDIO_OUTPUT_HPP
+#define BEAT_DETECTOR__AUDIO_OUTPUT_HPP
 
-#include <BTrack.h>
 // #include <audiofile.h>
-// #include <filesystem>
 // #include <iostream>
 // #include <math.h>
-// #include <portaudio.h>
 // #include <stdio.h>
 // #include <vector>
+#include <BTrack.h>
+#include <filesystem>
+#include <portaudio.h>
 
 #include "../config.hpp"
 #include "audio_exception.hpp"
+#include "portaudio_handler.hpp"
 
 namespace fs = std::filesystem;
 
@@ -68,6 +69,7 @@ private:
     return ((AudioOutput *)userData)->paStreamFinishedMethod();
   }
 
+  ScopedPaHandler port_audio_handler_;
   PaStream *stream_;
   std::vector<audio_buffer_t> audio_data_;
   int read_index_ = 0;
@@ -79,4 +81,4 @@ private:
 
 } // namespace beat_detector
 
-#endif // BEATDETECTOR_AUDIOOUTPUT_H
+#endif // BEAT_DETECTOR__AUDIO_OUTPUT_HPP

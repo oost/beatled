@@ -1,5 +1,5 @@
-#ifndef BEAT_TRACKER__AUDIO_RECORDER_H
-#define BEAT_TRACKER__AUDIO_RECORDER_H
+#ifndef BEAT_TRACKER__AUDIO_RECORDER_HPP
+#define BEAT_TRACKER__AUDIO_RECORDER_HPP
 
 #include <string>
 
@@ -19,4 +19,4 @@ private:
 };
 } // namespace beat_detector
 
-#endif // BEAT_TRACKER__AUDIO_RECORDER_H
+#endif // BEAT_TRACKER__AUDIO_RECORDER_HPP

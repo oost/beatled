@@ -16,7 +16,11 @@ std::string AudioRecorder::record() {
 
   AudioBufferPool audio_buffer_pool{constants::audio_buffer_size};
 
-  AudioInput audio_input(audio_buffer_pool, sample_rate_, frames_per_buffer_);
+  // Use frame_rate = 0 to let the OS choose the frame rate (potentially
+  // dynamcially)
+  AudioInput audio_input(audio_buffer_pool, sample_rate_, 0);
+  // AudioInput audio_input(audio_buffer_pool, sample_rate_,
+  // frames_per_buffer_);
 
   if (!audio_input.open()) {
     throw AudioInputException("Couldn't open device.");
@@ -41,7 +45,7 @@ std::string AudioRecorder::record() {
       static_cast<int>(sampleRate) / constants::audio_buffer_size;
 
   while (1) {
-    AudioBuffer_ptr buffer = audio_buffer_pool.dequeue_blocking();
+    AudioBuffer::Ptr buffer = audio_buffer_pool.dequeue_blocking();
     int elements_to_copy = (buffer->size() > audio_data_remaining_capacity)
                                ? audio_data_remaining_capacity
                                : buffer->size();

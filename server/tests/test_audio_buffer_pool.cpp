@@ -12,7 +12,7 @@ TEST_CASE("AudioBufferPools ", "[AudioBufferPool]") {
   SECTION("Pool can create new AudioBuffers") {
     REQUIRE(audio_buffer_pool.pool_size() == 1);
     REQUIRE(audio_buffer_pool.queue_empty());
-    AudioBuffer_ptr buffer = audio_buffer_pool.get_new_buffer();
+    AudioBuffer::Ptr buffer = audio_buffer_pool.get_new_buffer();
     REQUIRE(buffer != nullptr);
 
     REQUIRE(audio_buffer_pool.pool_empty());
@@ -26,7 +26,7 @@ TEST_CASE("AudioBufferPools ", "[AudioBufferPool]") {
   }
 
   SECTION("Pool can enqueue and dequeue buffers") {
-    AudioBuffer_ptr buffer = audio_buffer_pool.get_new_buffer();
+    AudioBuffer::Ptr buffer = audio_buffer_pool.get_new_buffer();
     std::chrono::time_point<std::chrono::system_clock> time_point =
         std::chrono::system_clock::now();
     buffer->set_start_time(std::forward<start_time_t>(time_point));

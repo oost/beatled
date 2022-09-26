@@ -4,6 +4,7 @@ add_library(
     audio_input.cpp
     audio_output.cpp
     audio_recorder.cpp
+    audio_player.cpp
 )
 
 target_link_libraries(
