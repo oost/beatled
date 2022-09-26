@@ -32,8 +32,6 @@ add_test (NAME TestFactorials COMMAND test_factorials)
 set(BINARY_INSTALL_DIR ${PROJECT_BINARY_DIR}/target)
 set(INSTALL_TARGETS 
   ${BEAT_SERVER} 
-  hello_world
-  hello_world_fftw
   async_udp_echo_server
   blocking_udp_echo_server
   blocking_udp_echo_client

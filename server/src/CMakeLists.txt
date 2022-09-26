@@ -1,4 +1,3 @@
-add_executable(hello_world hello_world.cpp)
 
 add_subdirectory(server)
 add_subdirectory(state_manager)
@@ -19,15 +18,6 @@ find_package(Threads REQUIRED)
 target_link_libraries(${BEAT_SERVER} PRIVATE Threads::Threads)
 
 target_link_libraries(${BEAT_SERVER} PRIVATE asio asio::asio fmt::fmt-header-only bfg::lyra spdlog::spdlog spdlog::spdlog_header_only)
-
-
-add_executable(hello_world_fftw hello_world_fftw.cpp)
-target_link_libraries(hello_world_fftw FFTW3::fftw3)
-
-
-
-add_executable(hw_portaudio hello_world_portaudio.cpp)
-target_link_libraries(hw_portaudio beat_detector portaudio_static FFTW3::fftw3)
 
 
 add_executable(audio_beat audio_beat.cpp)
