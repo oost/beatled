@@ -95,57 +95,6 @@ bool AudioInput::stop() {
   return (err == paNoError);
 }
 
-// std::string AudioInput::save_to_disk(const std::string &file_name) {
-//   // 1. Create an AudioBuffer
-//   // (BTW, AudioBuffer is just a vector of vectors)
-
-//   AudioFile<audio_buffer_t>::AudioBuffer buffer;
-
-//   // 2. Set to (e.g.) two channels
-//   buffer.resize(1);
-
-//   // 3. Set number of samples per channel
-//   buffer[0].resize(audio_data_.size());
-
-//   // 4. do something here to fill the buffer with samples, e.g.
-
-//   // then...
-
-//   int numChannels = 1;
-//   int numSamplesPerChannel = audio_data_.size();
-//   float sampleRate = 44100.f;
-//   float frequency = 440.f;
-
-//   for (int i = 0; i < numSamplesPerChannel; i++) {
-//     for (int channel = 0; channel < numChannels; channel++)
-//       buffer[0][i] = audio_data_[i];
-//   }
-
-//   AudioFile<audio_buffer_t> audioFile;
-//   // 5. Put into the AudioFile object
-//   if (!audioFile.setAudioBuffer(buffer)) {
-//     throw AudioInputException("Error handling audio buffer.");
-//   }
-
-//   fs::path audio_file_path = file_name;
-
-//   if (audio_file_path.is_relative()) {
-//     audio_file_path = fs::current_path() / file_name;
-//   }
-
-//   std::cout << "Saving audio file to: " << audio_file_path << std::endl;
-//   // Wave file (explicit)
-//   if (!audioFile.save(audio_file_path, AudioFileFormat::Wave)) {
-//     throw AudioFileException("Error saving file.");
-//   }
-//   return audio_file_path;
-// }
-
-// const std::vector<audio_buffer_t> &AudioInput::get_audio_data() {
-//   std::cout << "audio_data.length: " << audio_data_.size() << std::endl;
-//   return audio_data_;
-// }
-
 int AudioInput::paCallbackMethod(const void *inputBuffer, void *outputBuffer,
                                  unsigned long framesPerBuffer,
                                  const PaStreamCallbackTimeInfo *timeInfo,

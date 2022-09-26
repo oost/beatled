@@ -20,10 +20,7 @@ namespace beat_detector {
 
 class AudioOutput {
 public:
-  AudioOutput();
-  AudioOutput(std::vector<audio_buffer_t> &&audio_data, double sample_rate,
-              int frames_per_buffer);
-
+  AudioOutput(std::vector<audio_buffer_t> &audio_data, uint32_t sample_rate);
   ~AudioOutput();
 
   bool open();
@@ -31,10 +28,6 @@ public:
   bool start();
   bool is_active();
   bool stop();
-
-  bool load_from_disk(const std::filesystem::path &file_path);
-
-  const std::vector<audio_buffer_t> &get_audio_data();
 
 private:
   /* The instance callback, where we have access to every method/variable in
@@ -73,9 +66,8 @@ private:
   PaStream *stream_;
   std::vector<audio_buffer_t> audio_data_;
   int read_index_ = 0;
-  std::size_t data_length_;
-  double sample_rate_;
-  int frames_per_buffer_;
+  uint32_t sample_rate_;
+
   BTrack beat_tracker_;
 };
 

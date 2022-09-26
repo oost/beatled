@@ -22,7 +22,6 @@ public:
     total_pool_size_++;
   }
 
-  // TODO: Adding mutex not possible on const method?
   inline size_t pool_size() const {
     std::unique_lock<std::mutex> L{pool_buffer_queue_mutex_};
     return pool_buffer_queue_.size();
@@ -64,8 +63,7 @@ public:
     std::unique_lock<std::mutex> L{filled_buffer_queue_mutex_};
     filled_buffer_queue_cv_.wait(L, [&]() {
       // Acquire the lock only if
-      // the queue
-      // isn't empty
+      // the queue isn't empty
       return !filled_buffer_queue_.empty();
     });
 

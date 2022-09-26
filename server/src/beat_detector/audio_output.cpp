@@ -17,14 +17,10 @@ namespace fs = std::filesystem;
 
 using namespace beat_detector;
 
-AudioOutput::AudioOutput()
-    : stream_{0}, frames_per_buffer_{512}, beat_tracker_{frames_per_buffer_} {}
-
-AudioOutput::AudioOutput(std::vector<audio_buffer_t> &&audio_data,
-                         double sample_rate, int frames_per_buffer)
+AudioOutput::AudioOutput(std::vector<audio_buffer_t> &audio_data,
+                         uint32_t sample_rate)
     : stream_{0}, audio_data_{std::move(audio_data)}, read_index_{0},
-      sample_rate_{sample_rate}, frames_per_buffer_{frames_per_buffer},
-      beat_tracker_{frames_per_buffer_} {}
+      sample_rate_{sample_rate}, beat_tracker_{constants::audio_buffer_size} {}
 
 AudioOutput::~AudioOutput() {
   stop();
@@ -50,9 +46,8 @@ bool AudioOutput::open() {
 
   PaError err = Pa_OpenStream(
       &stream_, NULL, &outputParameters, /* &outputParameters, */
-      sample_rate_, frames_per_buffer_,
-      paClipOff, /* we won't output out of range samples so don't bother
-                    clipping them */
+      sample_rate_, 512, paClipOff,  /* we won't output out of range samples so
+                                      don't bother    clipping them */
       &AudioOutput::paCallback, this /* Using 'this' for userData so we can
                                  cast to AudioOutput* in paCallback method */
   );
@@ -112,46 +107,46 @@ bool AudioOutput::stop() {
   return (err == paNoError);
 }
 
-bool AudioOutput::load_from_disk(const std::filesystem::path &file_path) {
-  //---------------------------------------------------------------
-  // 1. Set a file path to an audio file on your machine
-  fs::path filePath = file_path;
+// bool AudioOutput::load_from_disk(const std::filesystem::path &file_path) {
+//   //---------------------------------------------------------------
+//   // 1. Set a file path to an audio file on your machine
+//   fs::path filePath = file_path;
 
-  if (filePath.is_relative()) {
-    filePath = fs::current_path() / filePath;
-  }
+//   if (filePath.is_relative()) {
+//     filePath = fs::current_path() / filePath;
+//   }
 
-  //---------------------------------------------------------------
-  // 2. Create an AudioFile object and load the audio file
+//   //---------------------------------------------------------------
+//   // 2. Create an AudioFile object and load the audio file
 
-  AudioFile<audio_buffer_t> audio_file;
-  bool loadedOK = audio_file.load(filePath);
+//   AudioFile<audio_buffer_t> audio_file;
+//   bool loadedOK = audio_file.load(filePath);
 
-  /** If you hit this assert then the file path above
-   probably doesn't refer to a valid audio file */
-  assert(loadedOK);
+//   /** If you hit this assert then the file path above
+//    probably doesn't refer to a valid audio file */
+//   assert(loadedOK);
 
-  sample_rate_ = audio_file.getSampleRate();
+//   sample_rate_ = audio_file.getSampleRate();
 
-  // or, just use this quick shortcut to print a summary to the console
-  audio_file.printSummary();
+//   // or, just use this quick shortcut to print a summary to the console
+//   audio_file.printSummary();
 
-  if (audio_file.getNumChannels() > 1) {
-    throw AudioException("Multiple channels not supported (yet)...");
-  }
+//   if (audio_file.getNumChannels() > 1) {
+//     throw AudioException("Multiple channels not supported (yet)...");
+//   }
 
-  int channel = 0;
+//   int channel = 0;
 
-  audio_data_.resize(audio_file.getNumSamplesPerChannel());
-  for (int i = 0; i < audio_file.getNumSamplesPerChannel(); i++) {
-    audio_data_[i] = audio_file.samples[channel][i];
-  }
-  return true;
-}
+//   audio_data_.resize(audio_file.getNumSamplesPerChannel());
+//   for (int i = 0; i < audio_file.getNumSamplesPerChannel(); i++) {
+//     audio_data_[i] = audio_file.samples[channel][i];
+//   }
+//   return true;
+// }
 
-const std::vector<audio_buffer_t> &AudioOutput::get_audio_data() {
-  return std::move(audio_data_);
-}
+// const std::vector<audio_buffer_t> &AudioOutput::get_audio_data() {
+//   return std::move(audio_data_);
+// }
 
 /* The instance callback, where we have access to every method/variable in
  * object of class Sine */
@@ -169,6 +164,7 @@ int AudioOutput::paCallbackMethod(const void *inputBuffer, void *outputBuffer,
   for (int i = 0; i < elements_to_read; i++) {
     out[i] = audio_data_[read_index_ + i];
   }
+
   double *hop_data = audio_data_.data();
   beat_tracker_.processAudioFrame(hop_data + read_index_);
 

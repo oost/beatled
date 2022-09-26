@@ -69,10 +69,7 @@ std::string AudioRecorder::record() {
     }
   }
 
-  fs::path audio_file_path = filename_;
-  if (audio_file_path.is_relative()) {
-    audio_file_path = fs::current_path() / audio_file_path;
-  }
+  fs::path audio_file_path = absolute_file_path();
 
   std::cout << "Saving audio file to: " << audio_file_path << std::endl;
   // Wave file (explicit)
@@ -83,5 +80,13 @@ std::string AudioRecorder::record() {
   std::cout << "Audio input active: " << audio_input.is_active() << std::endl;
 
   std::cout << "Saved audio to " << audio_file_path << std::endl;
+  return audio_file_path;
+}
+
+std::filesystem::path AudioRecorder::absolute_file_path() const {
+  fs::path audio_file_path = filename_;
+  if (audio_file_path.is_relative()) {
+    audio_file_path = fs::current_path() / audio_file_path;
+  }
   return audio_file_path;
 }
