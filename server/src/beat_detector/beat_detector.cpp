@@ -65,7 +65,11 @@ void BeatDetector::do_detect_tempo() {
 
     if (beat_tracker.beatDueInCurrentFrame()) {
       // do something on the beat
-      std::cout << "Beat --- " << std::endl;
+      std::cout << fmt::format("\nBeat (tempo: {})--- ",
+                               beat_tracker.getCurrentTempoEstimate())
+                << std::endl;
+    } else {
+      std::cout << ".";
     }
     // const audio_buffer_data_t &buffer_data = buffer->data();
     // for (int i = 0; i < elements_to_copy; i++) {

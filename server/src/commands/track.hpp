@@ -9,6 +9,7 @@
 struct track_beat_command {
   bool verbose = false;
   bool show_help = false;
+  double duration = 10;
 
   track_beat_command(lyra::cli &cli) {
     cli.add_argument(
@@ -17,6 +18,11 @@ struct track_beat_command {
                       [this](const lyra::group &g) { this->do_command(g); })
             .help("Track audio")
             .add_argument(lyra::help(show_help))
+            .add_argument(lyra::opt(duration, "duration")
+                              .name("-d")
+                              .name("--duration")
+                              .help(fmt::format("Which duration? (default: {})",
+                                                duration)))
             .add_argument(
                 lyra::opt(verbose)
                     .name("-v")
@@ -36,7 +42,8 @@ struct track_beat_command {
 
       bd.run();
       std::cout << "Started Beat Detector" << std::endl;
-      std::this_thread::sleep_for(20s);
+      std::this_thread::sleep_for(
+          std::chrono::seconds(static_cast<int>(duration)));
       bd.request_stop();
 
       // std::this_thread::sleep_for(2000ms);
