@@ -9,8 +9,6 @@
 #include "../beat_detector/audio_recorder.hpp"
 #include "../beat_detector/portaudio_handler.hpp"
 
-using namespace beat_detector;
-
 /*******************************************************************/
 struct record_audio_command {
   bool verbose = false;
@@ -61,6 +59,8 @@ struct record_audio_command {
     if (show_help)
       std::cout << g;
     else {
+
+      using namespace beat_detector;
 
       AudioRecorder recorder{audioFileName, duration, sample_rate,
                              static_cast<double>(frames_per_buffer)};

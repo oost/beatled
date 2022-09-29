@@ -1,12 +1,16 @@
 #include "audio_input.hpp"
 #include "../config.hpp"
 
+#include <chrono>
+
 using namespace beat_detector;
 
-AudioInput::AudioInput(AudioBufferPool &audio_buffer_pool, double sample_rate,
-                       unsigned long frames_per_buffer)
+AudioInput::AudioInput(AudioBufferPool &audio_buffer_pool, uint32_t sample_rate,
+                       uint32_t frames_per_buffer)
     : stream_(0), audio_buffer_pool_{audio_buffer_pool},
-      sample_rate_{sample_rate}, frames_per_buffer_{frames_per_buffer} {}
+      sample_rate_{sample_rate}, frames_per_buffer_{frames_per_buffer} {
+  frame_duration_ = std::chrono::microseconds(sample_rate_ / frames_per_buffer);
+}
 
 AudioInput::~AudioInput() {
   stop();
@@ -30,9 +34,12 @@ bool AudioInput::open() {
 
   inputParameters.hostApiSpecificStreamInfo = NULL;
 
+  int framePerBuffer = paFramesPerBufferUnspecified;
+  // int framePerBuffer = constants::audio_buffer_size;
+
   PaError err = Pa_OpenStream(
       &stream_, &inputParameters, NULL, /* &outputParameters, */
-      sample_rate_, frames_per_buffer_,
+      sample_rate_, framePerBuffer,
       paClipOff, /* we won't output out of range samples so don't bother
                     clipping them */
       &AudioInput::paCallback, this /* Using 'this' for userData so we can
@@ -99,19 +106,30 @@ int AudioInput::paCallbackMethod(const void *inputBuffer, void *outputBuffer,
                                  unsigned long framesPerBuffer,
                                  const PaStreamCallbackTimeInfo *timeInfo,
                                  PaStreamCallbackFlags statusFlags) {
+  auto now = std::chrono::system_clock::now();
+  auto time_lag{std::chrono::duration_cast<std::chrono::milliseconds>(
+      std::chrono::duration<double>(timeInfo->currentTime -
+                                    timeInfo->inputBufferAdcTime))};
+
+  auto buffer_start_time = now - time_lag;
 
   float *input = (float *)inputBuffer;
+
   if (current_buffer_ == nullptr) {
     current_buffer_ = audio_buffer_pool_.get_new_buffer();
+    current_buffer_->set_start_time(buffer_start_time);
   }
   int elements_copied = 0;
   while (elements_copied < framesPerBuffer) {
 
     elements_copied += current_buffer_->copy_raw_data(
         input + elements_copied, framesPerBuffer - elements_copied);
+
     if (current_buffer_->is_full()) {
       audio_buffer_pool_.enqueue(std::move(current_buffer_));
       current_buffer_ = audio_buffer_pool_.get_new_buffer();
+      buffer_start_time += frame_duration_;
+      current_buffer_->set_start_time(buffer_start_time);
     }
   }
 

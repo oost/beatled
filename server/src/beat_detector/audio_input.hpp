@@ -21,8 +21,8 @@ namespace beat_detector {
 
 class AudioInput {
 public:
-  AudioInput(AudioBufferPool &audio_buffer_pool, double sample_rate,
-             unsigned long frames_per_buffer);
+  AudioInput(AudioBufferPool &audio_buffer_pool, uint32_t sample_rate,
+             uint32_t frames_per_buffer);
 
   ~AudioInput();
 
@@ -68,9 +68,10 @@ private:
   ScopedPaHandler port_audio_handler_;
   PaStream *stream_;
   AudioBufferPool &audio_buffer_pool_;
-  double sample_rate_;
-  unsigned long frames_per_buffer_;
+  uint32_t sample_rate_;
+  uint32_t frames_per_buffer_;
   AudioBuffer::Ptr current_buffer_;
+  std::chrono::microseconds frame_duration_;
 };
 
 } // namespace beat_detector

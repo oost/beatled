@@ -9,10 +9,6 @@
 #include "../beat_detector/portaudio_handler.hpp"
 #include "../config.hpp"
 
-namespace fs = std::filesystem;
-
-using namespace beat_detector;
-
 /*******************************************************************/
 struct play_audio_command {
   bool verbose = false;
@@ -42,6 +38,9 @@ struct play_audio_command {
     if (show_help)
       std::cout << g;
     else {
+      namespace fs = std::filesystem;
+
+      using namespace beat_detector;
       //---------------------------------------------------------------
       std::cout << "**********************" << std::endl;
       std::cout << "Running Example: Load Audio File and Print Summary"

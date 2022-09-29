@@ -18,7 +18,8 @@ std::string AudioRecorder::record() {
 
   // Use frame_rate = 0 to let the OS choose the frame rate (potentially
   // dynamcially)
-  AudioInput audio_input(audio_buffer_pool, sample_rate_, 0);
+  AudioInput audio_input(audio_buffer_pool, sample_rate_,
+                         constants::audio_buffer_size);
   // AudioInput audio_input(audio_buffer_pool, sample_rate_,
   // frames_per_buffer_);
 

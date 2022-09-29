@@ -5,11 +5,12 @@
   },
   "cmake.debugConfig": {
     "args": [
-      "record",
-      "-d",
-      "1",
-      "-o",
-      "audio2.wav"
+      "track"
+      // "record",
+      // "-d",
+      // "1",
+      // "-o",
+      // "audio2.wav"
     ]
   },
   "files.associations": {

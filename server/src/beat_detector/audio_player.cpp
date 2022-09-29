@@ -57,7 +57,8 @@ void AudioPlayer::load_from_disk() {
   // or, just use this quick shortcut to print a summary to the console
   audio_file.printSummary();
 
-  if (audio_file.getNumChannels() > 1) {
+  // if (audio_file.getNumChannels() > 1) {
+  if (!audio_file.isMono()) {
     throw AudioException("Multiple channels not supported (yet)...");
   }
 

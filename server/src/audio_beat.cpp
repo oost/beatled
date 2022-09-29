@@ -4,6 +4,7 @@
 
 #include "commands/play.hpp"
 #include "commands/record.hpp"
+#include "commands/track.hpp"
 
 int main(int argc, const char **argv) {
   auto cli = lyra::cli();
@@ -12,6 +13,7 @@ int main(int argc, const char **argv) {
 
   record_audio_command record{cli};
   play_audio_command play{cli};
+  track_beat_command track{cli};
 
   try {
     auto result = cli.parse({argc, argv});

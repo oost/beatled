@@ -9,24 +9,19 @@
 namespace beat_detector {
 class BeatDetector {
 public:
-  BeatDetector();
+  BeatDetector(uint32_t sample_rate);
 
   void run();
+  void request_stop();
 
 private:
   void do_detect_tempo();
 
-  /// The io_context used to perform asynchronous operations.
-  asio::io_context io_context_;
+  std::thread thread_;
+  std::future<void> bd_thread_future_;
+  std::atomic_bool stop_requested_;
 
-  /// The signal_set is used to register for process termination notifications.
-  asio::signal_set signals_;
-
-  asio::thread *thread_;
-  asio::high_resolution_timer timer_;
-  std::chrono::nanoseconds alarm_period_;
-
-  AudioBufferPool audio_buffer_pool_;
+  uint32_t sample_rate_;
 };
 
 } // namespace beat_detector
