@@ -37,13 +37,14 @@ struct track_beat_command {
       using namespace beat_detector;
 
       using namespace std::chrono_literals;
-
-      BeatDetector bd{44100};
+      constexpr int sample_rate = 41000;
+      BeatDetector bd{sample_rate};
 
       bd.run();
       std::cout << "Started Beat Detector" << std::endl;
       std::this_thread::sleep_for(
           std::chrono::seconds(static_cast<int>(duration)));
+      std::cout << " Requesting stop" << std::endl;
       bd.request_stop();
 
       // std::this_thread::sleep_for(2000ms);

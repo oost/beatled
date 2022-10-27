@@ -49,8 +49,8 @@ void Server::run() {
 
   // Create a pool of threads to run all of the io_contexts.
   std::vector<std::shared_ptr<asio::thread>> threads;
-  std::cout << "Starting " << thread_pool_size_ << " network worker threads"
-            << std::endl;
+  std::cout << "Starting " << server_parameters_.thread_pool_size
+            << " network worker threads" << std::endl;
 
   for (std::size_t i = 0; i < server_parameters_.thread_pool_size; ++i) {
     std::shared_ptr<asio::thread> thread(
@@ -64,11 +64,23 @@ void Server::run() {
     threads.push_back(thread);
   }
 
-  UDPServer udp_server(io_context_, server_parameters_.udp, state_manager_);
-  TempoBroadcaster tempo_broadcaster(
-      io_context_, std::chrono::milliseconds((60 * 1000) / 120),
-      std::chrono::seconds(2), server_parameters_.broadcasting);
-  HTTPServer(io_context_, server_parameters_.http, state_manager_, logger_);
+  std::unique_ptr<UDPServer> udp_server;
+  std::unique_ptr<TempoBroadcaster> tempo_broadcaster;
+  std::unique_ptr<HTTPServer> http_server;
+
+  if (server_parameters_.start_udp_server) {
+    udp_server = std::make_unique<UDPServer>(
+        io_context_, server_parameters_.udp, state_manager_);
+  }
+  if (server_parameters_.start_broadcaster) {
+    tempo_broadcaster = std::make_unique<TempoBroadcaster>(
+        io_context_, std::chrono::milliseconds((60 * 1000) / 120),
+        std::chrono::seconds(2), server_parameters_.broadcasting);
+  }
+  if (server_parameters_.start_http_server) {
+    http_server = std::make_unique<HTTPServer>(
+        io_context_, server_parameters_.http, state_manager_, logger_);
+  }
 
   std::cout << "Waiting for threads to join" << std::endl;
   // Wait for all threads in the pool to exit.

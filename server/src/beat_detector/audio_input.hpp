@@ -71,7 +71,7 @@ private:
   uint32_t sample_rate_;
   uint32_t frames_per_buffer_;
   AudioBuffer::Ptr current_buffer_;
-  std::chrono::microseconds frame_duration_;
+  double frame_duration_;
 };
 
 } // namespace beat_detector

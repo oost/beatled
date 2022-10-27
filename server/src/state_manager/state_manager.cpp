@@ -5,7 +5,7 @@
 StateManager::StateManager(asio::io_context &io_context)
     : strand_{asio::make_strand(io_context)} {}
 
-void StateManager::update_tempo(float tempo, const precise_time_t &timeref) {
+void StateManager::update_tempo(float tempo, const sntp_time_t &timeref) {
   asio::post(strand_, [this, tempo, timeref]() {
     tempo_ = tempo;
     time_ref_ = timeref;
@@ -18,7 +18,7 @@ void StateManager::broadcast_tempo() {
 }
 
 void StateManager::post_tempo(
-    const std::function<void(float, uint64_t, uint32_t)> &post_cb) {
+    const std::function<void(float, uint32_t, uint32_t)> &post_cb) {
 
   // Not sure why we need to pass by value
   // But otherwise it results in a segmentation fault

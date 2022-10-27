@@ -8,7 +8,7 @@
       "name": "(lldb) Launch",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/src/hw_portaudio",
+      "program": "${workspaceFolder}/build/src/beat_server",
       "args": [],
       "stopAtEntry": false,
       "cwd": "${fileDirname}",

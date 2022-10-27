@@ -23,7 +23,7 @@ void BeatDetector::run() {
   if (!bd_thread_future_.valid() ||
       bd_thread_future_.wait_for(0s) == std::future_status::ready) {
     std::cout << "Starting thread" << std::endl;
-    stop_requested_ = false;
+    stop_requested_.store(false);
     bd_thread_future_ = std::async(
         std::launch::async, [this]() -> void { return do_detect_tempo(); });
   } else {
@@ -57,7 +57,7 @@ void BeatDetector::do_detect_tempo() {
   // const int cycle_per_second =
   //     static_cast<int>(sample_rate_) / constants::audio_buffer_size;
 
-  while (1) {
+  while (true) {
     AudioBuffer::Ptr buffer = audio_buffer_pool.dequeue_blocking();
 
     auto hop_data = buffer->data();
@@ -65,8 +65,14 @@ void BeatDetector::do_detect_tempo() {
 
     if (beat_tracker.beatDueInCurrentFrame()) {
       // do something on the beat
-      std::cout << fmt::format("\nBeat (tempo: {})--- ",
+      // std::timespec ts = buffer->start_time().timespec();
+      // char buf[100];
+
+      // std::strftime(buf, sizeof buf, "%D %T", std::gmtime(&ts.tv_sec));
+      std::cout << fmt::format("\nBeat (tempo: {}, timestamp: )--- ",
                                beat_tracker.getCurrentTempoEstimate())
+                // << "Current time: " << buf << '.' << ts.tv_nsec << "
+                // UTC\n"
                 << std::endl;
     } else {
       std::cout << ".";
@@ -84,11 +90,12 @@ void BeatDetector::do_detect_tempo() {
     //                                sample_rate_)
     //             << std::endl;
     // }
-    if (stop_requested_) {
+    if (stop_requested_.load()) {
       std::cout << "Stopping thread" << std::endl;
       audio_input.stop();
 
-      return;
+      break;
     }
   }
+  std::cout << "Exiting loop" << std::endl;
 }

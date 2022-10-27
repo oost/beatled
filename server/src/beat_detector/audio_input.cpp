@@ -9,10 +9,11 @@ AudioInput::AudioInput(AudioBufferPool &audio_buffer_pool, uint32_t sample_rate,
                        uint32_t frames_per_buffer)
     : stream_(0), audio_buffer_pool_{audio_buffer_pool},
       sample_rate_{sample_rate}, frames_per_buffer_{frames_per_buffer} {
-  frame_duration_ = std::chrono::microseconds(sample_rate_ / frames_per_buffer);
+  frame_duration_ = (double)frames_per_buffer / sample_rate_;
 }
 
 AudioInput::~AudioInput() {
+  std::cout << "Destroying audio input" << std::endl;
   stop();
   close();
 }
@@ -66,6 +67,7 @@ bool AudioInput::open() {
 bool AudioInput::close() {
   if (stream_ == 0)
     return false;
+  printf("Closing stream\n");
 
   PaError err = Pa_CloseStream(stream_);
   stream_ = 0;
@@ -96,6 +98,7 @@ bool AudioInput::is_active() {
 bool AudioInput::stop() {
   if (stream_ == 0)
     return false;
+  printf("Stopping stream\n");
 
   PaError err = Pa_StopStream(stream_);
 
@@ -106,17 +109,16 @@ int AudioInput::paCallbackMethod(const void *inputBuffer, void *outputBuffer,
                                  unsigned long framesPerBuffer,
                                  const PaStreamCallbackTimeInfo *timeInfo,
                                  PaStreamCallbackFlags statusFlags) {
-  auto now = std::chrono::system_clock::now();
-  auto time_lag{std::chrono::duration_cast<std::chrono::milliseconds>(
-      std::chrono::duration<double>(timeInfo->currentTime -
-                                    timeInfo->inputBufferAdcTime))};
 
-  auto buffer_start_time = now - time_lag;
+  AudioBufferTimespec buffer_start_time = AudioBufferTimespec::now();
+  double time_lag = timeInfo->currentTime - timeInfo->inputBufferAdcTime;
+  buffer_start_time += time_lag;
 
   float *input = (float *)inputBuffer;
 
   if (current_buffer_ == nullptr) {
     current_buffer_ = audio_buffer_pool_.get_new_buffer();
+
     current_buffer_->set_start_time(buffer_start_time);
   }
   int elements_copied = 0;
@@ -128,7 +130,7 @@ int AudioInput::paCallbackMethod(const void *inputBuffer, void *outputBuffer,
     if (current_buffer_->is_full()) {
       audio_buffer_pool_.enqueue(std::move(current_buffer_));
       current_buffer_ = audio_buffer_pool_.get_new_buffer();
-      buffer_start_time += frame_duration_;
+      buffer_start_time = buffer_start_time + frame_duration_;
       current_buffer_->set_start_time(buffer_start_time);
     }
   }

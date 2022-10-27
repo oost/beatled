@@ -50,7 +50,7 @@ auto HTTPServer::server_handler(const std::string &root_dir) {
   router->http_get("/api/tempo", [this](auto req, auto) {
     // create an empty structure (null)
     state_manager_.post_tempo(
-        [req](float tempo, uint64_t tv_sec, uint32_t tv_nsec) {
+        [req](float tempo, uint32_t tv_sec, uint32_t tv_nsec) {
           json j;
 
           // to an object)
@@ -172,6 +172,7 @@ HTTPServer::HTTPServer(asio::io_context &io_context,
                        const http_server_parameters_t &http_server_parameters,
                        StateManager &state_manager, Logger &logger)
     : state_manager_{state_manager}, logger_{logger} {
+
   using namespace std::chrono;
 
   std::cout << "Starting HTTP server, listening on: "

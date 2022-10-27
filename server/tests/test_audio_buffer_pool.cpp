@@ -17,24 +17,22 @@ TEST_CASE("AudioBufferPools ", "[AudioBufferPool]") {
 
     REQUIRE(audio_buffer_pool.pool_empty());
 
-    std::chrono::time_point<std::chrono::system_clock> time_point =
-        std::chrono::system_clock::now();
-    buffer->set_start_time(time_point);
-    REQUIRE(buffer->start_time() == time_point);
+    AudioBufferTimespec abts;
+    buffer->set_start_time(abts);
+    REQUIRE(buffer->start_time() == abts);
 
     REQUIRE(buffer->size() == 0);
   }
 
   SECTION("Pool can enqueue and dequeue buffers") {
     AudioBuffer::Ptr buffer = audio_buffer_pool.get_new_buffer();
-    std::chrono::time_point<std::chrono::system_clock> time_point =
-        std::chrono::system_clock::now();
-    buffer->set_start_time(std::forward<start_time_t>(time_point));
+    AudioBufferTimespec abts;
+    buffer->set_start_time(abts);
     audio_buffer_pool.enqueue(std::move(buffer));
     REQUIRE(buffer == nullptr);
     REQUIRE(!audio_buffer_pool.queue_empty());
     auto new_buffer = audio_buffer_pool.dequeue_blocking();
-    REQUIRE(new_buffer->start_time() == time_point);
+    REQUIRE(new_buffer->start_time() == abts);
     REQUIRE(audio_buffer_pool.queue_empty());
   }
 
@@ -44,10 +42,9 @@ TEST_CASE("AudioBufferPools ", "[AudioBufferPool]") {
     auto buffer = audio_buffer_pool.get_new_buffer();
     REQUIRE(audio_buffer_pool.pool_empty());
 
-    std::chrono::time_point<std::chrono::system_clock> time_point =
-        std::chrono::system_clock::now();
-    buffer->set_start_time(time_point);
-    REQUIRE(buffer->start_time() == time_point);
+    AudioBufferTimespec abts;
+    buffer->set_start_time(abts);
+    REQUIRE(buffer->start_time() == abts);
 
     audio_buffer_pool.release_buffer(std::move(buffer));
     REQUIRE(!audio_buffer_pool.pool_empty());
@@ -55,7 +52,9 @@ TEST_CASE("AudioBufferPools ", "[AudioBufferPool]") {
     auto buffer2 = audio_buffer_pool.get_new_buffer();
     REQUIRE(audio_buffer_pool.pool_empty());
 
-    REQUIRE(buffer2->start_time() ==
-            std::chrono::time_point<std::chrono::system_clock>());
+    AudioBufferTimespec now = AudioBufferTimespec::now();
+
+    buffer2->set_start_time(now);
+    REQUIRE(buffer2->start_time() == now);
   }
 }

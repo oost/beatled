@@ -5,7 +5,8 @@
   },
   "cmake.debugConfig": {
     "args": [
-      "track"
+      "--start-udp"
+      // "track"
       // "record",
       // "-d",
       // "1",

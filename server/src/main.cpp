@@ -15,6 +15,9 @@
 struct app_args_t {
   bool m_help{false};
   std::string m_address{"localhost"};
+  bool m_start_http_server = false;
+  bool m_start_udp_server = false;
+  bool m_start_broadcaster = false;
   std::uint16_t m_http_port{8080};
   std::uint16_t m_udp_port{9090};
   std::string m_broadcasting_address{"192.168.86.255"};
@@ -30,6 +33,13 @@ struct app_args_t {
         lyra::help(result.m_help) |
         lyra::opt(result.m_address, "address")["-a"]["--address"](
             fmt::format("address to listen (default: {})", result.m_address)) |
+        lyra::opt(result.m_start_http_server)["--start-http"](
+            "Start HTTP server") |
+        lyra::opt(result.m_start_udp_server)["--start-udp"](
+            "Start UDP server") |
+        lyra::opt(result.m_start_broadcaster)["--start-http"](
+            "Start broadcaster ") |
+
         lyra::opt(result.m_http_port, "http port")["-p"]["--http-port"](
             fmt::format("port to listen (default: {})", result.m_http_port)) |
         lyra::opt(result.m_udp_port, "udp port")["-u"]["--udp-port"](
@@ -93,6 +103,9 @@ int main(int argc, char const *argv[]) {
     // });
 
     server::server_parameters_t server_parameters{
+        .start_http_server = args.m_start_http_server,
+        .start_udp_server = args.m_start_udp_server,
+        .start_broadcaster = args.m_start_broadcaster,
         .http =
             {
                 args.m_address,   // address

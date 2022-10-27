@@ -36,9 +36,6 @@ public:
 private:
   server_parameters_t server_parameters_;
 
-  /// The number of threads that will call io_context::run().
-  std::size_t thread_pool_size_;
-
   /// The io_context used to perform asynchronous operations.
   asio::io_context io_context_;
 

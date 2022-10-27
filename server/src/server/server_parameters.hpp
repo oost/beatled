@@ -9,6 +9,9 @@
 namespace server {
 
 struct server_parameters_t {
+  bool start_http_server;
+  bool start_udp_server;
+  bool start_broadcaster;
   http_server_parameters_t http;
   udp_server_parameters_t udp;
   broadcasting_server_parameters_t broadcasting;

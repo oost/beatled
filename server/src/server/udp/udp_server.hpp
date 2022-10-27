@@ -19,11 +19,13 @@ public:
 private:
   void do_receive();
 
-  void do_send(std::size_t length, const std::string &sendBuf);
+  void send_response(const std::string &sendBuf,
+                     const asio::ip::udp::endpoint &remote_endpoint);
+
   asio::ip::udp::socket socket_;
-  asio::ip::udp::endpoint remote_endpoint_;
   int max_length_ = 1024;
 
+  asio::ip::udp::endpoint remote_endpoint_;
   StateManager &state_manager_;
 };
 } // namespace server
