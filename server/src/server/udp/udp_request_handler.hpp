@@ -2,23 +2,27 @@
 #define UDP__REQUEST_HANDLER_HPP
 
 #include <asio.hpp>
-#include <string>
+#include <vector>
+
+#include "udp_buffer.hpp"
 
 namespace server {
 
 class UDPRequestHandler {
 public:
-  UDPRequestHandler(std::string_view request_body,
-                    const asio::ip::udp::endpoint &remote_endpoint);
-
-  std::string get_response();
+  UDPRequestHandler(UDPRequestBuffer::Ptr request_buffer_ptr);
+  UDPResponseBuffer::Ptr response();
 
 private:
-  std::string tempo();
-  std::string time_response();
+  const UDPRequestBuffer::Ptr request_buffer_ptr_;
 
-  std::string_view request_body_;
-  const asio::ip::udp::endpoint &remote_endpoint_;
+  template <typename T>
+  UDPResponseBuffer::Ptr make_response_buffer(const T &data);
+
+  UDPResponseBuffer::Ptr process_tempo_request();
+  UDPResponseBuffer::Ptr process_time_request();
+  UDPResponseBuffer::Ptr process_hello_request();
+  UDPResponseBuffer::Ptr error_response(uint8_t error_code);
 };
 } // namespace server
 

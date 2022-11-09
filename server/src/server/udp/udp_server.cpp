@@ -1,3 +1,4 @@
+#include <array>
 #include <asio/signal_set.hpp>
 #include <asio/ts/buffer.hpp>
 #include <asio/ts/internet.hpp>
@@ -6,9 +7,9 @@
 #include <string>
 
 #include "server_parameters.hpp"
-#include "udp_server.hpp"
-
+#include "udp_buffer.hpp"
 #include "udp_request_handler.hpp"
+#include "udp_server.hpp"
 
 using namespace server;
 using asio::ip::udp;
@@ -25,23 +26,34 @@ UDPServer::UDPServer(asio::io_context &io_context,
 }
 
 void UDPServer::do_receive() {
-
-  std::string recvBuf(max_length_, 0);
+  std::unique_ptr<UDPRequestBuffer> request_buffer_ptr =
+      std::make_unique<UDPRequestBuffer>();
 
   socket_.async_receive_from(
-      asio::buffer(recvBuf, max_length_), remote_endpoint_,
-      [this, request_body = std::move(recvBuf)](std::error_code ec,
-                                                std::size_t bytes_recvd) {
-        if (!ec && bytes_recvd > 0) {
-          std::string_view request_body_view(request_body);
+      asio::buffer(request_buffer_ptr->data(), request_buffer_ptr->BUFFER_SIZE),
+      remote_endpoint_,
+      [this, request_buffer_ptr = std::move(request_buffer_ptr)](
+          std::error_code ec, std::size_t bytes_recvd) mutable {
+        // TODO: Why do we need mutable here?
 
-          UDPRequestHandler requestHandler{
-              request_body_view.substr(0, bytes_recvd), remote_endpoint_};
-          std::string response = requestHandler.get_response();
-          std::cout << "Sending: " << response << " to " << remote_endpoint_
+        if (!ec && bytes_recvd > 0) {
+          std::cout << "Received request from  response: " << remote_endpoint_
                     << std::endl;
+
+          request_buffer_ptr->setSize(bytes_recvd);
+
+          UDPRequestHandler requestHandler{std::move(request_buffer_ptr)};
+
+          UDPResponseBuffer::Ptr response_buffer_ptr =
+              requestHandler.response();
+
+          std::cout << "Sending response: " << *response_buffer_ptr << " to "
+                    << remote_endpoint_ << std::endl;
+
           socket_.async_send_to(
-              asio::buffer(response), remote_endpoint_,
+              asio::buffer(response_buffer_ptr->data(),
+                           response_buffer_ptr->size()),
+              remote_endpoint_,
               [this](std::error_code /*ec*/, std::size_t /*bytes_sent*/) {});
         }
 

@@ -23,7 +23,6 @@ private:
                      const asio::ip::udp::endpoint &remote_endpoint);
 
   asio::ip::udp::socket socket_;
-  int max_length_ = 1024;
 
   asio::ip::udp::endpoint remote_endpoint_;
   StateManager &state_manager_;

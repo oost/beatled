@@ -1,4 +1,5 @@
 #include <arpa/inet.h>
+#include <iomanip>
 #include <iostream>
 #include <string>
 
@@ -7,83 +8,102 @@
 
 using namespace server;
 
-UDPRequestHandler::UDPRequestHandler(
-    std::string_view request_body,
-    const asio::ip::udp::endpoint &remote_endpoint)
-    : request_body_{request_body}, remote_endpoint_{remote_endpoint} {}
+UDPRequestHandler::UDPRequestHandler(UDPRequestBuffer::Ptr request_buffer_ptr)
+    : request_buffer_ptr_{std::move(request_buffer_ptr)} {}
 
-std::string UDPRequestHandler::get_response() {
-  std::string response_body;
+UDPResponseBuffer::Ptr UDPRequestHandler::response() {
 
-  std::cout << "Received: " << request_body_ << std::endl;
+  if (request_buffer_ptr_->size() == 0) {
 
-  std::string response = "E0";
-  if (request_body_.size() == 0) {
-    response_body = "E1";
+    return error_response(noData);
+
   } else {
-    switch (request_body_[0]) {
-    case 'T':
-      response_body = time_response();
-      break;
-    case 't':
-      response_body = tempo();
-      break;
+    switch (request_buffer_ptr_->type()) {
+    case eBeatledHello:
+      return process_hello_request();
+    case eBeatledTime:
+      return process_time_request();
+
+    case eBeatledTempo:
+      return process_tempo_request();
+
     default:
-      response_body = "E2";
-      break;
+      return error_response(unknownMessageType);
     }
   }
-
-  return response_body;
-
-  // TODO : Is this correct? Does the string need to be moved?
-  // std::cout << "Sending: " << response_body_ << std::endl;
-
-  // socket_.async_send_to(
-  //     asio::buffer(response_body_), remote_endpoint,
-  //     [this, self](std::error_code /*ec*/, std::size_t /*bytes_sent*/) {});
 }
 
-std::string serialize_uint32_t(uint32_t val) {
-  std::string ret = "0000";
-  ret[0] = val;
-  ret[1] = val >> 8;
-  ret[2] = val >> 16;
-  ret[3] = val >> 24;
-  return ret;
+template <typename T>
+UDPResponseBuffer::Ptr UDPRequestHandler::make_response_buffer(const T &data) {
+  UDPResponseBuffer::Ptr buffer_ptr = std::make_unique<UDPResponseBuffer>();
+  memcpy(&(buffer_ptr->data()), &data, sizeof(T));
+  buffer_ptr->setSize(sizeof(T));
+  return buffer_ptr;
 }
 
-std::string serialize_uint64_t(uint64_t val) {
-  std::string ret = "00000000";
-  ret[0] = val;
-  ret[1] = val >> 8;
-  ret[2] = val >> 16;
-  ret[3] = val >> 24;
-  ret[4] = val >> 32;
-  ret[5] = val >> 40;
-  ret[6] = val >> 48;
-  ret[7] = val >> 56;
-  return ret;
+UDPResponseBuffer::Ptr UDPRequestHandler::error_response(uint8_t error_code) {
+  beatled_error_msg_t error_message;
+  error_message.base.type = eBeatledError;
+  error_message.error_code = error_code;
+
+  return make_response_buffer(error_message);
 }
 
-std::string UDPRequestHandler::time_response() {
-  time_resp_msg_t time_resp_msg;
-  time_resp_msg.command = COMMAND_TIME;
-  time_resp_msg.orig_time = htonll(0);
-  time_resp_msg.rec_time = htonll(0);
-  time_resp_msg.xmit_time = htonll(0);
+UDPResponseBuffer::Ptr UDPRequestHandler::process_hello_request() {
+  std::cout << "Hello request" << std::endl;
+  const beatled_hello_msg_t *hello_req =
+      reinterpret_cast<const beatled_hello_msg_t *>(
+          &(request_buffer_ptr_->data()));
 
-  return std::string(reinterpret_cast<char *>(&time_resp_msg));
+  beatled_hello_response_t response;
+  response.base.type = eBeatledHello;
+  // response.pico_id = hello_req->pico_id; // Should be the actual id of the
+  // pico
+
+  return make_response_buffer(response);
 }
 
-std::string UDPRequestHandler::tempo() {
+UDPResponseBuffer::Ptr UDPRequestHandler::process_time_request() {
+  std::cout << "Time request" << std::endl;
+
+  using namespace std::chrono;
+  microseconds ms_start =
+      duration_cast<microseconds>(system_clock::now().time_since_epoch());
+
+  const beatled_time_req_msg_t *time_req_msg =
+      reinterpret_cast<const beatled_time_req_msg_t *>(
+          &(request_buffer_ptr_->data()));
+
+  beatled_time_resp_msg_t time_resp_msg;
+  time_resp_msg.base.type = eBeatledTime;
+  time_resp_msg.orig_time = time_req_msg->orig_time;
+  time_resp_msg.recv_time = htonll(ms_start.count());
+  time_resp_msg.xmit_time =
+      htonll(duration_cast<microseconds>(system_clock::now().time_since_epoch())
+                 .count());
+  uint64_t orig_time = time_req_msg->orig_time;
+
+  std::cout << "Sending time request. (n) \n - orig_time: " << orig_time
+            << std::hex << orig_time << std::endl;
+  std::cout << "Sending time request (h). \n - orig_time: " << ntohll(orig_time)
+            << std::hex << ntohll(orig_time) << std::endl;
+  return make_response_buffer(time_resp_msg);
+}
+
+UDPResponseBuffer::Ptr UDPRequestHandler::process_tempo_request() {
+  std::cout << "Tempo request" << std::endl;
+
+  using namespace std::chrono;
+
   float tempo = 100;
   uint32_t tempo_period_us = 60 * 1000000UL / tempo;
 
-  tempo_msg_t tempo_msg;
-  tempo_msg.command = COMMAND_TEMPO;
-  tempo_msg.beat_time_ref = htonll(0);
+  beatled_tempo_msg_t tempo_msg;
+  tempo_msg.base.type = eBeatledTempo;
+  tempo_msg.beat_time_ref =
+      htonll(duration_cast<microseconds>(system_clock::now().time_since_epoch())
+                 .count());
   tempo_msg.tempo_period_us = htonl(tempo_period_us);
 
-  return std::string(reinterpret_cast<char *>(&tempo_msg));
+  return make_response_buffer(tempo_msg);
 }
