@@ -10,11 +10,11 @@ namespace server {
 
 class UDPRequestHandler {
 public:
-  UDPRequestHandler(UDPRequestBuffer::Ptr request_buffer_ptr);
+  UDPRequestHandler(UDPRequestBuffer::Ptr &&request_buffer_ptr);
   UDPResponseBuffer::Ptr response();
 
 private:
-  const UDPRequestBuffer::Ptr request_buffer_ptr_;
+  UDPRequestBuffer::Ptr request_buffer_ptr_;
 
   template <typename T>
   UDPResponseBuffer::Ptr make_response_buffer(const T &data);

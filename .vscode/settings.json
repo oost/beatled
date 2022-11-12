@@ -1,11 +1,11 @@
 {
+  "cmake.useCMakePresets": "always",
   "cmake.sourceDirectory": "${workspaceFolder}/server",
-  "cmake.configureSettings": {
-    "CMAKE_TOOLCHAIN_FILE": "/Users/oscarostlund/Programmation/projects/vcpkg/scripts/buildsystems/vcpkg.cmake"
-  },
   "cmake.debugConfig": {
     "args": [
-      "--start-udp"
+      "--start-udp",
+      "--start-http",
+      "--start-broadcast"
       // "track"
       // "record",
       // "-d",

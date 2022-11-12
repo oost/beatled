@@ -31,14 +31,15 @@ void UDPServer::do_receive() {
 
   socket_.async_receive_from(
       asio::buffer(request_buffer_ptr->data(), request_buffer_ptr->BUFFER_SIZE),
-      remote_endpoint_,
+      request_buffer_ptr->remote_endpoint(),
       [this, request_buffer_ptr = std::move(request_buffer_ptr)](
           std::error_code ec, std::size_t bytes_recvd) mutable {
         // TODO: Why do we need mutable here?
 
         if (!ec && bytes_recvd > 0) {
-          std::cout << "Received request from  response: " << remote_endpoint_
-                    << std::endl;
+
+          std::cout << "Received request from  response: "
+                    << request_buffer_ptr->remote_endpoint() << std::endl;
 
           request_buffer_ptr->setSize(bytes_recvd);
 
@@ -48,12 +49,12 @@ void UDPServer::do_receive() {
               requestHandler.response();
 
           std::cout << "Sending response: " << *response_buffer_ptr << " to "
-                    << remote_endpoint_ << std::endl;
+                    << response_buffer_ptr->remote_endpoint() << std::endl;
 
           socket_.async_send_to(
               asio::buffer(response_buffer_ptr->data(),
                            response_buffer_ptr->size()),
-              remote_endpoint_,
+              response_buffer_ptr->remote_endpoint(),
               [this](std::error_code /*ec*/, std::size_t /*bytes_sent*/) {});
         }
 

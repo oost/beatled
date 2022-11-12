@@ -37,7 +37,7 @@ struct app_args_t {
             "Start HTTP server") |
         lyra::opt(result.m_start_udp_server)["--start-udp"](
             "Start UDP server") |
-        lyra::opt(result.m_start_broadcaster)["--start-http"](
+        lyra::opt(result.m_start_broadcaster)["--start-broadcast"](
             "Start broadcaster ") |
 
         lyra::opt(result.m_http_port, "http port")["-p"]["--http-port"](

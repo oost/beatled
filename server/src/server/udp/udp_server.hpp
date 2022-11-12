@@ -24,7 +24,7 @@ private:
 
   asio::ip::udp::socket socket_;
 
-  asio::ip::udp::endpoint remote_endpoint_;
+  // asio::ip::udp::endpoint remote_endpoint_;
   StateManager &state_manager_;
 };
 } // namespace server

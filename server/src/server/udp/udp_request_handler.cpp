@@ -8,42 +8,44 @@
 
 using namespace server;
 
-UDPRequestHandler::UDPRequestHandler(UDPRequestBuffer::Ptr request_buffer_ptr)
+UDPRequestHandler::UDPRequestHandler(UDPRequestBuffer::Ptr &&request_buffer_ptr)
     : request_buffer_ptr_{std::move(request_buffer_ptr)} {}
 
 UDPResponseBuffer::Ptr UDPRequestHandler::response() {
 
   if (request_buffer_ptr_->size() == 0) {
 
-    return error_response(noData);
+    return error_response(BEATLED_ERROR_NO_DATA);
 
   } else {
     switch (request_buffer_ptr_->type()) {
-    case eBeatledHello:
+    case BEATLED_MESSAGE_HELLO_REQUEST:
       return process_hello_request();
-    case eBeatledTime:
+
+    case BEATLED_MESSAGE_TIME_REQUEST:
       return process_time_request();
 
-    case eBeatledTempo:
+    case BEATLED_MESSAGE_TEMPO_REQUEST:
       return process_tempo_request();
 
     default:
-      return error_response(unknownMessageType);
+      return error_response(BEATLED_ERROR_UNKNOWN_MESSAGE_TYPE);
     }
   }
 }
 
 template <typename T>
 UDPResponseBuffer::Ptr UDPRequestHandler::make_response_buffer(const T &data) {
-  UDPResponseBuffer::Ptr buffer_ptr = std::make_unique<UDPResponseBuffer>();
+  UDPResponseBuffer::Ptr buffer_ptr = std::make_unique<UDPResponseBuffer>(
+      request_buffer_ptr_->remote_endpoint());
   memcpy(&(buffer_ptr->data()), &data, sizeof(T));
   buffer_ptr->setSize(sizeof(T));
   return buffer_ptr;
 }
 
 UDPResponseBuffer::Ptr UDPRequestHandler::error_response(uint8_t error_code) {
-  beatled_error_msg_t error_message;
-  error_message.base.type = eBeatledError;
+  beatled_message_error_t error_message;
+  error_message.base.type = BEATLED_MESSAGE_ERROR;
   error_message.error_code = error_code;
 
   return make_response_buffer(error_message);
@@ -51,12 +53,12 @@ UDPResponseBuffer::Ptr UDPRequestHandler::error_response(uint8_t error_code) {
 
 UDPResponseBuffer::Ptr UDPRequestHandler::process_hello_request() {
   std::cout << "Hello request" << std::endl;
-  const beatled_hello_msg_t *hello_req =
-      reinterpret_cast<const beatled_hello_msg_t *>(
+  const beatled_message_hello_request_t *hello_req =
+      reinterpret_cast<const beatled_message_hello_request_t *>(
           &(request_buffer_ptr_->data()));
 
-  beatled_hello_response_t response;
-  response.base.type = eBeatledHello;
+  beatled_message_hello_response_t response;
+  response.base.type = BEATLED_MESSAGE_HELLO_RESPONSE;
   // response.pico_id = hello_req->pico_id; // Should be the actual id of the
   // pico
 
@@ -70,12 +72,12 @@ UDPResponseBuffer::Ptr UDPRequestHandler::process_time_request() {
   microseconds ms_start =
       duration_cast<microseconds>(system_clock::now().time_since_epoch());
 
-  const beatled_time_req_msg_t *time_req_msg =
-      reinterpret_cast<const beatled_time_req_msg_t *>(
+  const beatled_message_time_request_t *time_req_msg =
+      reinterpret_cast<const beatled_message_time_request_t *>(
           &(request_buffer_ptr_->data()));
 
-  beatled_time_resp_msg_t time_resp_msg;
-  time_resp_msg.base.type = eBeatledTime;
+  beatled_message_time_response_t time_resp_msg;
+  time_resp_msg.base.type = BEATLED_MESSAGE_TIME_RESPONSE;
   time_resp_msg.orig_time = time_req_msg->orig_time;
   time_resp_msg.recv_time = htonll(ms_start.count());
   time_resp_msg.xmit_time =
@@ -85,8 +87,10 @@ UDPResponseBuffer::Ptr UDPRequestHandler::process_time_request() {
 
   std::cout << "Sending time request. (n) \n - orig_time: " << orig_time
             << std::hex << orig_time << std::endl;
+
   std::cout << "Sending time request (h). \n - orig_time: " << ntohll(orig_time)
             << std::hex << ntohll(orig_time) << std::endl;
+
   return make_response_buffer(time_resp_msg);
 }
 
@@ -98,8 +102,8 @@ UDPResponseBuffer::Ptr UDPRequestHandler::process_tempo_request() {
   float tempo = 100;
   uint32_t tempo_period_us = 60 * 1000000UL / tempo;
 
-  beatled_tempo_msg_t tempo_msg;
-  tempo_msg.base.type = eBeatledTempo;
+  beatled_message_tempo_response_t tempo_msg;
+  tempo_msg.base.type = BEATLED_MESSAGE_TEMPO_RESPONSE;
   tempo_msg.beat_time_ref =
       htonll(duration_cast<microseconds>(system_clock::now().time_since_epoch())
                  .count());
