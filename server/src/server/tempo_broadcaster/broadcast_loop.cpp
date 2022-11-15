@@ -11,7 +11,7 @@ using namespace server;
 BroadcastLoop::BroadcastLoop(
     std::shared_ptr<asio::ip::udp::socket> socket,
     std::chrono::nanoseconds alarm_period,
-    std::function<std::string(void)> prepare_buffer,
+    std::function<UDPResponseBuffer::Ptr(void)> prepare_buffer,
     const broadcasting_server_parameters_t &broadcasting_server_parameters)
     : alarm_period_{alarm_period}, count_{0},
       timer_{asio::high_resolution_timer(socket->get_executor(), alarm_period)},
@@ -25,11 +25,12 @@ BroadcastLoop::BroadcastLoop(
 }
 
 void BroadcastLoop::do_broadcast() {
-  std::string sendBuf = prepare_buffer_();
-  std::cout << "Broadcasting: " << sendBuf << std::endl;
+  UDPResponseBuffer::Ptr response_buffer_ptr = prepare_buffer_();
+  std::cout << "Broadcasting: " << *response_buffer_ptr << std::endl;
 
   socket_->async_send_to(
-      asio::buffer(std::move(sendBuf)), broadcast_address_,
+      asio::buffer(response_buffer_ptr->data(), response_buffer_ptr->size()),
+      broadcast_address_,
       [this](std::error_code /*ec*/, std::size_t l /*bytes_sent*/) {
         std::cout << "Broadcasted: bytes sent=" << l << std::endl;
 

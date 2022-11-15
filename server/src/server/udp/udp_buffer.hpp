@@ -38,8 +38,22 @@ private:
 class UDPResponseBuffer : public UDPBuffer {
 public:
   using Ptr = std::unique_ptr<UDPResponseBuffer>;
+  UDPResponseBuffer() = default;
+
   UDPResponseBuffer(const asio::ip::udp::endpoint &remote_endpoint)
       : UDPBuffer{remote_endpoint} {}
+
+  void set_error_response(uint8_t error_code);
+
+  void set_hello_response(uint16_t pico_id);
+
+  void set_time_response(uint64_t orig_time, uint64_t recv_time,
+                         uint64_t xmit_time);
+
+  void set_tempo_response(uint64_t beat_time_ref, uint32_t tempo_period_us);
+
+private:
+  template <typename T> void set_data(const T &data);
 };
 
 class UDPRequestBuffer : public UDPBuffer {

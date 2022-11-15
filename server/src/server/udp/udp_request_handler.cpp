@@ -12,60 +12,50 @@ UDPRequestHandler::UDPRequestHandler(UDPRequestBuffer::Ptr &&request_buffer_ptr)
     : request_buffer_ptr_{std::move(request_buffer_ptr)} {}
 
 UDPResponseBuffer::Ptr UDPRequestHandler::response() {
+  response_buffer_ptr_ = std::make_unique<UDPResponseBuffer>(
+      request_buffer_ptr_->remote_endpoint());
 
   if (request_buffer_ptr_->size() == 0) {
 
-    return error_response(BEATLED_ERROR_NO_DATA);
+    error_response(BEATLED_ERROR_NO_DATA);
 
   } else {
     switch (request_buffer_ptr_->type()) {
     case BEATLED_MESSAGE_HELLO_REQUEST:
-      return process_hello_request();
+      process_hello_request();
+      break;
 
     case BEATLED_MESSAGE_TIME_REQUEST:
-      return process_time_request();
+      process_time_request();
+      break;
 
     case BEATLED_MESSAGE_TEMPO_REQUEST:
-      return process_tempo_request();
+      process_tempo_request();
+      break;
 
     default:
-      return error_response(BEATLED_ERROR_UNKNOWN_MESSAGE_TYPE);
+      error_response(BEATLED_ERROR_UNKNOWN_MESSAGE_TYPE);
+      break;
     }
   }
+  return std::move(response_buffer_ptr_);
 }
 
-template <typename T>
-UDPResponseBuffer::Ptr UDPRequestHandler::make_response_buffer(const T &data) {
-  UDPResponseBuffer::Ptr buffer_ptr = std::make_unique<UDPResponseBuffer>(
-      request_buffer_ptr_->remote_endpoint());
-  memcpy(&(buffer_ptr->data()), &data, sizeof(T));
-  buffer_ptr->setSize(sizeof(T));
-  return buffer_ptr;
+void UDPRequestHandler::error_response(uint8_t error_code) {
+  response_buffer_ptr_->set_error_response(error_code);
 }
 
-UDPResponseBuffer::Ptr UDPRequestHandler::error_response(uint8_t error_code) {
-  beatled_message_error_t error_message;
-  error_message.base.type = BEATLED_MESSAGE_ERROR;
-  error_message.error_code = error_code;
-
-  return make_response_buffer(error_message);
-}
-
-UDPResponseBuffer::Ptr UDPRequestHandler::process_hello_request() {
+void UDPRequestHandler::process_hello_request() {
   std::cout << "Hello request" << std::endl;
   const beatled_message_hello_request_t *hello_req =
       reinterpret_cast<const beatled_message_hello_request_t *>(
           &(request_buffer_ptr_->data()));
 
-  beatled_message_hello_response_t response;
-  response.base.type = BEATLED_MESSAGE_HELLO_RESPONSE;
-  // response.pico_id = hello_req->pico_id; // Should be the actual id of the
-  // pico
-
-  return make_response_buffer(response);
+  uint16_t pico_id = 1234;
+  response_buffer_ptr_->set_hello_response(pico_id);
 }
 
-UDPResponseBuffer::Ptr UDPRequestHandler::process_time_request() {
+void UDPRequestHandler::process_time_request() {
   std::cout << "Time request" << std::endl;
 
   using namespace std::chrono;
@@ -76,25 +66,17 @@ UDPResponseBuffer::Ptr UDPRequestHandler::process_time_request() {
       reinterpret_cast<const beatled_message_time_request_t *>(
           &(request_buffer_ptr_->data()));
 
-  beatled_message_time_response_t time_resp_msg;
-  time_resp_msg.base.type = BEATLED_MESSAGE_TIME_RESPONSE;
-  time_resp_msg.orig_time = time_req_msg->orig_time;
-  time_resp_msg.recv_time = htonll(ms_start.count());
-  time_resp_msg.xmit_time =
-      htonll(duration_cast<microseconds>(system_clock::now().time_since_epoch())
-                 .count());
-  uint64_t orig_time = time_req_msg->orig_time;
+  uint64_t orig_time = ntohll(time_req_msg->orig_time);
+  response_buffer_ptr_->set_time_response(
+      orig_time, ms_start.count(),
+      duration_cast<microseconds>(system_clock::now().time_since_epoch())
+          .count());
 
   std::cout << "Sending time request. (n) \n - orig_time: " << orig_time
             << std::hex << orig_time << std::endl;
-
-  std::cout << "Sending time request (h). \n - orig_time: " << ntohll(orig_time)
-            << std::hex << ntohll(orig_time) << std::endl;
-
-  return make_response_buffer(time_resp_msg);
 }
 
-UDPResponseBuffer::Ptr UDPRequestHandler::process_tempo_request() {
+void UDPRequestHandler::process_tempo_request() {
   std::cout << "Tempo request" << std::endl;
 
   using namespace std::chrono;
@@ -102,12 +84,8 @@ UDPResponseBuffer::Ptr UDPRequestHandler::process_tempo_request() {
   float tempo = 100;
   uint32_t tempo_period_us = 60 * 1000000UL / tempo;
 
-  beatled_message_tempo_response_t tempo_msg;
-  tempo_msg.base.type = BEATLED_MESSAGE_TEMPO_RESPONSE;
-  tempo_msg.beat_time_ref =
-      htonll(duration_cast<microseconds>(system_clock::now().time_since_epoch())
-                 .count());
-  tempo_msg.tempo_period_us = htonl(tempo_period_us);
-
-  return make_response_buffer(tempo_msg);
+  response_buffer_ptr_->set_tempo_response(
+      duration_cast<microseconds>(system_clock::now().time_since_epoch())
+          .count(),
+      tempo_period_us);
 }

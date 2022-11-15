@@ -4,7 +4,9 @@
 #include <asio.hpp>
 #include <chrono>
 
+#include "../udp/udp_buffer.hpp"
 #include "server_parameters.hpp"
+
 namespace server {
 
 class BroadcastLoop {
@@ -12,7 +14,7 @@ public:
   BroadcastLoop(
       std::shared_ptr<asio::ip::udp::socket>,
       std::chrono::nanoseconds alarm_period,
-      std::function<std::string(void)> prepare_buffer,
+      std::function<UDPResponseBuffer::Ptr(void)> prepare_buffer,
       const broadcasting_server_parameters_t &broadcasting_server_parameters);
 
 private:
@@ -21,7 +23,7 @@ private:
   std::shared_ptr<asio::ip::udp::socket> socket_;
   asio::high_resolution_timer timer_;
   std::chrono::nanoseconds alarm_period_;
-  std::function<std::string(void)> prepare_buffer_;
+  std::function<UDPResponseBuffer::Ptr(void)> prepare_buffer_;
   asio::ip::udp::endpoint broadcast_address_;
 };
 

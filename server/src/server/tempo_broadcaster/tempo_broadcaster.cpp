@@ -2,6 +2,7 @@
 #include <iostream>
 
 #include "../../state_manager/state_manager.hpp"
+#include "../udp/udp_buffer.hpp"
 #include "broadcast_loop.hpp"
 #include "tempo_broadcaster.hpp"
 
@@ -41,18 +42,20 @@ TempoBroadcaster::TempoBroadcaster(
   loops_.push_back(std::make_unique<BroadcastLoop>(
       socket_, alarm_period,
       []() {
-        std::string sendBuf("d");
-        return std::move(sendBuf);
+        UDPResponseBuffer::Ptr response_buffer =
+            std::make_unique<UDPResponseBuffer>();
+        response_buffer->set_tempo_response(0, 120);
+        return std::move(response_buffer);
       },
       broadcasting_server_parameters));
 
-  loops_.push_back(std::make_unique<BroadcastLoop>(
-      socket_, program_alarm_period,
-      [this]() {
-        std::string sendBuf{"ca"};
-        // sendBuf[1] = char(program_idx_++ % 7);
-        // std::cout << int(sendBuf[1]) << std::endl;
-        return std::move(sendBuf);
-      },
-      broadcasting_server_parameters));
+  // loops_.push_back(std::make_unique<BroadcastLoop>(
+  //     socket_, program_alarm_period,
+  //     [this]() {
+  //       std::string sendBuf{"ca"};
+  //       // sendBuf[1] = char(program_idx_++ % 7);
+  //       // std::cout << int(sendBuf[1]) << std::endl;
+  //       return std::move(sendBuf);
+  //     },
+  //     broadcasting_server_parameters));
 }
