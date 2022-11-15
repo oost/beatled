@@ -43,8 +43,7 @@ TempoBroadcaster::TempoBroadcaster(
       socket_, alarm_period,
       []() {
         UDPResponseBuffer::Ptr response_buffer =
-            std::make_unique<UDPResponseBuffer>();
-        response_buffer->set_tempo_response(0, 120);
+            std::make_unique<UDPTempoResponseBuffer>(0, 120);
         return std::move(response_buffer);
       },
       broadcasting_server_parameters));

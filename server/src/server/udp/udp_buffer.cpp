@@ -17,9 +17,13 @@ void UDPBuffer::print_buffer() const {
 std::ostream &operator<<(std::ostream &os, const UDPBuffer &buffer) {
   using namespace std;
 
-  os << hex << setfill('0');
-  for (int i = 0; i < buffer.size(); i++)
-    os << setw(2) << buffer.data_const()[i] << ":";
+  for (int i = 0; i < buffer.size(); i++) {
+    os << hex << setfill('0') << setw(2) << static_cast<int>(buffer.data()[i]);
+    if (i < buffer.size() - 1) {
+      os << ":";
+    }
+  }
+
   return os;
 }
 
