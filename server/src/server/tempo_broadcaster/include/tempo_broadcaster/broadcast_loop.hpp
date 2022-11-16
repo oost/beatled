@@ -4,8 +4,8 @@
 #include <asio.hpp>
 #include <chrono>
 
-#include "../udp/udp_buffer.hpp"
 #include "server_parameters.hpp"
+#include "udp/udp_buffer.hpp"
 
 namespace server {
 

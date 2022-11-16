@@ -7,12 +7,12 @@ add_library(
     audio_player.cpp
 )
 
-target_link_libraries(
-    beat_detector 
+target_link_libraries(beat_detector 
     PUBLIC 
       asio 
       portaudio_static 
       FFTW3::fftw3 
       AudioFile 
       btrack
+      beatled_state_manager
 )

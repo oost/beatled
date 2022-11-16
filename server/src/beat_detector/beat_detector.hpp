@@ -5,11 +5,12 @@
 #include <memory>
 
 #include "audio_buffer_pool.hpp"
+#include "state_manager/state_manager.hpp"
 
 namespace beat_detector {
 class BeatDetector {
 public:
-  BeatDetector(uint32_t sample_rate);
+  BeatDetector(StateManager::Ptr state_manager, uint32_t sample_rate);
 
   void run();
   void request_stop();
@@ -22,6 +23,7 @@ private:
   std::atomic_bool stop_requested_;
 
   uint32_t sample_rate_;
+  StateManager::Ptr state_manager_;
 };
 
 } // namespace beat_detector

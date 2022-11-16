@@ -47,7 +47,7 @@ export function TempoControl() {
   } else if (status) {
     message = (
       <p>
-        Tempo: {status.tempo}. Time ref: {status.tv_sec}.{status.tv_nsec}
+        Tempo: {status.tempo}. Time ref: {status.time_ref}
       </p>
     );
   }

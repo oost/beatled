@@ -6,7 +6,7 @@
 #include <restinio/all.hpp>
 
 #include "file_extensions.hpp"
-#include "http_server.hpp"
+#include "http_server/http_server.hpp"
 
 using namespace server;
 
@@ -49,21 +49,21 @@ auto HTTPServer::server_handler(const std::string &root_dir) {
 
   router->http_get("/api/tempo", [this](auto req, auto) {
     // create an empty structure (null)
-    state_manager_.post_tempo(
-        [req](float tempo, uint32_t tv_sec, uint32_t tv_nsec) {
-          json j;
+    tempo_ref_t tr = state_manager_->get_tempo_ref();
 
-          // to an object)
-          j["tempo"] = tempo;
-          j["tv_sec"] = tv_sec;
-          j["tv_nsec"] = tv_nsec;
+    json j;
 
-          init_resp(req->create_response())
-              .append_header(restinio::http_field::content_type,
-                             "text/json; charset=utf-8")
-              .set_body(j.dump())
-              .done();
-        });
+    // to an object)
+    j["tempo"] = tr.tempo;
+    j["time_ref"] = tr.beat_time_ref;
+    // j["tv_sec"] = tv_sec;
+    // j["tv_nsec"] = tv_nsec;
+
+    init_resp(req->create_response())
+        .append_header(restinio::http_field::content_type,
+                       "text/json; charset=utf-8")
+        .set_body(j.dump())
+        .done();
 
     return restinio::request_accepted();
   });
@@ -170,7 +170,7 @@ auto HTTPServer::server_handler(const std::string &root_dir) {
 
 HTTPServer::HTTPServer(asio::io_context &io_context,
                        const http_server_parameters_t &http_server_parameters,
-                       StateManager &state_manager, Logger &logger)
+                       StateManager::Ptr state_manager, Logger &logger)
     : state_manager_{state_manager}, logger_{logger} {
 
   using namespace std::chrono;

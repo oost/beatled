@@ -1,2 +1,11 @@
-add_library(http_server STATIC http_server.cpp)
-target_link_libraries(http_server PRIVATE asio asio::asio restinio::restinio nlohmann_json::nlohmann_json)
+add_library(beatled_http_server STATIC http_server.cpp)
+
+target_link_libraries(beatled_http_server PUBLIC 
+  asio asio::asio 
+  restinio::restinio 
+  nlohmann_json::nlohmann_json
+  beatled_logger
+  beatled_state_manager
+)
+
+target_include_directories(beatled_http_server PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include)

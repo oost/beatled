@@ -1,34 +1,20 @@
 #include <iostream>
 
-#include "state_manager.hpp"
+#include "state_manager/state_manager.hpp"
 
-StateManager::StateManager(asio::io_context &io_context)
-    : strand_{asio::make_strand(io_context)} {}
+StateManager::StateManager() {}
 
-void StateManager::update_tempo(float tempo, const sntp_time_t &timeref) {
-  asio::post(strand_, [this, tempo, timeref]() {
-    tempo_ = tempo;
-    time_ref_ = timeref;
-  });
+void StateManager::update_tempo(float tempo, uint64_t timeref) {
+  std::unique_lock lk(mtx_);
+  tempo_ = tempo;
+  time_ref_ = timeref;
 }
 
-void StateManager::broadcast_tempo() {
-  std::cout << "Broadcasting dddtempo " << tempo_ << " and time ref "
-            << time_ref_.tv_sec << "." << time_ref_.tv_nsec << std::endl;
+tempo_ref_t StateManager::get_tempo_ref() {
+  std::unique_lock lk(mtx_);
+  tempo_ref_t tr = {.beat_time_ref = time_ref_,
+                    .tempo_period_us =
+                        static_cast<uint32_t>(60 * 1000000UL / tempo_),
+                    .tempo = tempo_};
+  return tr;
 }
-
-void StateManager::post_tempo(
-    const std::function<void(float, uint32_t, uint32_t)> &post_cb) {
-
-  // Not sure why we need to pass by value
-  // But otherwise it results in a segmentation fault
-
-  asio::post(strand_, [this, post_cb]() {
-    std::cout << "Posting tempo: " << tempo_ << " and time ref "
-              << time_ref_.tv_sec << "." << time_ref_.tv_nsec << std::endl;
-    post_cb(tempo_, time_ref_.tv_sec, time_ref_.tv_nsec);
-  });
-}
-
-// asio::strand<asio::any_io_executor> &StateManager::strand() { return strand_;
-// }

@@ -1,10 +1,10 @@
 #include <asio.hpp>
 #include <iostream>
 
-#include "../../state_manager/state_manager.hpp"
-#include "../udp/udp_buffer.hpp"
-#include "broadcast_loop.hpp"
-#include "tempo_broadcaster.hpp"
+#include "state_manager/state_manager.hpp"
+#include "tempo_broadcaster/broadcast_loop.hpp"
+#include "tempo_broadcaster/tempo_broadcaster.hpp"
+#include "udp/udp_buffer.hpp"
 
 using asio::ip::udp;
 
@@ -13,7 +13,8 @@ using namespace server;
 TempoBroadcaster::TempoBroadcaster(
     asio::io_context &io_context, std::chrono::nanoseconds alarm_period,
     std::chrono::nanoseconds program_alarm_period,
-    const broadcasting_server_parameters_t &broadcasting_server_parameters)
+    const broadcasting_server_parameters_t &broadcasting_server_parameters,
+    StateManager::Ptr state_manager)
     : io_context_(io_context), alarm_period_(alarm_period),
       program_alarm_period_(program_alarm_period), count_(0),
       program_timer_(
@@ -22,7 +23,8 @@ TempoBroadcaster::TempoBroadcaster(
       socket_(std::make_shared<asio::ip::udp::socket>(io_context)),
       broadcast_address_(
           asio::ip::make_address_v4(broadcasting_server_parameters.address)),
-      port_(broadcasting_server_parameters.port), program_idx_(0) {
+      port_(broadcasting_server_parameters.port),
+      program_idx_(0), state_manager_{state_manager} {
 
   std::cout << "Starting TempoBroadcaster " << std::endl;
 
@@ -41,9 +43,12 @@ TempoBroadcaster::TempoBroadcaster(
 
   loops_.push_back(std::make_unique<BroadcastLoop>(
       socket_, alarm_period,
-      []() {
+      [this]() {
+        tempo_ref_t tr = state_manager_->get_tempo_ref();
+
         UDPResponseBuffer::Ptr response_buffer =
-            std::make_unique<UDPTempoResponseBuffer>(0, 120);
+            std::make_unique<UDPTempoResponseBuffer>(tr.beat_time_ref,
+                                                     tr.tempo_period_us);
         return std::move(response_buffer);
       },
       broadcasting_server_parameters));

@@ -13,15 +13,16 @@
 #include <memory>
 #include <vector>
 
-#include "http/http_server.hpp"
+#include "http_server/http_server.hpp"
 #include "server.hpp"
 #include "tempo_broadcaster/tempo_broadcaster.hpp"
-#include "udp/udp_server.hpp"
+#include "udp_server/udp_server.hpp"
 
 using namespace server;
 
-Server::Server(const server_parameters_t &server_parameters)
-    : signals_{io_context_}, state_manager_{io_context_},
+Server::Server(StateManager::Ptr state_manager,
+               const server_parameters_t &server_parameters)
+    : state_manager_{state_manager}, signals_{io_context_},
       server_parameters_{server_parameters}, logger_(server_parameters.logger) {
 
   logger_.log_message("INFO", "Initializing server");
@@ -75,7 +76,8 @@ void Server::run() {
   if (server_parameters_.start_broadcaster) {
     tempo_broadcaster = std::make_unique<TempoBroadcaster>(
         io_context_, std::chrono::milliseconds((60 * 1000) / 120),
-        std::chrono::seconds(2), server_parameters_.broadcasting);
+        std::chrono::seconds(2), server_parameters_.broadcasting,
+        state_manager_);
   }
   if (server_parameters_.start_http_server) {
     http_server = std::make_unique<HTTPServer>(

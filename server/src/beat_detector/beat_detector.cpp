@@ -5,15 +5,17 @@
 #include <iostream>
 #include <sys/time.h>
 
-#include "../state_manager/state_manager.hpp"
 #include "audio_exception.hpp"
 #include "audio_input.hpp"
 #include "beat_detector.hpp"
+#include "state_manager/state_manager.hpp"
 
 using namespace beat_detector;
 using namespace std::chrono_literals;
 
-BeatDetector::BeatDetector(uint32_t sample_rate) : sample_rate_{sample_rate} {}
+BeatDetector::BeatDetector(StateManager::Ptr state_manager,
+                           uint32_t sample_rate)
+    : state_manager_{state_manager}, sample_rate_{sample_rate} {}
 
 void BeatDetector::request_stop() { stop_requested_ = true; }
 
@@ -74,6 +76,12 @@ void BeatDetector::do_detect_tempo() {
                 // << "Current time: " << buf << '.' << ts.tv_nsec << "
                 // UTC\n"
                 << std::endl;
+      state_manager_->update_tempo(
+          beat_tracker.getCurrentTempoEstimate(),
+          duration_cast<std::chrono::microseconds>(
+              std::chrono::system_clock::now().time_since_epoch())
+              .count());
+
     } else {
       std::cout << ".";
     }

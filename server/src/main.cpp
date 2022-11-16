@@ -94,13 +94,13 @@ int main(int argc, char const *argv[]) {
   if (!args.m_help) {
 
     // // Initialize our singleton in the main thread
-    // StateManager::initialize();
+    StateManager::Ptr state_manager = std::make_shared<StateManager>();
 
     // // Let's start the beat detector thread.
-    // asio::thread bd_thread([]() {
-    //   BeatDetector bd;
-    //   bd.run();
-    // });
+    asio::thread bd_thread([state_manager]() {
+      beat_detector::BeatDetector bd(state_manager, 44100);
+      bd.run();
+    });
 
     server::server_parameters_t server_parameters{
         .start_http_server = args.m_start_http_server,
@@ -118,7 +118,7 @@ int main(int argc, char const *argv[]) {
         .thread_pool_size = args.m_pool_size,
     };
 
-    server::Server server(server_parameters);
+    server::Server server(state_manager, server_parameters);
     server.run();
 
     // bd_thread.join();

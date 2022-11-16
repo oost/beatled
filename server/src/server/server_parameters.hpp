@@ -1,10 +1,10 @@
 #ifndef SERVER_ARGUMENTS_H
 #define SERVER_ARGUMENTS_H
 
-#include "http/server_parameters.hpp"
+#include "http_server/server_parameters.hpp"
 #include "logger/logger_parameters.hpp"
 #include "tempo_broadcaster/server_parameters.hpp"
-#include "udp/server_parameters.hpp"
+#include "udp_server/server_parameters.hpp"
 
 namespace server {
 

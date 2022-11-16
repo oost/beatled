@@ -5,9 +5,9 @@
 #include <memory>
 #include <string>
 
-#include "../../state_manager/state_manager.hpp"
-#include "../logger/logger.hpp"
+#include "logger/logger.hpp"
 #include "server_parameters.hpp"
+#include "state_manager/state_manager.hpp"
 
 namespace server {
 
@@ -15,10 +15,10 @@ class HTTPServer {
 public:
   HTTPServer(asio::io_context &io_context,
              const http_server_parameters_t &http_server_parameters,
-             StateManager &state_manager, Logger &logger);
+             StateManager::Ptr state_manager, Logger &logger);
 
 private:
-  StateManager &state_manager_;
+  StateManager::Ptr state_manager_;
   Logger &logger_;
 
   auto server_handler(const std::string &root_dir);

@@ -9,7 +9,7 @@ add_executable(${BEAT_SERVER} main.cpp)
 string(TIMESTAMP RPIZ_BS_BUILDTIME "%Y-%m-%d %H:%M")
 configure_file(build_constants.h.in build_constants.h)
 target_include_directories(${BEAT_SERVER} PUBLIC "${PROJECT_BINARY_DIR}/src")
-target_link_libraries(${BEAT_SERVER} PRIVATE server state_manager beat_detector)
+target_link_libraries(${BEAT_SERVER} PRIVATE beatled_server beatled_state_manager beat_detector)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)

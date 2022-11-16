@@ -1,8 +1,8 @@
 #include <asio.hpp>
 #include <iostream>
 
-#include "../../state_manager/state_manager.hpp"
-#include "broadcast_loop.hpp"
+#include "state_manager/state_manager.hpp"
+#include "tempo_broadcaster/broadcast_loop.hpp"
 
 using asio::ip::udp;
 
@@ -32,7 +32,7 @@ void BroadcastLoop::do_broadcast() {
       asio::buffer(response_buffer_ptr->data(), response_buffer_ptr->size()),
       broadcast_address_,
       [this](std::error_code /*ec*/, std::size_t l /*bytes_sent*/) {
-        std::cout << "Broadcasted: bytes sent=" << std::dec << l << std::endl;
+        std::cout << "Bytes sent=" << std::dec << l << std::endl;
 
         // Need to check if we haven't passed beyond next time.
         auto next_time = timer_.expiry();

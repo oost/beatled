@@ -4,9 +4,9 @@
 #include <asio.hpp>
 #include <chrono>
 
-// #include "../../state_manager/state_manager.hpp"
 #include "broadcast_loop.hpp"
 #include "server_parameters.hpp"
+#include "state_manager/state_manager.hpp"
 
 namespace server {
 class TempoBroadcaster {
@@ -14,7 +14,8 @@ public:
   TempoBroadcaster(
       asio::io_context &io_context, std::chrono::nanoseconds alarm_period,
       std::chrono::nanoseconds program_alarm_period,
-      const broadcasting_server_parameters_t &broadcasting_server_parameters);
+      const broadcasting_server_parameters_t &broadcasting_server_parameters,
+      StateManager::Ptr state_manager);
 
 private:
   void do_broadcast_beat();
@@ -23,6 +24,8 @@ private:
                     asio::high_resolution_timer &timer,
                     const std::chrono::nanoseconds &alarm_period,
                     std::function<void(void)> callback);
+
+  StateManager::Ptr state_manager_;
   asio::io_context &io_context_;
 
   asio::high_resolution_timer timer_;
