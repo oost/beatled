@@ -14,7 +14,7 @@ class UDPServer {
 public:
   UDPServer(asio::io_context &io_context,
             const udp_server_parameters_t &server_parameters,
-            StateManager::Ptr state_manager);
+            StateManager &state_manager);
 
 private:
   void do_receive();
@@ -25,7 +25,7 @@ private:
   asio::ip::udp::socket socket_;
 
   // asio::ip::udp::endpoint remote_endpoint_;
-  StateManager::Ptr state_manager_;
+  StateManager &state_manager_;
 };
 } // namespace server
 #endif // UDP_SERVER_H

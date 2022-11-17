@@ -20,7 +20,7 @@
 
 using namespace server;
 
-Server::Server(StateManager::Ptr state_manager,
+Server::Server(StateManager &state_manager,
                const server_parameters_t &server_parameters)
     : state_manager_{state_manager}, signals_{io_context_},
       server_parameters_{server_parameters}, logger_(server_parameters.logger) {

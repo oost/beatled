@@ -49,7 +49,7 @@ auto HTTPServer::server_handler(const std::string &root_dir) {
 
   router->http_get("/api/tempo", [this](auto req, auto) {
     // create an empty structure (null)
-    tempo_ref_t tr = state_manager_->get_tempo_ref();
+    tempo_ref_t tr = state_manager_.get_tempo_ref();
 
     json j;
 
@@ -170,7 +170,7 @@ auto HTTPServer::server_handler(const std::string &root_dir) {
 
 HTTPServer::HTTPServer(asio::io_context &io_context,
                        const http_server_parameters_t &http_server_parameters,
-                       StateManager::Ptr state_manager, Logger &logger)
+                       StateManager &state_manager, Logger &logger)
     : state_manager_{state_manager}, logger_{logger} {
 
   using namespace std::chrono;

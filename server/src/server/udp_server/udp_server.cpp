@@ -16,7 +16,7 @@ using asio::ip::udp;
 
 UDPServer::UDPServer(asio::io_context &io_context,
                      const udp_server_parameters_t &server_parameters,
-                     StateManager::Ptr state_manager)
+                     StateManager &state_manager)
     : socket_{io_context, udp::endpoint(udp::v4(), server_parameters.port)},
       state_manager_{state_manager} {
   std::cout << "Starting UDP server, listening on: " << socket_.local_endpoint()
@@ -44,7 +44,7 @@ void UDPServer::do_receive() {
           request_buffer_ptr->setSize(bytes_recvd);
 
           UDPRequestHandler requestHandler{std::move(request_buffer_ptr),
-                                           state_manager_.get()};
+                                           state_manager_};
 
           UDPResponseBuffer::Ptr response_buffer_ptr =
               requestHandler.response();

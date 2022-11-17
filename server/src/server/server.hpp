@@ -26,7 +26,7 @@ class Server {
 public:
   /// Construct the server to listen on the specified TCP address and port, and
   /// serve up files from the given directory.
-  explicit Server(StateManager::Ptr state_manager,
+  explicit Server(StateManager &state_manager,
                   const server_parameters_t &server_parameters);
 
   Server &operator=(const Server &) = delete;
@@ -43,7 +43,7 @@ private:
   /// The signal_set is used to register for process termination notifications.
   asio::signal_set signals_;
 
-  StateManager::Ptr state_manager_;
+  StateManager &state_manager_;
   Logger logger_;
 };
 } // namespace server

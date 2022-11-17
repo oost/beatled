@@ -16,3 +16,5 @@ target_link_libraries(beat_detector
       btrack
       beatled_state_manager
 )
+
+target_include_directories(beat_detector PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include)

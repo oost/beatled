@@ -12,12 +12,12 @@ namespace server {
 class UDPRequestHandler {
 public:
   UDPRequestHandler(UDPRequestBuffer::Ptr &&request_buffer_ptr,
-                    StateManager *state_manager);
+                    StateManager &state_manager);
   UDPResponseBuffer::Ptr response();
 
 private:
   UDPRequestBuffer::Ptr request_buffer_ptr_;
-  StateManager *state_manager_;
+  StateManager &state_manager_;
   // UDPResponseBuffer::Ptr response_buffer_ptr_;
 
   UDPResponseBuffer::Ptr process_tempo_request();

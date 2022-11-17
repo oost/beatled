@@ -14,7 +14,7 @@ TempoBroadcaster::TempoBroadcaster(
     asio::io_context &io_context, std::chrono::nanoseconds alarm_period,
     std::chrono::nanoseconds program_alarm_period,
     const broadcasting_server_parameters_t &broadcasting_server_parameters,
-    StateManager::Ptr state_manager)
+    StateManager &state_manager)
     : io_context_(io_context), alarm_period_(alarm_period),
       program_alarm_period_(program_alarm_period), count_(0),
       program_timer_(
@@ -44,7 +44,7 @@ TempoBroadcaster::TempoBroadcaster(
   loops_.push_back(std::make_unique<BroadcastLoop>(
       socket_, alarm_period,
       [this]() {
-        tempo_ref_t tr = state_manager_->get_tempo_ref();
+        tempo_ref_t tr = state_manager_.get_tempo_ref();
 
         UDPResponseBuffer::Ptr response_buffer =
             std::make_unique<UDPTempoResponseBuffer>(tr.beat_time_ref,
