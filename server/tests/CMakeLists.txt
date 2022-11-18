@@ -13,8 +13,6 @@ target_link_libraries(async_udp_echo_server asio)
 target_link_libraries(blocking_udp_echo_server asio)
 target_link_libraries(blocking_udp_echo_client asio)
 
-set(THREADS_PREFER_PTHREAD_FLAG ON)
-find_package(Threads REQUIRED)
 
 target_link_libraries(async_udp_echo_server Threads::Threads)
 target_link_libraries(blocking_udp_echo_server Threads::Threads)

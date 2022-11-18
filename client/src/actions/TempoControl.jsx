@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Button from "react-bootstrap/Button";
 
 export function TempoControl() {
@@ -10,7 +10,7 @@ export function TempoControl() {
   // this useEffect will run once
   // similar to componentDidMount()
 
-  const getTempo = (programId) => {
+  const getTempo = () => {
     setIsLoading(true);
     fetch("/api/tempo", {
       method: "GET", // *GET, POST, PUT, DELETE, etc.
@@ -39,6 +39,13 @@ export function TempoControl() {
       .then(() => setIsLoading(false));
   };
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      getTempo();
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  });
   let message = "";
   if (error) {
     message = <div>Error: {error.message}</div>;

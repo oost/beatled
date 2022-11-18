@@ -10,3 +10,5 @@ target_link_libraries(beatled_udp_server PRIVATE
   beatled_state_manager
 )
 
+target_include_directories(beatled_udp_server PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include)
+

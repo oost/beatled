@@ -14,7 +14,7 @@
 #include <vector>
 
 #include "http_server/http_server.hpp"
-#include "server.hpp"
+#include "server/server.hpp"
 #include "tempo_broadcaster/tempo_broadcaster.hpp"
 #include "udp_server/udp_server.hpp"
 

@@ -3,7 +3,7 @@
 #include <lyra/lyra.hpp>
 #include <string>
 
-#include "../beat_detector/beat_detector.hpp"
+#include "beat_detector/beat_detector.hpp"
 
 /*******************************************************************/
 struct track_beat_command {

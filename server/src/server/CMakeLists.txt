@@ -15,3 +15,4 @@ target_link_libraries(beatled_server PUBLIC
   beatled_logger
 )
 
+target_include_directories(beatled_server PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include)

@@ -1,5 +1,6 @@
 add_library(beatled_logger 
   logger.cpp 
+  ring_buffer_sink.cpp
 )
 
 target_link_libraries(beatled_logger PUBLIC 

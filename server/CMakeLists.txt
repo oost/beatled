@@ -8,6 +8,9 @@ set(BUILD_SHARED_LIBS OFF)
 
 option(BEATSERVER_ENABLE_TESTS "Enable tests" ON)
 
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+
+find_package(Threads REQUIRED)
 find_package(FFTW3 CONFIG REQUIRED)
 # find_package(FFTW3l CONFIG REQUIRED)
 find_package(unofficial-http-parser CONFIG REQUIRED)

@@ -6,10 +6,10 @@
 #include <iostream>
 #include <string>
 
-#include "server_parameters.hpp"
 #include "udp/udp_buffer.hpp"
 #include "udp_request_handler.hpp"
-#include "udp_server.hpp"
+#include "udp_server/server_parameters.hpp"
+#include "udp_server/udp_server.hpp"
 
 using namespace server;
 using asio::ip::udp;
