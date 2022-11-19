@@ -18,10 +18,9 @@ target_link_libraries(${BEAT_SERVER} PRIVATE
 
   Threads::Threads
   asio asio::asio 
-  fmt::fmt-header-only
+  fmt::fmt
   bfg::lyra 
   spdlog::spdlog 
-  spdlog::spdlog_header_only
 )
 
 
@@ -30,5 +29,5 @@ target_link_libraries(beatled_cli PUBLIC
   beat_detector
   portaudio_static 
   bfg::lyra 
-  fmt::fmt-header-only 
+  fmt::fmt
 )

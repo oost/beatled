@@ -10,23 +10,25 @@
 #include "beat_detector/beat_detector.hpp"
 #include "build_constants.h"
 #include "config/config.hpp"
+#include "logger/logger.hpp"
+#include "logger/logger_parameters.hpp"
 #include "server/server.hpp"
 #include "state_manager/state_manager.hpp"
 
 void print_version(const char *command) {
-  std::cout << command << " Version " << RPIZ_BS_VERSION_MAJOR << "."
-            << RPIZ_BS_VERSION_MINOR << std::endl
-            << "Compiled on " << RPIZ_BS_BUILDTIME << std::endl;
+  SPDLOG_INFO("{} Version {}.{}. Compiled on {}", command,
+              RPIZ_BS_VERSION_MAJOR, RPIZ_BS_VERSION_MINOR,
+              RPIZ_BS_BUILDTIME); // included
 }
 
 int main(int argc, char const *argv[]) {
-
+  struct server::logger_parameters_t logger_parameters = {.queue_size = 20};
   // try {
   // // create color multi threaded logger
+  auto logger = server::Logger(logger_parameters);
   auto console = spdlog::stdout_color_mt("console");
   auto err_logger = spdlog::stderr_color_mt("stderr");
-  spdlog::get("console")->info("Starting beat log ! ");
-  spdlog::flush_every(std::chrono::seconds(1));
+  SPDLOG_INFO("Starting beat log ! ");
 
   print_version(argv[0]);
 

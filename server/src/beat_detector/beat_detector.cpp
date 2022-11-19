@@ -3,6 +3,7 @@
 #include <fmt/format.h>
 #include <future>
 #include <iostream>
+#include <spdlog/spdlog.h>
 #include <sys/time.h>
 
 #include "audio_exception.hpp"
@@ -19,16 +20,16 @@ BeatDetector::BeatDetector(StateManager &state_manager, uint32_t sample_rate)
 void BeatDetector::request_stop() { stop_requested_ = true; }
 
 void BeatDetector::run() {
-  std::cout << "Starting Beat Detector" << std::endl;
+  SPDLOG_INFO("Starting Beat Detector");
 
   if (!bd_thread_future_.valid() ||
       bd_thread_future_.wait_for(0s) == std::future_status::ready) {
-    std::cout << "Starting thread" << std::endl;
+    SPDLOG_INFO("Starting thread");
     stop_requested_.store(false);
     bd_thread_future_ = std::async(
         std::launch::async, [this]() -> void { return do_detect_tempo(); });
   } else {
-    std::cout << "Beat detector is already running" << std::endl;
+    SPDLOG_INFO("Beat detector is already running");
   }
 }
 
@@ -52,7 +53,7 @@ void BeatDetector::do_detect_tempo() {
     throw AudioInputException("Couldn't start stream.");
   }
 
-  std::cout << "Audio input active: " << audio_input.is_active() << std::endl;
+  SPDLOG_INFO("Audio input active: {}", audio_input.is_active());
 
   // int idx = 0;
   // const int cycle_per_second =
@@ -70,11 +71,11 @@ void BeatDetector::do_detect_tempo() {
       // char buf[100];
 
       // std::strftime(buf, sizeof buf, "%D %T", std::gmtime(&ts.tv_sec));
-      std::cout << fmt::format("\nBeat (tempo: {}, timestamp: )--- ",
-                               beat_tracker.getCurrentTempoEstimate())
-                // << "Current time: " << buf << '.' << ts.tv_nsec << "
-                // UTC\n"
-                << std::endl;
+      SPDLOG_INFO("Beat (tempo: {}, timestamp: )--- ",
+                  beat_tracker.getCurrentTempoEstimate());
+      // << "Current time: " << buf << '.' << ts.tv_nsec << "
+      // UTC\n"
+
       state_manager_.update_tempo(
           beat_tracker.getCurrentTempoEstimate(),
           duration_cast<std::chrono::microseconds>(
@@ -82,7 +83,7 @@ void BeatDetector::do_detect_tempo() {
               .count());
 
     } else {
-      std::cout << ".";
+      SPDLOG_INFO(".");
     }
     // const audio_buffer_data_t &buffer_data = buffer->data();
     // for (int i = 0; i < elements_to_copy; i++) {
@@ -98,11 +99,11 @@ void BeatDetector::do_detect_tempo() {
     //             << std::endl;
     // }
     if (stop_requested_.load()) {
-      std::cout << "Stopping thread" << std::endl;
+      SPDLOG_INFO("Stopping thread");
       audio_input.stop();
 
       break;
     }
   }
-  std::cout << "Exiting loop" << std::endl;
+  SPDLOG_INFO("Exiting loop");
 }

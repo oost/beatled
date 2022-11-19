@@ -3,7 +3,9 @@
 #include <asio/ts/buffer.hpp>
 #include <asio/ts/internet.hpp>
 #include <cstdlib>
+#include <fmt/ostream.h>
 #include <iostream>
+#include <spdlog/spdlog.h>
 #include <string>
 
 #include "udp/udp_buffer.hpp"
@@ -19,8 +21,8 @@ UDPServer::UDPServer(asio::io_context &io_context,
                      StateManager &state_manager)
     : socket_{io_context, udp::endpoint(udp::v4(), server_parameters.port)},
       state_manager_{state_manager} {
-  std::cout << "Starting UDP server, listening on: " << socket_.local_endpoint()
-            << std::endl;
+  SPDLOG_INFO("Starting UDP server, listening on: {}",
+              fmt::streamed(socket_.local_endpoint()));
 
   do_receive();
 }
@@ -38,8 +40,8 @@ void UDPServer::do_receive() {
 
         if (!ec && bytes_recvd > 0) {
 
-          std::cout << "Received request from  response: "
-                    << request_buffer_ptr->remote_endpoint() << std::endl;
+          SPDLOG_INFO("Received request from  response: {}",
+                      fmt::streamed(request_buffer_ptr->remote_endpoint()));
 
           request_buffer_ptr->setSize(bytes_recvd);
 
@@ -49,8 +51,9 @@ void UDPServer::do_receive() {
           UDPResponseBuffer::Ptr response_buffer_ptr =
               requestHandler.response();
 
-          std::cout << "Sending response: " << *response_buffer_ptr << " to "
-                    << response_buffer_ptr->remote_endpoint() << std::endl;
+          SPDLOG_INFO("Sending response: {} to {}",
+                      fmt::streamed(*response_buffer_ptr),
+                      fmt::streamed(response_buffer_ptr->remote_endpoint()));
 
           socket_.async_send_to(
               asio::buffer(response_buffer_ptr->data(),
@@ -71,7 +74,7 @@ void UDPServer::do_receive() {
 //                               const asio::ip::udp::endpoint &remote_endpoint)
 //                               {
 //   // TODO : Is this correct? Does the string need to be moved?
-//   std::cout << "Sending: " << sendBuf << " to " << remote_endpoint <<
+//   SPDLOG_INFO("Sending: " << sendBuf << " to " << remote_endpoint <<
 //   std::endl;
 
 //   socket_.async_send_to(

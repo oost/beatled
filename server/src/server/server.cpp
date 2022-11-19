@@ -11,6 +11,7 @@
 #include <chrono>
 #include <iostream>
 #include <memory>
+#include <spdlog/spdlog.h>
 #include <vector>
 
 #include "http_server/http_server.hpp"
@@ -44,14 +45,13 @@ Server::Server(StateManager &state_manager,
 }
 
 void Server::run() {
-  logger_.log_message("INFO", "Starting server");
-
+  SPDLOG_INFO("Starting server");
   std::exception_ptr exception_caught;
 
   // Create a pool of threads to run all of the io_contexts.
   std::vector<std::shared_ptr<asio::thread>> threads;
-  std::cout << "Starting " << server_parameters_.thread_pool_size
-            << " network worker threads" << std::endl;
+  SPDLOG_INFO("Starting {} network worker threads",
+              server_parameters_.thread_pool_size);
 
   for (std::size_t i = 0; i < server_parameters_.thread_pool_size; ++i) {
     std::shared_ptr<asio::thread> thread(
@@ -84,7 +84,7 @@ void Server::run() {
         io_context_, server_parameters_.http, state_manager_, logger_);
   }
 
-  std::cout << "Waiting for threads to join" << std::endl;
+  SPDLOG_INFO("Waiting for threads to join");
   // Wait for all threads in the pool to exit.
   for (std::size_t i = 0; i < threads.size(); ++i)
     threads[i]->join();

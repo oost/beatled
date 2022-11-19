@@ -1,5 +1,7 @@
 #include <asio.hpp>
+#include <fmt/ostream.h>
 #include <iostream>
+#include <spdlog/spdlog.h>
 
 #include "state_manager/state_manager.hpp"
 #include "tempo_broadcaster/broadcast_loop.hpp"
@@ -19,20 +21,20 @@ BroadcastLoop::BroadcastLoop(
       broadcast_address_{udp::endpoint(
           asio::ip::make_address_v4(broadcasting_server_parameters.address),
           broadcasting_server_parameters.port)} {
-  std::cout << "Starting Broadcast loop " << std::endl;
+  SPDLOG_INFO("Starting Broadcast loop ");
 
   do_broadcast();
 }
 
 void BroadcastLoop::do_broadcast() {
   UDPResponseBuffer::Ptr response_buffer_ptr = prepare_buffer_();
-  std::cout << "Broadcasting: " << *response_buffer_ptr << std::endl;
+  SPDLOG_INFO("Broadcasting: {}", fmt::streamed(*response_buffer_ptr));
 
   socket_->async_send_to(
       asio::buffer(response_buffer_ptr->data(), response_buffer_ptr->size()),
       broadcast_address_,
       [this](std::error_code /*ec*/, std::size_t l /*bytes_sent*/) {
-        std::cout << "Bytes sent=" << std::dec << l << std::endl;
+        SPDLOG_INFO("Bytes sent={}", l);
 
         // Need to check if we haven't passed beyond next time.
         auto next_time = timer_.expiry();

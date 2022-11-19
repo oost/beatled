@@ -13,7 +13,7 @@ AudioInput::AudioInput(AudioBufferPool &audio_buffer_pool, uint32_t sample_rate,
 }
 
 AudioInput::~AudioInput() {
-  std::cout << "Destroying audio input" << std::endl;
+  SPDLOG_INFO("Destroying audio input");
   stop();
   close();
 }

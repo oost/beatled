@@ -15,6 +15,7 @@ target_link_libraries(beat_detector
       AudioFile 
       btrack
       beatled_state_manager
+      spdlog::spdlog
 )
 
 target_include_directories(beat_detector PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include)

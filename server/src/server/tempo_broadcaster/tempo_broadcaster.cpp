@@ -1,5 +1,7 @@
 #include <asio.hpp>
+#include <fmt/ostream.h>
 #include <iostream>
+#include <spdlog/spdlog.h>
 
 #include "state_manager/state_manager.hpp"
 #include "tempo_broadcaster/broadcast_loop.hpp"
@@ -26,7 +28,7 @@ TempoBroadcaster::TempoBroadcaster(
       port_(broadcasting_server_parameters.port),
       program_idx_(0), state_manager_{state_manager} {
 
-  std::cout << "Starting TempoBroadcaster " << std::endl;
+  SPDLOG_INFO("Starting TempoBroadcaster ");
 
   socket_->open(udp::v4());
   if (!socket_->is_open()) {
@@ -37,9 +39,9 @@ TempoBroadcaster::TempoBroadcaster(
   socket_->set_option(asio::socket_base::broadcast(true));
 
   // socket_->bind(udp::endpoint(broadcast_address_, port_));
-  std::cout << "TempoBroadcaster broadcasting on UDP through "
-            << socket_->local_endpoint() << " " << broadcast_address_
-            << std::endl;
+  SPDLOG_INFO("TempoBroadcaster broadcasting on UDP through {} {}",
+              fmt::streamed(socket_->local_endpoint()),
+              fmt::streamed(broadcast_address_));
 
   loops_.push_back(std::make_unique<BroadcastLoop>(
       socket_, alarm_period,

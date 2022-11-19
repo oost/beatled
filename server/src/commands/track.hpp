@@ -41,10 +41,10 @@ struct track_beat_command {
       BeatDetector bd{sample_rate};
 
       bd.run();
-      std::cout << "Started Beat Detector" << std::endl;
+      SPDLOG_INFO("Started Beat Detector");
       std::this_thread::sleep_for(
           std::chrono::seconds(static_cast<int>(duration)));
-      std::cout << " Requesting stop" << std::endl;
+      SPDLOG_INFO(" Requesting stop");
       bd.request_stop();
 
       // std::this_thread::sleep_for(2000ms);

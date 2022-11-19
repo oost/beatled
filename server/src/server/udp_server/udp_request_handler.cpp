@@ -1,6 +1,7 @@
 #include <arpa/inet.h>
 #include <iomanip>
 #include <iostream>
+#include <spdlog/spdlog.h>
 #include <string>
 
 #include "beatled/protocol.h"
@@ -43,7 +44,7 @@ UDPResponseBuffer::Ptr UDPRequestHandler::error_response(uint8_t error_code) {
 }
 
 UDPResponseBuffer::Ptr UDPRequestHandler::process_hello_request() {
-  std::cout << "Hello request" << std::endl;
+  SPDLOG_INFO("Hello request");
   const beatled_message_hello_request_t *hello_req =
       reinterpret_cast<const beatled_message_hello_request_t *>(
           &(request_buffer_ptr_->data()));
@@ -53,7 +54,7 @@ UDPResponseBuffer::Ptr UDPRequestHandler::process_hello_request() {
 }
 
 UDPResponseBuffer::Ptr UDPRequestHandler::process_time_request() {
-  std::cout << "Time request" << std::endl;
+  SPDLOG_INFO("Time request");
 
   using namespace std::chrono;
   microseconds ms_start =
@@ -65,8 +66,8 @@ UDPResponseBuffer::Ptr UDPRequestHandler::process_time_request() {
 
   uint64_t orig_time = ntohll(time_req_msg->orig_time);
 
-  std::cout << "Sending time request. (n) \n - orig_time: " << orig_time
-            << std::hex << orig_time << std::endl;
+  SPDLOG_INFO("Sending time request. (n) \n - orig_time: {0} / {0:x}",
+              orig_time);
   return std::make_unique<UDPTimeResponseBuffer>(
       orig_time, ms_start.count(),
       duration_cast<microseconds>(system_clock::now().time_since_epoch())
@@ -74,7 +75,7 @@ UDPResponseBuffer::Ptr UDPRequestHandler::process_time_request() {
 }
 
 UDPResponseBuffer::Ptr UDPRequestHandler::process_tempo_request() {
-  std::cout << "Tempo request" << std::endl;
+  SPDLOG_INFO("Tempo request");
 
   // using namespace std::chrono;
 

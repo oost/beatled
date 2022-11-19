@@ -4,6 +4,7 @@
 #include <memory>
 #include <nlohmann/json.hpp>
 #include <restinio/all.hpp>
+#include <spdlog/spdlog.h>
 
 #include "file_extensions.hpp"
 #include "http_server/http_server.hpp"
@@ -175,9 +176,8 @@ HTTPServer::HTTPServer(asio::io_context &io_context,
 
   using namespace std::chrono;
 
-  std::cout << "Starting HTTP server, listening on: "
-            << http_server_parameters.address << ":"
-            << http_server_parameters.port << std::endl;
+  SPDLOG_INFO("Starting HTTP server, listening on: {}:{}",
+              http_server_parameters.address, http_server_parameters.port);
 
   using traits_t =
       restinio::traits_t<restinio::asio_timer_manager_t,

@@ -22,8 +22,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(LogMessage, time, level, message)
 
 class Logger {
 public:
-  Logger(const logger_parameters_t &logger_parameters)
-      : max_queue_size_{logger_parameters.queue_size} {}
+  Logger(const logger_parameters_t &logger_parameters);
 
   void log_message(const char *level, const char *message);
 

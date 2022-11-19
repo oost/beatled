@@ -6,6 +6,7 @@
 #include <iostream>
 #include <math.h>
 #include <portaudio.h>
+#include <spdlog/spdlog.h>
 #include <stdio.h>
 #include <vector>
 
@@ -170,7 +171,7 @@ int AudioOutput::paCallbackMethod(const void *inputBuffer, void *outputBuffer,
 
   if (beat_tracker_.beatDueInCurrentFrame()) {
     // do something on the beat
-    std::cout << "Beat --- " << std::endl;
+    SPDLOG_INFO("Beat --- ");
   }
   // printf("Writing at %d, %d (frames %lu)", read_index_, elements_to_read,
   //        framesPerBuffer);

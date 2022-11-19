@@ -7,6 +7,7 @@
 #include <memory>
 #include <mutex>
 #include <queue>
+#include <spdlog/spdlog.h>
 #include <vector>
 
 #include "../config.hpp"
@@ -39,8 +40,8 @@ public:
     std::unique_lock<std::mutex> L{pool_buffer_queue_mutex_};
     if (pool_buffer_queue_.empty()) {
       total_pool_size_++;
-      std::cout << "Creating new AudioBuffer. Total pool size: "
-                << total_pool_size_ << std::endl;
+      SPDLOG_INFO("Creating new AudioBuffer. Total pool size: {}",
+                  total_pool_size_);
 
       return std::make_unique<AudioBuffer>(buffer_size_);
     }
