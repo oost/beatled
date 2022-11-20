@@ -4,7 +4,10 @@
 #include <array>
 #include <asio.hpp>
 #include <cstdint>
+#include <fmt/ostream.h>
+#include <iterator>
 #include <memory>
+#include <span>
 
 #include "udp_buffer.hpp"
 
@@ -21,7 +24,6 @@ public:
 
   const buffer_t &data() const { return data_; }
   std::size_t size() const { return size_; }
-  void print_buffer() const;
   uint8_t type() const;
   friend std::ostream &operator<<(std::ostream &os, const UDPBuffer &buffer);
 
@@ -85,5 +87,28 @@ public:
 };
 
 } // namespace server
+
+// // template <>
+// // struct fmt::formatter<server::UDPResponseBuffer> : ostream_formatter {};
+// template <typename T>
+// struct fmt::formatter<
+//     T, std::enable_if_t<std::is_base_of<server::UDPBuffer, T>::value, char>>
+//     : fmt::formatter<string_view> {
+
+//   // Formats the point p using the parsed format specification (presentation)
+//   // stored in this formatter.
+//   template <typename FormatContext>
+//   auto format(const T &buffer, FormatContext &ctx) const
+//       -> decltype(ctx.out()) {
+//     // ctx.out() is an output iterator to write to.
+//     auto begin = buffer.data().begin();
+//     auto end = std::next(begin, buffer.size());
+
+//     return fmt::format_to(ctx.out(), "{::x}", fmt::join(begin, end, ":"));
+//   }
+// };
+
+template <>
+struct fmt::formatter<server::UDPResponseBuffer> : ostream_formatter {};
 
 #endif // UDP__UDP_BUFFER_H

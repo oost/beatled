@@ -83,7 +83,7 @@ void BeatDetector::do_detect_tempo() {
               .count());
 
     } else {
-      SPDLOG_INFO(".");
+      // SPDLOG_INFO(".");
     }
     // const audio_buffer_data_t &buffer_data = buffer->data();
     // for (int i = 0; i < elements_to_copy; i++) {
