@@ -1,5 +1,6 @@
 #include "audiofile.h"
-#include "fmt/format.h"
+#include <fmt/ostream.h>
+#include <spdlog/spdlog.h>
 
 #include "audio_buffer_pool.hpp"
 #include "audio_output.hpp"
@@ -18,13 +19,13 @@ void AudioPlayer::play() {
     throw AudioException("Couldn't open device.");
   }
 
-  std::cout << "Output stream opened ! " << std::endl;
+  SPDLOG_INFO("Output stream opened ! ");
 
   if (!audio_output.start()) {
     throw AudioException("Couldn't start stream.");
   }
 
-  std::cout << "Audio output active: " << audio_output.is_active() << std::endl;
+  SPDLOG_INFO("Audio output active: {}", audio_output.is_active());
 
   while (audio_output.is_active()) {
     Pa_Sleep(100);
@@ -32,7 +33,7 @@ void AudioPlayer::play() {
 
   // Add thread syncronization
 
-  std::cout << "Audio output active: " << audio_output.is_active() << std::endl;
+  SPDLOG_INFO("Audio output active: {}", audio_output.is_active());
 
   audio_output.close();
 }

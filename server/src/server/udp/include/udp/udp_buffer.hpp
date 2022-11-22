@@ -111,4 +111,15 @@ public:
 template <>
 struct fmt::formatter<server::UDPResponseBuffer> : ostream_formatter {};
 
+// template <>
+// struct fmt::formatter<server::UDPResponseBuffer> : formatter<std::string> {
+//   // parse is inherited from formatter<string_view>.
+//   template <typename FormatContext>
+//   auto format(server::UDPResponseBuffer buf, FormatContext &ctx) const {
+//     auto it = buf.data().begin();
+//     auto end = std::next(buf.data().begin(), buf.size());
+//     return formatter<std::string>::format(fmt::join(it, end, ":"), ctx);
+//   }
+// };
+
 #endif // UDP__UDP_BUFFER_H

@@ -32,7 +32,7 @@ struct track_beat_command {
   }
   void do_command(const lyra::group &g) {
     if (show_help)
-      std::cout << g;
+      SPDLOG_INFO(g);
     else {
       using namespace beat_detector;
 

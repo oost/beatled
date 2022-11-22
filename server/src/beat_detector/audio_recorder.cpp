@@ -1,4 +1,6 @@
-#include "fmt/format.h"
+#include <fmt/format.h>
+#include <fmt/ostream.h>
+#include <spdlog/spdlog.h>
 
 #include "audio_buffer_pool.hpp"
 #include "audio_input.hpp"
@@ -31,7 +33,7 @@ std::string AudioRecorder::record() {
     throw AudioInputException("Couldn't start stream.");
   }
 
-  std::cout << "Audio input active: " << audio_input.is_active() << std::endl;
+  SPDLOG_INFO("Audio input active: {}", audio_input.is_active());
 
   AudioFile<audio_buffer_t> audio_file;
   audio_file.samples.resize(1);
@@ -64,23 +66,22 @@ std::string AudioRecorder::record() {
 
     idx++;
     if (idx % cycle_per_second == 0) {
-      std::cout << fmt::format("Recorded {} seconds",
-                               idx * constants::audio_buffer_size / sampleRate)
-                << std::endl;
+      SPDLOG_INFO("Recorded {} seconds",
+                  idx * constants::audio_buffer_size / sampleRate);
     }
   }
 
   fs::path audio_file_path = absolute_file_path();
 
-  std::cout << "Saving audio file to: " << audio_file_path << std::endl;
+  SPDLOG_INFO("Saving audio file to: {}", fmt::streamed(audio_file_path));
   // Wave file (explicit)
   if (!audio_file.save(audio_file_path, AudioFileFormat::Wave)) {
     throw AudioFileException("Error saving file.");
   }
 
-  std::cout << "Audio input active: " << audio_input.is_active() << std::endl;
+  SPDLOG_INFO("Audio input active: {}", audio_input.is_active());
 
-  std::cout << "Saved audio to " << audio_file_path << std::endl;
+  SPDLOG_INFO("Saved audio to {}", fmt::streamed(audio_file_path));
   return audio_file_path;
 }
 

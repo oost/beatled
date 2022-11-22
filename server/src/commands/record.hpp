@@ -57,7 +57,7 @@ struct record_audio_command {
   }
   void do_command(const lyra::group &g) {
     if (show_help)
-      std::cout << g;
+      SPDLOG_INFO(g);
     else {
 
       using namespace beat_detector;
@@ -67,7 +67,7 @@ struct record_audio_command {
 
       std::string audio_file_path = recorder.record();
 
-      std::cout << "Saved audio to " << audio_file_path << std::endl;
+      SPDLOG_INFO("Saved audio to {}", audio_file_path);
     }
   };
 };

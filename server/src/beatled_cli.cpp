@@ -18,7 +18,7 @@ int main(int argc, const char **argv) {
   try {
     auto result = cli.parse({argc, argv});
     if (show_help) {
-      std::cout << cli;
+      SPDLOG_INFO(cli);
       return 0;
     }
 

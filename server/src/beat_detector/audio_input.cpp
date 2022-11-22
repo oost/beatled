@@ -24,7 +24,7 @@ bool AudioInput::open() {
   inputParameters.device =
       Pa_GetDefaultInputDevice(); /* default input device */
   if (inputParameters.device == paNoDevice) {
-    fprintf(stderr, "Error: No default input device.\n");
+    SPDLOG_ERROR("Error: No default input device.\n");
     return false;
   }
 
@@ -67,7 +67,7 @@ bool AudioInput::open() {
 bool AudioInput::close() {
   if (stream_ == 0)
     return false;
-  printf("Closing stream\n");
+  SPDLOG_INFO("Closing stream\n");
 
   PaError err = Pa_CloseStream(stream_);
   stream_ = 0;
@@ -80,7 +80,7 @@ bool AudioInput::start() {
     return false;
 
   PaError err = Pa_StartStream(stream_);
-  printf("Starting stream\n");
+  SPDLOG_INFO("Starting stream\n");
   return (err == paNoError);
 }
 
@@ -90,7 +90,7 @@ bool AudioInput::is_active() {
     return true;
   }
   if (active < 0) {
-    printf("Hmm error....");
+    SPDLOG_INFO("Hmm error....");
   }
   return false;
 }
@@ -98,7 +98,7 @@ bool AudioInput::is_active() {
 bool AudioInput::stop() {
   if (stream_ == 0)
     return false;
-  printf("Stopping stream\n");
+  SPDLOG_INFO("Stopping stream\n");
 
   PaError err = Pa_StopStream(stream_);
 
@@ -142,4 +142,4 @@ int AudioInput::paCallbackMethod(const void *inputBuffer, void *outputBuffer,
   return paContinue;
 }
 
-void AudioInput::paStreamFinishedMethod() { printf("Stream Completed\n"); }
+void AudioInput::paStreamFinishedMethod() { SPDLOG_INFO("Stream Completed\n"); }

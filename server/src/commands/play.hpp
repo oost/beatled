@@ -36,16 +36,15 @@ struct play_audio_command {
   }
   void do_command(const lyra::group &g) {
     if (show_help)
-      std::cout << g;
+      SPDLOG_INFO(g);
     else {
       namespace fs = std::filesystem;
 
       using namespace beat_detector;
       //---------------------------------------------------------------
-      std::cout << "**********************" << std::endl;
-      std::cout << "Running Example: Load Audio File and Print Summary"
-                << std::endl;
-      std::cout << "**********************" << std::endl << std::endl;
+      SPDLOG_INFO("**********************");
+      SPDLOG_INFO("Running Example: Load Audio File and Print Summary");
+      SPDLOG_INFO"**********************");
 
       AudioPlayer audio_player_(audioFileName);
       audio_player_.play();

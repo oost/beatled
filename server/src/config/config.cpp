@@ -1,3 +1,6 @@
+#include <fmt/ostream.h>
+#include <spdlog/spdlog.h>
+
 #include "config/config.hpp"
 
 BeatledConfig::BeatledConfig(int argc, const char *argv[]) {
@@ -34,7 +37,7 @@ BeatledConfig::BeatledConfig(int argc, const char *argv[]) {
   }
 
   if (m_help) {
-    std::cout << cli << std::endl;
+    SPDLOG_INFO(fmt::streamed(cli));
   }
 }
 
