@@ -28,7 +28,7 @@ BroadcastLoop::BroadcastLoop(
 
 void BroadcastLoop::do_broadcast() {
   UDPResponseBuffer::Ptr response_buffer_ptr = prepare_buffer_();
-  SPDLOG_INFO("Broadcasting: {}", *response_buffer_ptr);
+  SPDLOG_INFO("Broadcasting: {::x}", *response_buffer_ptr);
 
   socket_->async_send_to(
       asio::buffer(response_buffer_ptr->data(), response_buffer_ptr->size()),

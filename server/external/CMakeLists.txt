@@ -4,7 +4,7 @@ set(KISSFFT_TEST OFF)
 set(KISSFFT_TOOLS OFF)
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 
-add_subdirectory(kissfft)
+# add_subdirectory(kissfft)
 
 set(ENABLE_FFTW ON)
 add_subdirectory(BTrack)

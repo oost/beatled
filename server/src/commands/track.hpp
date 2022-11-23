@@ -1,9 +1,11 @@
 #include <fmt/format.h>
+#include <fmt/ostream.h>
 #include <iostream>
 #include <lyra/lyra.hpp>
 #include <string>
 
 #include "beat_detector/beat_detector.hpp"
+#include "state_manager/state_manager.hpp"
 
 /*******************************************************************/
 struct track_beat_command {
@@ -32,13 +34,15 @@ struct track_beat_command {
   }
   void do_command(const lyra::group &g) {
     if (show_help)
-      SPDLOG_INFO(g);
+      SPDLOG_INFO(fmt::streamed(g));
     else {
       using namespace beat_detector;
 
       using namespace std::chrono_literals;
       constexpr int sample_rate = 41000;
-      BeatDetector bd{sample_rate};
+      StateManager state_manager;
+
+      BeatDetector bd{state_manager, sample_rate};
 
       bd.run();
       SPDLOG_INFO("Started Beat Detector");

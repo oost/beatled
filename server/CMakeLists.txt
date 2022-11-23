@@ -37,6 +37,8 @@ add_subdirectory(src)
 
 if (BEATSERVER_ENABLE_TESTS)
   message("Building tests")
+  include(CTest)
+  enable_testing()
   add_subdirectory(tests)
 endif()
 

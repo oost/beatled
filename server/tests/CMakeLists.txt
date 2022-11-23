@@ -1,9 +1,11 @@
+message("Configuring tests")
 find_package(Catch2 CONFIG REQUIRED)
-include(CTest)
-include(Catch)
+include(Catch) 
+
 
 
 add_subdirectory(fftw)
+add_subdirectory(logger)
 
 add_executable(async_udp_echo_server async_udp_echo_server.cpp)
 add_executable(blocking_udp_echo_server blocking_udp_echo_server.cpp)
@@ -29,13 +31,16 @@ target_link_libraries(test_factorials PRIVATE Catch2::Catch2 Catch2::Catch2WithM
 add_executable(rpitest_btrack test_btrack.cpp)
 target_link_libraries(rpitest_btrack PRIVATE btrack)
 
+set(KISSFFT_STATIC ON)
+find_package(unofficial-kissfft CONFIG REQUIRED)
+set(FFT_LIBRARY unofficial::kissfft::kissfft)
 
 add_executable(test_kissfft test_kissfft.cpp)
-target_link_libraries(test_kissfft PRIVATE kissfft)
+target_link_libraries(test_kissfft PRIVATE unofficial::kissfft::kissfft)
 
 
 add_executable(test_audio_buffer_pool test_audio_buffer_pool.cpp)
-target_link_libraries(test_audio_buffer_pool PRIVATE Catch2::Catch2 Catch2::Catch2WithMain)
+target_link_libraries(test_audio_buffer_pool PRIVATE Catch2::Catch2 Catch2::Catch2WithMain spdlog::spdlog)
 catch_discover_tests(test_audio_buffer_pool)
 
 # add_executable(test_tempo test-tempo.c)

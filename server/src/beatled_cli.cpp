@@ -1,4 +1,5 @@
 #include <fmt/format.h>
+#include <fmt/ostream.h>
 #include <iostream>
 #include <lyra/lyra.hpp>
 
@@ -18,7 +19,7 @@ int main(int argc, const char **argv) {
   try {
     auto result = cli.parse({argc, argv});
     if (show_help) {
-      SPDLOG_INFO(cli);
+      SPDLOG_INFO(fmt::streamed(cli));
       return 0;
     }
 

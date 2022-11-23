@@ -4,7 +4,8 @@ add_library(beatled_udp
 )
 
 target_link_libraries(beatled_udp PRIVATE
-  asio asio::asio         
+  asio asio::asio   
+  fmt::fmt      
   beatled_protocol
 )
 

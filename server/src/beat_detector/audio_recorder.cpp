@@ -1,5 +1,6 @@
 #include <fmt/format.h>
 #include <fmt/ostream.h>
+#include <fmt/std.h>
 #include <spdlog/spdlog.h>
 
 #include "audio_buffer_pool.hpp"
@@ -73,7 +74,7 @@ std::string AudioRecorder::record() {
 
   fs::path audio_file_path = absolute_file_path();
 
-  SPDLOG_INFO("Saving audio file to: {}", fmt::streamed(audio_file_path));
+  SPDLOG_INFO("Saving audio file to: {}", audio_file_path);
   // Wave file (explicit)
   if (!audio_file.save(audio_file_path, AudioFileFormat::Wave)) {
     throw AudioFileException("Error saving file.");
@@ -81,7 +82,7 @@ std::string AudioRecorder::record() {
 
   SPDLOG_INFO("Audio input active: {}", audio_input.is_active());
 
-  SPDLOG_INFO("Saved audio to {}", fmt::streamed(audio_file_path));
+  SPDLOG_INFO("Saved audio to {}", audio_file_path);
   return audio_file_path;
 }
 

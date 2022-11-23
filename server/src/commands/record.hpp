@@ -1,4 +1,5 @@
 #include <fmt/format.h>
+#include <fmt/ostream.h>
 #include <iostream>
 #include <lyra/lyra.hpp>
 #include <portaudio.h>
@@ -57,7 +58,7 @@ struct record_audio_command {
   }
   void do_command(const lyra::group &g) {
     if (show_help)
-      SPDLOG_INFO(g);
+      SPDLOG_INFO(fmt::streamed(g));
     else {
 
       using namespace beat_detector;

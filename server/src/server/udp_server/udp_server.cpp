@@ -51,8 +51,7 @@ void UDPServer::do_receive() {
           UDPResponseBuffer::Ptr response_buffer_ptr =
               requestHandler.response();
 
-          SPDLOG_INFO("Sending response: {} to {}",
-                      fmt::streamed(*response_buffer_ptr),
+          SPDLOG_INFO("Sending response: {::x} to {}", *response_buffer_ptr,
                       fmt::streamed(response_buffer_ptr->remote_endpoint()));
 
           socket_.async_send_to(

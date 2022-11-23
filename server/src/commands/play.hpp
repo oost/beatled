@@ -1,8 +1,10 @@
 #include <filesystem>
 #include <fmt/format.h>
+#include <fmt/ostream.h>
 #include <iostream>
 #include <lyra/lyra.hpp>
 #include <portaudio.h>
+#include <spdlog/spdlog.h>
 #include <string>
 
 #include "../beat_detector/audio_player.hpp"
@@ -36,7 +38,7 @@ struct play_audio_command {
   }
   void do_command(const lyra::group &g) {
     if (show_help)
-      SPDLOG_INFO(g);
+      SPDLOG_INFO(fmt::streamed(g));
     else {
       namespace fs = std::filesystem;
 
@@ -44,7 +46,7 @@ struct play_audio_command {
       //---------------------------------------------------------------
       SPDLOG_INFO("**********************");
       SPDLOG_INFO("Running Example: Load Audio File and Print Summary");
-      SPDLOG_INFO"**********************");
+      SPDLOG_INFO("**********************");
 
       AudioPlayer audio_player_(audioFileName);
       audio_player_.play();

@@ -30,4 +30,6 @@ target_link_libraries(beatled_cli PUBLIC
   portaudio_static 
   bfg::lyra 
   fmt::fmt
+  spdlog::spdlog 
+
 )

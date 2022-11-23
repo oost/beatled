@@ -4,7 +4,9 @@
 #include <array>
 #include <asio.hpp>
 #include <cstdint>
+#include <exception>
 #include <fmt/ostream.h>
+#include <fmt/ranges.h>
 #include <iterator>
 #include <memory>
 #include <span>
@@ -29,9 +31,14 @@ public:
 
   asio::ip::udp::endpoint &remote_endpoint() { return remote_endpoint_; };
 
+  [[nodiscard]] auto begin() const noexcept { return data_.begin(); }
+  [[nodiscard]] auto end() const noexcept {
+    return std::next(data_.begin(), size_);
+  }
+
 protected:
   buffer_t data_;
-  std::size_t size_;
+  std::size_t size_ = 0;
   asio::ip::udp::endpoint remote_endpoint_;
 };
 
@@ -83,7 +90,12 @@ public:
   using const_Ptr = std::unique_ptr<const UDPRequestBuffer>;
 
   buffer_t &data() { return data_; }
-  void setSize(std::size_t size) { size_ = size; }
+  void setSize(std::size_t size) {
+    if (size > BUFFER_SIZE) {
+      throw std::overflow_error("size > buffer size");
+    }
+    size_ = size;
+  }
 };
 
 } // namespace server
@@ -108,8 +120,8 @@ public:
 //   }
 // };
 
-template <>
-struct fmt::formatter<server::UDPResponseBuffer> : ostream_formatter {};
+// template <>
+// struct fmt::formatter<server::UDPResponseBuffer> : ostream_formatter {};
 
 // template <>
 // struct fmt::formatter<server::UDPResponseBuffer> : formatter<std::string> {
