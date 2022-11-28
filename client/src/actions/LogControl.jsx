@@ -47,7 +47,7 @@ export function LogControl() {
   } else if (status) {
     message = "";
     for (const msg of status) {
-      message += `${msg.time}\t${msg.level}\t${msg.message}\n`;
+      message += `${msg}`;
     }
   }
   return (

@@ -1,7 +1,12 @@
-add_library(beatled_state_manager state_manager.cpp)
+add_library(beatled_state_manager 
+  state_manager.cpp
+  client_status.cpp
+)
 
 target_link_libraries(beatled_state_manager PUBLIC
   asio::asio
+  fmt::fmt 
+  nlohmann_json::nlohmann_json
   beatled_protocol
 )
 

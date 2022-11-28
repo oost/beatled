@@ -3,8 +3,12 @@
 
 #include <asio.hpp>
 #include <cstdint>
+#include <fmt/ranges.h>
+#include <nlohmann/json.hpp>
 
 #include "beatled/protocol.h"
+
+using json = nlohmann::json;
 
 class ClientStatus {
 public:
@@ -15,6 +19,11 @@ public:
   uint64_t last_status_time;
   board_id_t board_id;
 };
+
+void to_json(json &j, const ClientStatus::board_id_t &board_id);
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ClientStatus, client_id, last_status_time,
+                                   board_id);
 
 using client_map_t = std::map<asio::ip::address, ClientStatus::Ptr>;
 

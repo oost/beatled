@@ -16,9 +16,10 @@ using namespace server;
 Logger::Logger(const logger_parameters_t &logger_parameters)
     : max_queue_size_{logger_parameters.queue_size} {
   spdlog::init_thread_pool(8192, 1);
+  ringbuffer_ = std::make_shared<spdlog::sinks::ringbuffer_sink_mt>(1024);
   std::vector<spdlog::sink_ptr> sinks;
   sinks.push_back(std::make_shared<spdlog::sinks::stdout_sink_mt>());
-  sinks.push_back(std::make_shared<spdlog::sinks::ringbuffer_sink_mt>(1024));
+  sinks.push_back(ringbuffer_);
 
   auto logger = std::make_shared<spdlog::async_logger>(
       "logger", std::begin(sinks), std::end(sinks), spdlog::thread_pool(),
@@ -52,7 +53,7 @@ void Logger::log_message(const char *level, const char *message) {
 json Logger::log_tail() {
   json data;
 
-  for (auto &msg : log_queue_) {
+  for (auto &msg : ringbuffer_->last_formatted()) {
     data.push_back(msg);
   }
 

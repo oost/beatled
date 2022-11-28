@@ -9,6 +9,7 @@
 #include "audio_exception.hpp"
 #include "audio_input.hpp"
 #include "beat_detector/beat_detector.hpp"
+#include "state_manager/clock.hpp"
 #include "state_manager/state_manager.hpp"
 
 using namespace beat_detector;
@@ -66,21 +67,15 @@ void BeatDetector::do_detect_tempo() {
     beat_tracker.processAudioFrame(hop_data.data());
 
     if (beat_tracker.beatDueInCurrentFrame()) {
-      // do something on the beat
-      // std::timespec ts = buffer->start_time().timespec();
-      // char buf[100];
+      uint64_t timeref = Clock::time_since_epoch_us();
 
-      // std::strftime(buf, sizeof buf, "%D %T", std::gmtime(&ts.tv_sec));
       SPDLOG_INFO("Beat (tempo: {}, timestamp: {})--- ",
-                  beat_tracker.getCurrentTempoEstimate(), 0);
+                  beat_tracker.getCurrentTempoEstimate(), timeref);
       // << "Current time: " << buf << '.' << ts.tv_nsec << "
       // UTC\n"
 
-      state_manager_.update_tempo(
-          beat_tracker.getCurrentTempoEstimate(),
-          duration_cast<std::chrono::microseconds>(
-              std::chrono::system_clock::now().time_since_epoch())
-              .count());
+      state_manager_.update_tempo(beat_tracker.getCurrentTempoEstimate(),
+                                  timeref);
 
     } else {
       // SPDLOG_INFO(".");

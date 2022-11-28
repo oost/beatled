@@ -31,7 +31,6 @@ beatled_protocol_init()
 
 
 add_subdirectory(external)
-# add_subdirectory(lib)
 
 add_subdirectory(src)
 
@@ -43,15 +42,3 @@ if (BEATSERVER_ENABLE_TESTS)
 endif()
 
 
-# set(BINARY_INSTALL_DIR ${PROJECT_BINARY_DIR}/target)
-# set(INSTALL_TARGETS 
-#   ${BEAT_SERVER} 
-#   async_udp_echo_server
-#   blocking_udp_echo_server
-#   blocking_udp_echo_client
-# )
-
-# install(
-#   TARGETS ${INSTALL_TARGETS}
-#   DESTINATION ${BINARY_INSTALL_DIR}
-# )

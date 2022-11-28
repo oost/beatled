@@ -21,10 +21,10 @@ public:
   StateManager();
 
   void update_tempo(float tempo, uint64_t timeref);
-  tempo_ref_t get_tempo_ref();
+  tempo_ref_t get_tempo_ref() const;
 
-  ClientStatus *client_status(const asio::ip::address &client_address) const;
-  ClientStatus *register_client(const asio::ip::address &client_address,
+  ClientStatus *client_status(asio::ip::address client_address) const;
+  ClientStatus *register_client(asio::ip::address client_address,
                                 const ClientStatus::board_id_t &new_board_id);
 
 private:
@@ -34,7 +34,8 @@ private:
   uint16_t client_id_max_ = 0;
   float tempo_;
   uint64_t time_ref_;
-  std::mutex mtx_;
+  mutable std::mutex tempo_mtx_;
+  mutable std::mutex client_mtx_;
   client_map_t clients_;
 };
 

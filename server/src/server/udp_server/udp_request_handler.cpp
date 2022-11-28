@@ -5,6 +5,7 @@
 #include <string>
 
 #include "beatled/protocol.h"
+#include "state_manager/clock.hpp"
 #include "udp_request_handler.hpp"
 
 using namespace server;
@@ -14,8 +15,6 @@ UDPRequestHandler::UDPRequestHandler(UDPRequestBuffer *request_buffer_ptr,
     : request_buffer_ptr_{request_buffer_ptr}, state_manager_{state_manager} {}
 
 ResponseBuffer::Ptr UDPRequestHandler::response() {
-  // response_buffer_ptr_ = std::make_unique<ResponseBuffer>(
-  // request_buffer_ptr_->remote_endpoint());
 
   if (request_buffer_ptr_->size() == 0) {
 
@@ -78,19 +77,12 @@ ResponseBuffer::Ptr UDPRequestHandler::process_time_request() {
 
   SPDLOG_INFO("Sending time request. (n) \n - orig_time: {0} / {0:x}",
               orig_time);
-  return std::make_unique<TimeResponseBuffer>(
-      orig_time, ms_start.count(),
-      duration_cast<microseconds>(system_clock::now().time_since_epoch())
-          .count());
+  return std::make_unique<TimeResponseBuffer>(orig_time, ms_start.count(),
+                                              Clock::time_since_epoch_us());
 }
 
 ResponseBuffer::Ptr UDPRequestHandler::process_tempo_request() {
   SPDLOG_INFO("Tempo request");
-
-  // using namespace std::chrono;
-
-  // float tempo = 100;
-  // uint32_t tempo_period_us = 60 * 1000000UL / tempo;
   tempo_ref_t tr = state_manager_.get_tempo_ref();
 
   return std::make_unique<TempoResponseBuffer>(tr.beat_time_ref,
