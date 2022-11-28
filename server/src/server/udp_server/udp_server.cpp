@@ -45,19 +45,18 @@ void UDPServer::do_receive() {
 
           request_buffer_ptr->setSize(bytes_recvd);
 
-          UDPRequestHandler requestHandler{std::move(request_buffer_ptr),
+          UDPRequestHandler requestHandler{request_buffer_ptr.get(),
                                            state_manager_};
 
-          UDPResponseBuffer::Ptr response_buffer_ptr =
-              requestHandler.response();
+          ResponseBuffer::Ptr response_buffer_ptr = requestHandler.response();
 
           SPDLOG_INFO("Sending response: {::x} to {}", *response_buffer_ptr,
-                      fmt::streamed(response_buffer_ptr->remote_endpoint()));
+                      fmt::streamed(request_buffer_ptr->remote_endpoint()));
 
           socket_.async_send_to(
               asio::buffer(response_buffer_ptr->data(),
                            response_buffer_ptr->size()),
-              response_buffer_ptr->remote_endpoint(),
+              request_buffer_ptr->remote_endpoint(),
               [this](std::error_code /*ec*/, std::size_t /*bytes_sent*/) {});
         }
 

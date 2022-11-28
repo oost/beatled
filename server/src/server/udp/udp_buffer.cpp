@@ -6,7 +6,7 @@
 
 namespace server {
 
-std::ostream &operator<<(std::ostream &os, const UDPBuffer &buffer) {
+std::ostream &operator<<(std::ostream &os, const DataBuffer &buffer) {
   using namespace std;
 
   for (int i = 0; i < buffer.size(); i++) {
@@ -19,7 +19,7 @@ std::ostream &operator<<(std::ostream &os, const UDPBuffer &buffer) {
   return os;
 }
 
-uint8_t UDPBuffer::type() const {
+uint8_t DataBuffer::type() const {
   if (size_ == 0) {
     throw std::range_error("Size of buffer is 0");
   }

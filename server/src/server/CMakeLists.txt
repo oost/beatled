@@ -1,6 +1,7 @@
 add_subdirectory(http)
 add_subdirectory(udp)
 add_subdirectory(udp_server)
+add_subdirectory(tcp_server)
 add_subdirectory(tempo_broadcaster)
 add_subdirectory(logger)
 

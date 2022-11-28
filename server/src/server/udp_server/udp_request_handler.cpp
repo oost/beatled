@@ -9,13 +9,12 @@
 
 using namespace server;
 
-UDPRequestHandler::UDPRequestHandler(UDPRequestBuffer::Ptr &&request_buffer_ptr,
+UDPRequestHandler::UDPRequestHandler(UDPRequestBuffer *request_buffer_ptr,
                                      StateManager &state_manager)
-    : request_buffer_ptr_{std::move(request_buffer_ptr)}, state_manager_{
-                                                              state_manager} {}
+    : request_buffer_ptr_{request_buffer_ptr}, state_manager_{state_manager} {}
 
-UDPResponseBuffer::Ptr UDPRequestHandler::response() {
-  // response_buffer_ptr_ = std::make_unique<UDPResponseBuffer>(
+ResponseBuffer::Ptr UDPRequestHandler::response() {
+  // response_buffer_ptr_ = std::make_unique<ResponseBuffer>(
   // request_buffer_ptr_->remote_endpoint());
 
   if (request_buffer_ptr_->size() == 0) {
@@ -39,21 +38,32 @@ UDPResponseBuffer::Ptr UDPRequestHandler::response() {
   }
 }
 
-UDPResponseBuffer::Ptr UDPRequestHandler::error_response(uint8_t error_code) {
-  return std::make_unique<UDPErrorResponseBuffer>(error_code);
+ResponseBuffer::Ptr UDPRequestHandler::error_response(uint8_t error_code) {
+  return std::make_unique<ErrorResponseBuffer>(error_code);
 }
 
-UDPResponseBuffer::Ptr UDPRequestHandler::process_hello_request() {
+ResponseBuffer::Ptr UDPRequestHandler::process_hello_request() {
   SPDLOG_INFO("Hello request");
   const beatled_message_hello_request_t *hello_req =
       reinterpret_cast<const beatled_message_hello_request_t *>(
           &(request_buffer_ptr_->data()));
 
-  uint16_t pico_id = 1234;
-  return std::make_unique<UDPHelloResponseBuffer>(pico_id);
+  ClientStatus::board_id_t board_id;
+  std::copy(hello_req->board_id, hello_req->board_id + board_id.size(),
+            board_id.begin());
+
+  ClientStatus *cs = state_manager_.register_client(
+      request_buffer_ptr_->remote_endpoint().address(), board_id);
+  if (!cs) {
+    // FIXME: Handle error
+    SPDLOG_ERROR("Address already registered");
+    return std::make_unique<HelloResponseBuffer>(0);
+  } else {
+    return std::make_unique<HelloResponseBuffer>(cs->client_id);
+  }
 }
 
-UDPResponseBuffer::Ptr UDPRequestHandler::process_time_request() {
+ResponseBuffer::Ptr UDPRequestHandler::process_time_request() {
   SPDLOG_INFO("Time request");
 
   using namespace std::chrono;
@@ -68,13 +78,13 @@ UDPResponseBuffer::Ptr UDPRequestHandler::process_time_request() {
 
   SPDLOG_INFO("Sending time request. (n) \n - orig_time: {0} / {0:x}",
               orig_time);
-  return std::make_unique<UDPTimeResponseBuffer>(
+  return std::make_unique<TimeResponseBuffer>(
       orig_time, ms_start.count(),
       duration_cast<microseconds>(system_clock::now().time_since_epoch())
           .count());
 }
 
-UDPResponseBuffer::Ptr UDPRequestHandler::process_tempo_request() {
+ResponseBuffer::Ptr UDPRequestHandler::process_tempo_request() {
   SPDLOG_INFO("Tempo request");
 
   // using namespace std::chrono;
@@ -83,6 +93,6 @@ UDPResponseBuffer::Ptr UDPRequestHandler::process_tempo_request() {
   // uint32_t tempo_period_us = 60 * 1000000UL / tempo;
   tempo_ref_t tr = state_manager_.get_tempo_ref();
 
-  return std::make_unique<UDPTempoResponseBuffer>(tr.beat_time_ref,
-                                                  tr.tempo_period_us);
+  return std::make_unique<TempoResponseBuffer>(tr.beat_time_ref,
+                                               tr.tempo_period_us);
 }

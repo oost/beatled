@@ -34,8 +34,8 @@ bool AudioOutput::open() {
   outputParameters.device =
       Pa_GetDefaultOutputDevice(); /* default output device */
   if (outputParameters.device == paNoDevice) {
-    SPDLOG_ERROR("Error: No default output device.\n");
-    throw AudioException("No default output device.\n");
+    SPDLOG_ERROR("Error: No default output device.");
+    throw AudioException("No default output device.");
   }
 
   outputParameters.channelCount = 1;         /* stereo output */
@@ -84,7 +84,7 @@ bool AudioOutput::start() {
     return false;
 
   PaError err = Pa_StartStream(stream_);
-  SPDLOG_INFO("Starting stream\n");
+  SPDLOG_INFO("Starting stream");
   return (err == paNoError);
 }
 
@@ -189,6 +189,4 @@ int AudioOutput::paCallbackMethod(const void *inputBuffer, void *outputBuffer,
   return paContinue;
 }
 
-void AudioOutput::paStreamFinishedMethod() {
-  SPDLOG_INFO("Stream Completed\n");
-}
+void AudioOutput::paStreamFinishedMethod() { SPDLOG_INFO("Stream Completed"); }

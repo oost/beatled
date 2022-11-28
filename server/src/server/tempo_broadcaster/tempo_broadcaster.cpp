@@ -48,9 +48,9 @@ TempoBroadcaster::TempoBroadcaster(
       [this]() {
         tempo_ref_t tr = state_manager_.get_tempo_ref();
 
-        UDPResponseBuffer::Ptr response_buffer =
-            std::make_unique<UDPTempoResponseBuffer>(tr.beat_time_ref,
-                                                     tr.tempo_period_us);
+        ResponseBuffer::Ptr response_buffer =
+            std::make_unique<TempoResponseBuffer>(tr.beat_time_ref,
+                                                  tr.tempo_period_us);
         return std::move(response_buffer);
       },
       broadcasting_server_parameters));

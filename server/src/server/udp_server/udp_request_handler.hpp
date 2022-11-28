@@ -11,19 +11,18 @@ namespace server {
 
 class UDPRequestHandler {
 public:
-  UDPRequestHandler(UDPRequestBuffer::Ptr &&request_buffer_ptr,
+  UDPRequestHandler(UDPRequestBuffer *request_buffer_ptr,
                     StateManager &state_manager);
-  UDPResponseBuffer::Ptr response();
+  ResponseBuffer::Ptr response();
 
 private:
-  UDPRequestBuffer::Ptr request_buffer_ptr_;
-  StateManager &state_manager_;
-  // UDPResponseBuffer::Ptr response_buffer_ptr_;
+  ResponseBuffer::Ptr process_tempo_request();
+  ResponseBuffer::Ptr process_time_request();
+  ResponseBuffer::Ptr process_hello_request();
+  ResponseBuffer::Ptr error_response(uint8_t error_code);
 
-  UDPResponseBuffer::Ptr process_tempo_request();
-  UDPResponseBuffer::Ptr process_time_request();
-  UDPResponseBuffer::Ptr process_hello_request();
-  UDPResponseBuffer::Ptr error_response(uint8_t error_code);
+  UDPRequestBuffer *request_buffer_ptr_;
+  StateManager &state_manager_;
 };
 } // namespace server
 

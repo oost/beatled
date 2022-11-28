@@ -71,8 +71,8 @@ void BeatDetector::do_detect_tempo() {
       // char buf[100];
 
       // std::strftime(buf, sizeof buf, "%D %T", std::gmtime(&ts.tv_sec));
-      SPDLOG_INFO("Beat (tempo: {}, timestamp: )--- ",
-                  beat_tracker.getCurrentTempoEstimate());
+      SPDLOG_INFO("Beat (tempo: {}, timestamp: {})--- ",
+                  beat_tracker.getCurrentTempoEstimate(), 0);
       // << "Current time: " << buf << '.' << ts.tv_nsec << "
       // UTC\n"
 

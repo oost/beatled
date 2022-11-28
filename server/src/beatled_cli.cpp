@@ -24,12 +24,13 @@ int main(int argc, const char **argv) {
     }
 
     if (!result) {
-      std::cerr << result.message() << "\n";
+      std::cerr << result.message() << std::endl;
     }
     return result ? 0 : 1;
 
   } catch (const std::exception &exception) {
-    std::cerr << "An exception occured (" << exception.what() << ")\n";
+    std::cerr << "An exception occured (" << exception.what() << ")"
+              << std::endl;
   }
   return 1;
 }

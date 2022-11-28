@@ -5,7 +5,7 @@
     "args": [
       "--start-udp",
       "--start-http",
-      "--start-broadcast",
+      // "--start-broadcast",
       "${workspaceFolder}/client/build"
       // "track"
       // "record",

@@ -24,7 +24,7 @@ bool AudioInput::open() {
   inputParameters.device =
       Pa_GetDefaultInputDevice(); /* default input device */
   if (inputParameters.device == paNoDevice) {
-    SPDLOG_ERROR("Error: No default input device.\n");
+    SPDLOG_ERROR("Error: No default input device.");
     return false;
   }
 
@@ -67,7 +67,7 @@ bool AudioInput::open() {
 bool AudioInput::close() {
   if (stream_ == 0)
     return false;
-  SPDLOG_INFO("Closing stream\n");
+  SPDLOG_INFO("Closing stream");
 
   PaError err = Pa_CloseStream(stream_);
   stream_ = 0;
@@ -80,7 +80,7 @@ bool AudioInput::start() {
     return false;
 
   PaError err = Pa_StartStream(stream_);
-  SPDLOG_INFO("Starting stream\n");
+  SPDLOG_INFO("Starting stream");
   return (err == paNoError);
 }
 
