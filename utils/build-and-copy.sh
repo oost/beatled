@@ -3,6 +3,6 @@
 set -x
 set -e
 
-docker buildx build --platform linux/arm64 --builder=mybuilder --output out -f Dockerfile . --progress=plain
+docker build -f docker/Dockerfile.builder . --progress=plain -t docker-builder
 
-utils/copy-tar-files.sh
+# utils/copy-tar-files.sh

@@ -5,4 +5,6 @@ target_link_libraries(test_state_manager PRIVATE
   spdlog::spdlog
   beatled_state_manager 
 )
-catch_discover_tests(test_state_manager)
+if(NOT VCPKG_TARGET_TRIPLET)
+  catch_discover_tests(test_state_manager)
+endif()

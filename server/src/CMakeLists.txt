@@ -33,3 +33,7 @@ target_link_libraries(beatled_cli PUBLIC
   spdlog::spdlog 
 
 )
+
+
+install(TARGETS beatled_cli DESTINATION bin)
+install(TARGETS ${BEAT_SERVER} DESTINATION bin)

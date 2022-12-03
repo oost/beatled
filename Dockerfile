@@ -5,42 +5,40 @@
 ####################################
 
 FROM debian AS build-server
-ARG TARGETPLATFORM
-ARG BUILDPLATFORM
 
-RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM, uname $(uname -m)" 
+RUN echo "I am running on $TARGETPLATFORM, uname $(uname -m)" 
 
-RUN   apt-get update \
+RUN apt-get update \
   &&  apt-get install -y cmake make build-essential gawk pkg-config git ninja-build \
   curl zip unzip tar texinfo bison libncurses-dev libfftw3-dev \
+  gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libc6-dev-arm64-cross \
+  cmake libfftw3-dev file \
   && rm -rf /var/lib/apt/lists/*
 
 RUN cd /tmp \
     && git clone https://github.com/Microsoft/vcpkg.git -n \ 
     && cd vcpkg \
     && git checkout master \
-    && ./bootstrap-vcpkg.sh 
+    && ./bootstrap-vcpkg.sh -useSystemBinaries
 
-# WORKDIR /tmp
+WORKDIR /home/build 
+COPY server /home/source/ 
 
-# RUN curl -L https://github.com/rvagg/rpi-newer-crosstools/archive/eb68350c5c8ec1663b7fe52c742ac4271e3217c5.tar.gz -o rpi-toolchain.tar.gz && \
-#   mkdir -p /home/toolchains && \
-#   tar xzf rpi-toolchain.tar.gz -C /home/toolchains && \
-#   mv /home/toolchains/rpi-newer-crosstools-eb68350c5c8ec1663b7fe52c742ac4271e3217c5 /home/toolchains/arm-rpi-linux-gnueabihf
+WORKDIR /home/source 
 
-# https://sourceforge.net/projects/raspberry-pi-cross-compilers/files/Raspberry%20Pi%20GCC%20Cross-Compiler%20Toolchains/Bullseye/GCC%2010.3.0/Raspberry%20Pi%201%2C%20Zero/cross-gcc-10.3.0-pi_0-1.tar.gz/download
+ENV VCPKG_HOME=/tmp/vcpkg
+ENV TARGET_TRIPLET=arm64-linux
 
+RUN ${VCPKG_HOME}/vcpkg install --triplet=${TARGET_TRIPLET} fmt spdlog restinio asio nlohmann-json date bfgroup-lyra portaudio fftw3 audiofile libsamplerate catch2 kissfft
 
+RUN cmake -G Ninja \
+  -DCMAKE_TOOLCHAIN_FILE=${VCPKG_HOME}/scripts/buildsystems/vcpkg.cmake \
+  -DVCPKG_TARGET_TRIPLET=${TARGET_TRIPLET} \
+  -DVCPKG_CHAINLOAD_TOOLCHAIN_FILE=${VCPKG_HOME}/scripts/toolchains/linux.cmake \
+  -B ../build -S . --debug-output --trace-expand | tee ../build/out.log \
+  && cmake --build ../build \
+  && cmake --install ../build --prefix /home/final
 
-WORKDIR /app/server
-
-COPY server /app/server
-
-RUN uname -a
-
-RUN cmake -DCMAKE_TOOLCHAIN_FILE=/tmp/vcpkg/scripts/buildsystems/vcpkg.cmake -B build -S . \
-  && cmake --build build \
-  && cmake --install build
 
 # ####################################
 # # Build front end
@@ -53,6 +51,12 @@ RUN cmake -DCMAKE_TOOLCHAIN_FILE=/tmp/vcpkg/scripts/buildsystems/vcpkg.cmake -B 
 # WORKDIR /home
 # COPY client /home 
 # RUN npm install && npm run build 
+
+
+FROM scratch
+WORKDIR /home 
+COPY --from=build-server /home/final .
+
 
 # ####################################
 # # Bring together all the parts

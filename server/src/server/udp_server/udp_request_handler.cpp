@@ -4,6 +4,7 @@
 #include <spdlog/spdlog.h>
 #include <string>
 
+#include "beatled/network.h"
 #include "beatled/protocol.h"
 #include "state_manager/clock.hpp"
 #include "udp_request_handler.hpp"

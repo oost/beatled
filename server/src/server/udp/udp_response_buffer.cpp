@@ -1,5 +1,7 @@
+#include <arpa/inet.h>
 #include <iostream>
 
+#include "beatled/network.h"
 #include "beatled/protocol.h"
 #include "udp/udp_buffer.hpp"
 

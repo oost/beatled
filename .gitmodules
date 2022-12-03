@@ -4,3 +4,6 @@
 [submodule "server/external/BTrack"]
 	path = server/external/BTrack
 	url = git@github.com:oost/BTrack.git
+[submodule "server/external/pico-w-beatled"]
+	path = server/external/pico-w-beatled
+	url = https://github.com/oost/pico-w-beatled.git
