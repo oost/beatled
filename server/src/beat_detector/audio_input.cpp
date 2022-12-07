@@ -21,6 +21,14 @@ AudioInput::~AudioInput() {
 bool AudioInput::open() {
   PaStreamParameters inputParameters;
 
+  int numDevices = Pa_GetDeviceCount();
+  if (numDevices < 0) {
+    SPDLOG_ERROR("Pa_GetDeviceCount returned {}", numDevices);
+    return false;
+  }
+
+  SPDLOG_INFO("Pa_GetDeviceCount returned {}", numDevices);
+
   inputParameters.device =
       Pa_GetDefaultInputDevice(); /* default input device */
   if (inputParameters.device == paNoDevice) {
