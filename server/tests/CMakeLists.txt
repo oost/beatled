@@ -56,3 +56,7 @@ target_link_libraries(test_move_semantics PRIVATE Catch2::Catch2 Catch2::Catch2W
 if(NOT VCPKG_TARGET_TRIPLET)
   catch_discover_tests(test_move_semantics)
 endif()
+
+add_executable(test_portaudio_devs test_portaudio_devs.c)
+target_link_libraries(test_portaudio_devs PUBLIC portaudio_static)
+

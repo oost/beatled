@@ -5,7 +5,7 @@ lib/fftw*
 out/
 test-conan/out/
 **/*.wav
-
+*.tar.gz
 
 
 # General

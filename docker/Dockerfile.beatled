@@ -1,0 +1,40 @@
+
+# syntax=docker/dockerfile:1
+
+####################################
+# Build server
+####################################
+
+FROM docker-builder AS build-server
+
+COPY server /home/source/ 
+
+WORKDIR /home/source 
+
+RUN cmake -G Ninja -DCMAKE_TOOLCHAIN_FILE=/home/source/docker-toolchain.cmake \
+  -DVCPKG_DIR=${VCPKG_HOME}  -DVCPKG_TARGET_TRIPLET=${TARGET_TRIPLET} \ 
+  -B ../build -S . 
+
+RUN cmake --build ../build \
+  && cmake --install ../build --prefix /home/final
+
+
+####################################
+# Build front end
+####################################
+FROM --platform=$BUILDPLATFORM node AS build-client
+
+RUN   apt-get update \
+  &&  apt-get install -y tar 
+
+WORKDIR /home
+COPY client /home 
+RUN npm install && npm run build 
+
+
+FROM scratch
+WORKDIR / 
+COPY --from=build-server /home/final/bin server
+COPY --from=build-client /home/build client
+COPY scripts scripts
+
