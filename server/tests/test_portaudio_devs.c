@@ -108,6 +108,15 @@ int main(void) {
   printf("PortAudio version: 0x%08X\n", Pa_GetVersion());
   printf("Version text: '%s'\n", Pa_GetVersionInfo()->versionText);
 
+  int num_apis = Pa_GetHostApiCount();
+  printf("Host apis available: '%d'\n", num_apis);
+
+  for (int api_idx = 0; api_idx < num_apis; api_idx++) {
+    const PaHostApiInfo *api_info = Pa_GetHostApiInfo(api_idx);
+    printf(" - API %d: type: '%d',  name: '%s', devices: '%d'\n", api_idx,
+           api_info->type, api_info->name, api_info->deviceCount);
+  }
+
   numDevices = Pa_GetDeviceCount();
   if (numDevices < 0) {
     printf("ERROR: Pa_GetDeviceCount returned 0x%x\n", numDevices);

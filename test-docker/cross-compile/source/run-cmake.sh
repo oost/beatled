@@ -15,4 +15,4 @@ echo "\n\n --- Build 3\n"
 cmake -G Ninja -DCMAKE_TOOLCHAIN_FILE=${VCPKG_HOME}/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=${TARGET_TRIPLET} -DVCPKG_CHAINLOAD_TOOLCHAIN_FILE=${VCPKG_HOME}/scripts/toolchains/linux.cmake -B ../build3 -S .
 
 echo "\n\n --- Build with docker-toolchain\n"
-cmake -G Ninja -DCMAKE_TOOLCHAIN_FILE=/home/source/docker-toolchain.cmake -DVCPKG_DIR=${VCPKG_HOME} -DVCPKG_TARGET_TRIPLET=${TARGET_TRIPLET}  -B ../build4 -S .
+cmake -G Ninja -DCMAKE_TOOLCHAIN_FILE=/home/source/cmake/docker-toolchain.cmake -DVCPKG_DIR=${VCPKG_HOME} -DVCPKG_TARGET_TRIPLET=${TARGET_TRIPLET}  -B ../build4 -S .

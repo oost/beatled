@@ -27,7 +27,7 @@ find_package(AudioFile CONFIG REQUIRED)
 
 add_subdirectory(external)
 set(BEATLED_PROTOCOL_PATH "${CMAKE_CURRENT_LIST_DIR}/external/pico-w-beatled/lib/beatled_protocol")
-include(beatled_protocol_import.cmake)
+include("${CMAKE_CURRENT_LIST_DIR}/cmake/beatled_protocol_import.cmake")
 beatled_protocol_init()
 
 
