@@ -27,6 +27,12 @@ if (VCPKG_DIR)
   endif()
 
 
+  # set(CMAKE_FIND_ROOT_PATH "/usr/lib/aarch64-linux-gnu")
+  # set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+  # set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+  # set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+  # set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+
 
   message("Loading VCPKG cmake file")
   include("${VCPKG_DIR}/scripts/buildsystems/vcpkg.cmake")

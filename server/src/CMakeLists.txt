@@ -28,6 +28,7 @@ add_executable(beatled_cli beatled_cli.cpp)
 target_link_libraries(beatled_cli PUBLIC 
   beat_detector
   portaudio_static
+  # portaudio
   bfg::lyra 
   fmt::fmt
   spdlog::spdlog 

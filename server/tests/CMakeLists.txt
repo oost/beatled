@@ -58,6 +58,9 @@ if(NOT VCPKG_TARGET_TRIPLET)
 endif()
 
 add_executable(test_portaudio_devs test_portaudio_devs.c)
-target_link_libraries(test_portaudio_devs PUBLIC portaudio_static)
+target_link_libraries(test_portaudio_devs PUBLIC 
+  portaudio_static
+  # portaudio
+)
 
 install(TARGETS test_portaudio_devs DESTINATION bin)

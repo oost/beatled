@@ -12,6 +12,7 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 find_package(Threads REQUIRED)
 find_package(FFTW3 CONFIG REQUIRED)
+# find_library(FFTW3::fftw3 fftw3)
 # find_package(FFTW3l CONFIG REQUIRED)
 find_package(unofficial-http-parser CONFIG REQUIRED)
 find_package(lyra CONFIG REQUIRED)

@@ -11,6 +11,7 @@ target_link_libraries(beat_detector
     PUBLIC 
       asio 
       portaudio_static 
+    #   portaudio
       FFTW3::fftw3 
       AudioFile 
       btrack
