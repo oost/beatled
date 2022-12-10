@@ -40,6 +40,8 @@ Server::Server(StateManager &state_manager,
     // The server is stopped by cancelling all outstanding asynchronous
     // operations. Once all operations have finished the io_context::run()
     // call will exit.
+    SPDLOG_INFO("Stopping server on SIGINT signal");
+
     io_context_.stop();
   });
 }

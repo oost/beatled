@@ -2,7 +2,7 @@
 #define BEAT_DETECTOR_BEAT_DETECTOR_H
 
 #include <asio.hpp>
-#include <memory>
+#include <atomic>
 
 #include "state_manager/state_manager.hpp"
 
@@ -13,11 +13,11 @@ public:
 
   void run();
   void request_stop();
+  void stop_blocking();
 
 private:
   void do_detect_tempo();
 
-  std::thread thread_;
   std::future<void> bd_thread_future_;
   std::atomic_bool stop_requested_;
 

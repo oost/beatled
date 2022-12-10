@@ -4,7 +4,7 @@ add_subdirectory(state_manager)
 add_subdirectory(config)
 add_subdirectory(beat_detector)
 
-add_executable(${BEAT_SERVER} beatled_server.cpp)
+add_executable(${BEAT_SERVER} beatled_server.cpp application.cpp)
 
 
 string(TIMESTAMP RPIZ_BS_BUILDTIME "%Y-%m-%d %H:%M")

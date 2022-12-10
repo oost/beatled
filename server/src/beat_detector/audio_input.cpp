@@ -10,6 +10,8 @@ AudioInput::AudioInput(AudioBufferPool &audio_buffer_pool, uint32_t sample_rate,
     : stream_(0), audio_buffer_pool_{audio_buffer_pool},
       sample_rate_{sample_rate}, frames_per_buffer_{frames_per_buffer} {
   frame_duration_ = (double)frames_per_buffer / sample_rate_;
+
+  // TODO: Add real time scheduling for Linux
 }
 
 AudioInput::~AudioInput() {
@@ -21,13 +23,22 @@ AudioInput::~AudioInput() {
 bool AudioInput::open() {
   PaStreamParameters inputParameters;
 
+  int num_apis = Pa_GetHostApiCount();
+  SPDLOG_INFO("Host APIs available: {}", num_apis);
+
+  for (int api_idx = 0; api_idx < num_apis; api_idx++) {
+    const PaHostApiInfo *api_info = Pa_GetHostApiInfo(api_idx);
+    SPDLOG_INFO(" - API {}: type: '{}',  name: '{}', devices: '{}'", api_idx,
+                api_info->type, api_info->name, api_info->deviceCount);
+  }
+
   int numDevices = Pa_GetDeviceCount();
   if (numDevices < 0) {
-    SPDLOG_ERROR("Pa_GetDeviceCount returned {}", numDevices);
+    SPDLOG_ERROR("PortAudio device count: {}", numDevices);
     return false;
   }
 
-  SPDLOG_INFO("Pa_GetDeviceCount returned {}", numDevices);
+  SPDLOG_INFO("PortAudio device count: {}", numDevices);
 
   inputParameters.device =
       Pa_GetDefaultInputDevice(); /* default input device */
@@ -36,10 +47,17 @@ bool AudioInput::open() {
     return false;
   }
 
+  const PaDeviceInfo *default_input_device_info =
+      Pa_GetDeviceInfo(inputParameters.device);
+
+  SPDLOG_INFO("Starting listening on device: {} (API: {}, index: {})",
+              default_input_device_info->name,
+              default_input_device_info->hostApi, inputParameters.device);
+
   inputParameters.channelCount = 1;         /* stereo output */
   inputParameters.sampleFormat = paFloat32; /* 32 bit floating point output */
   inputParameters.suggestedLatency =
-      Pa_GetDeviceInfo(inputParameters.device)->defaultLowInputLatency;
+      default_input_device_info->defaultLowInputLatency;
 
   inputParameters.hostApiSpecificStreamInfo = NULL;
 

@@ -24,6 +24,7 @@ namespace server {
 /// The top-level class of the HTTP server.
 class Server {
 public:
+  using Ptr = std::unique_ptr<Server>;
   /// Construct the server to listen on the specified TCP address and port, and
   /// serve up files from the given directory.
   explicit Server(StateManager &state_manager,

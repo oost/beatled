@@ -18,7 +18,16 @@ using namespace std::chrono_literals;
 BeatDetector::BeatDetector(StateManager &state_manager, uint32_t sample_rate)
     : state_manager_{state_manager}, sample_rate_{sample_rate} {}
 
-void BeatDetector::request_stop() { stop_requested_ = true; }
+void BeatDetector::request_stop() {
+  SPDLOG_INFO("Requesting Beat Detector to stop");
+  stop_requested_ = true;
+}
+
+void BeatDetector::stop_blocking() {
+  request_stop();
+  SPDLOG_INFO("Waiting for Beat Detector to stop");
+  bd_thread_future_.wait();
+}
 
 void BeatDetector::run() {
   SPDLOG_INFO("Starting Beat Detector");
@@ -69,7 +78,7 @@ void BeatDetector::do_detect_tempo() {
     if (beat_tracker.beatDueInCurrentFrame()) {
       uint64_t timeref = Clock::time_since_epoch_us();
 
-      SPDLOG_INFO("Beat (tempo: {}, timestamp: {})--- ",
+      SPDLOG_INFO("Beat: tempo: {}, timestamp: {} ",
                   beat_tracker.getCurrentTempoEstimate(), timeref);
       // << "Current time: " << buf << '.' << ts.tv_nsec << "
       // UTC\n"
@@ -100,5 +109,5 @@ void BeatDetector::do_detect_tempo() {
       break;
     }
   }
-  SPDLOG_INFO("Exiting loop");
+  SPDLOG_INFO("Exiting beat detector loop");
 }

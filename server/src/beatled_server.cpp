@@ -1,12 +1,7 @@
-#include <fmt/format.h>
-#include <iostream>
-#include <lyra/lyra.hpp>
-#include <map>
-#include <memory>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
-#include <thread>
 
+#include "application.hpp"
 #include "beat_detector/beat_detector.hpp"
 #include "build_constants.h"
 #include "config/config.hpp"
@@ -36,22 +31,26 @@ int main(int argc, char const *argv[]) {
 
   if (!beatled_config.help()) {
 
-    // // Initialize our singleton in the main thread
-    StateManager state_manager;
+    BeatledApplication app(beatled_config);
 
-    // // Let's start the beat detector thread.
-    asio::thread bd_thread([&state_manager]() {
-      beat_detector::BeatDetector bd(state_manager, 44100);
-      bd.run();
-    });
+    app.start();
+    // // // Initialize our singleton in the main thread
+    // StateManager state_manager;
 
-    server::server_parameters_t server_parameters =
-        beatled_config.server_parameters();
+    // // // Let's start the beat detector thread.
+    // asio::thread bd_thread([&state_manager]() {
+    //   beat_detector::BeatDetector bd(state_manager, 44100);
+    //   bd.run();
+    // });
 
-    server::Server server(state_manager, server_parameters);
-    server.run();
+    // server::server_parameters_t server_parameters =
+    //     beatled_config.server_parameters();
 
-    bd_thread.join();
+    // server::Server server(state_manager, server_parameters);
+    // server.run();
+    // SPDLOG_INFO("Stopped servers. Waiting for beat detection thread.");
+
+    // bd_thread.join();
   }
   // } catch (const std::exception &ex) {
   //   std::cerr << "Error: " << ex.what() << std::endl;
