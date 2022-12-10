@@ -2,11 +2,12 @@
 Description=Beat Server service
 After=network.target
 StartLimitIntervalSec=0
+WorkingDirectory=/home/pi/beat-server
 
 [Service]
 Type=simple
 Restart=always
-ExecStart=/home/pi/beat-server/scripts/start-server.sh 
+ExecStart=/home/pi/beat-server/server/beat_server -a 0.0.0.0 /home/pi/beat-server/client/ --start-http --start-udp
 
 [Install]
 WantedBy=multi-user.target

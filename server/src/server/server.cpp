@@ -22,9 +22,11 @@
 using namespace server;
 
 Server::Server(StateManager &state_manager,
+               beat_detector::BeatDetector &beat_detector,
                const server_parameters_t &server_parameters)
-    : state_manager_{state_manager}, signals_{io_context_},
-      server_parameters_{server_parameters}, logger_(server_parameters.logger) {
+    : state_manager_{state_manager}, beat_detector_{beat_detector},
+      signals_{io_context_}, server_parameters_{server_parameters},
+      logger_(server_parameters.logger) {
 
   logger_.log_message("INFO", "Initializing server");
   // Register to handle the signals that indicate when the server should
@@ -82,8 +84,9 @@ void Server::run() {
         state_manager_);
   }
   if (server_parameters_.start_http_server) {
-    http_server = std::make_unique<HTTPServer>(
-        io_context_, server_parameters_.http, state_manager_, logger_);
+    http_server =
+        std::make_unique<HTTPServer>(io_context_, server_parameters_.http,
+                                     state_manager_, logger_, beat_detector_);
   }
 
   SPDLOG_INFO("Waiting for threads to join");

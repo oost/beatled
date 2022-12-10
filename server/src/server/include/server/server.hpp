@@ -16,9 +16,12 @@
 #include <string>
 #include <vector>
 
+#include "beat_detector/beat_detector.hpp"
 #include "logger/logger.hpp"
 #include "server_parameters.hpp"
 #include "state_manager/state_manager.hpp"
+
+class BeatledApplication;
 
 namespace server {
 /// The top-level class of the HTTP server.
@@ -28,6 +31,7 @@ public:
   /// Construct the server to listen on the specified TCP address and port, and
   /// serve up files from the given directory.
   explicit Server(StateManager &state_manager,
+                  beat_detector::BeatDetector &beat_detector,
                   const server_parameters_t &server_parameters);
 
   Server &operator=(const Server &) = delete;
@@ -45,6 +49,7 @@ private:
   asio::signal_set signals_;
 
   StateManager &state_manager_;
+  beat_detector::BeatDetector &beat_detector_;
   Logger logger_;
 };
 } // namespace server

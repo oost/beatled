@@ -7,7 +7,7 @@ RPIZ_HOST=raspberrypi1.local
 RPIZ_BEATSERVER_TGZ=beat-server.tar.gz
 
 cd out
-tar -czf $RPIZ_BEATSERVER_TGZ .
+tar -czf $RPIZ_BEATSERVER_TGZ *
 
 scp $RPIZ_BEATSERVER_TGZ ${RPIZ_HOST}:/home/pi
 

@@ -26,8 +26,13 @@ void BeatDetector::request_stop() {
 void BeatDetector::stop_blocking() {
   request_stop();
   SPDLOG_INFO("Waiting for Beat Detector to stop");
-  bd_thread_future_.wait();
+  if (bd_thread_future_.valid()) {
+    bd_thread_future_.wait();
+    bd_thread_future_.get();
+  }
 }
+
+bool BeatDetector::is_running() { return is_running_; }
 
 void BeatDetector::run() {
   SPDLOG_INFO("Starting Beat Detector");
@@ -68,7 +73,7 @@ void BeatDetector::do_detect_tempo() {
   // int idx = 0;
   // const int cycle_per_second =
   //     static_cast<int>(sample_rate_) / constants::audio_buffer_size;
-
+  is_running_ = true;
   while (true) {
     AudioBuffer::Ptr buffer = audio_buffer_pool.dequeue_blocking();
 
@@ -109,5 +114,6 @@ void BeatDetector::do_detect_tempo() {
       break;
     }
   }
+  is_running_ = false;
   SPDLOG_INFO("Exiting beat detector loop");
 }

@@ -2,13 +2,7 @@
 #include <spdlog/spdlog.h>
 
 #include "application.hpp"
-#include "beat_detector/beat_detector.hpp"
 #include "build_constants.h"
-#include "config/config.hpp"
-#include "logger/logger.hpp"
-#include "logger/logger_parameters.hpp"
-#include "server/server.hpp"
-#include "state_manager/state_manager.hpp"
 
 void print_version(const char *command) {
   SPDLOG_INFO("{} Version {}.{}. Compiled on {}", command,
@@ -18,44 +12,28 @@ void print_version(const char *command) {
 
 int main(int argc, char const *argv[]) {
   struct server::logger_parameters_t logger_parameters = {.queue_size = 20};
-  // try {
-  // // create color multi threaded logger
   auto logger = server::Logger(logger_parameters);
   auto console = spdlog::stdout_color_mt("console");
   auto err_logger = spdlog::stderr_color_mt("stderr");
-  SPDLOG_INFO("Starting beat log ! ");
+  SPDLOG_INFO("Starting log ");
 
-  print_version(argv[0]);
+  try {
 
-  const auto beatled_config = BeatledConfig(argc, argv);
+    print_version(argv[0]);
 
-  if (!beatled_config.help()) {
+    const auto beatled_config = BeatledConfig(argc, argv);
 
-    BeatledApplication app(beatled_config);
+    if (!beatled_config.help()) {
 
-    app.start();
-    // // // Initialize our singleton in the main thread
-    // StateManager state_manager;
+      BeatledApplication app(beatled_config);
 
-    // // // Let's start the beat detector thread.
-    // asio::thread bd_thread([&state_manager]() {
-    //   beat_detector::BeatDetector bd(state_manager, 44100);
-    //   bd.run();
-    // });
+      app.start();
+    }
+  } catch (const std::exception &ex) {
+    SPDLOG_ERROR("Caught exception: {}", ex.what());
 
-    // server::server_parameters_t server_parameters =
-    //     beatled_config.server_parameters();
-
-    // server::Server server(state_manager, server_parameters);
-    // server.run();
-    // SPDLOG_INFO("Stopped servers. Waiting for beat detection thread.");
-
-    // bd_thread.join();
+    return 1;
   }
-  // } catch (const std::exception &ex) {
-  //   std::cerr << "Error: " << ex.what() << std::endl;
-  //   return 1;
-  // }
 
   return 0;
 }

@@ -14,12 +14,14 @@ public:
   void run();
   void request_stop();
   void stop_blocking();
+  bool is_running();
 
 private:
   void do_detect_tempo();
 
   std::future<void> bd_thread_future_;
   std::atomic_bool stop_requested_;
+  std::atomic_bool is_running_ = false;
 
   uint32_t sample_rate_;
   StateManager &state_manager_;

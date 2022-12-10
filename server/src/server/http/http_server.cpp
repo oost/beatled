@@ -48,6 +48,44 @@ auto HTTPServer::server_handler(const std::string &root_dir) {
     return restinio::request_accepted();
   });
 
+  router->http_get("/api/beat-detector/start", [this](auto req, auto) {
+    beat_detector_.run();
+    json j;
+    j["OK"] = true;
+
+    init_resp(req->create_response())
+        .append_header(restinio::http_field::content_type,
+                       "text/json; charset=utf-8")
+        .set_body(j.dump())
+        .done();
+    return restinio::request_accepted();
+  });
+
+  router->http_get("/api/beat-detector/stop", [this](auto req, auto) {
+    beat_detector_.request_stop();
+    json j;
+    j["OK"] = true;
+
+    init_resp(req->create_response())
+        .append_header(restinio::http_field::content_type,
+                       "text/json; charset=utf-8")
+        .set_body(j.dump())
+        .done();
+    return restinio::request_accepted();
+  });
+
+  router->http_get("/api/beat-detector/status", [this](auto req, auto) {
+    json j;
+    j["is_running"] = beat_detector_.is_running();
+
+    init_resp(req->create_response())
+        .append_header(restinio::http_field::content_type,
+                       "text/json; charset=utf-8")
+        .set_body(j.dump())
+        .done();
+    return restinio::request_accepted();
+  });
+
   router->http_get("/api/tempo", [this](auto req, auto) {
     // create an empty structure (null)
     tempo_ref_t tr = state_manager_.get_tempo_ref();
@@ -171,8 +209,10 @@ auto HTTPServer::server_handler(const std::string &root_dir) {
 
 HTTPServer::HTTPServer(asio::io_context &io_context,
                        const http_server_parameters_t &http_server_parameters,
-                       StateManager &state_manager, Logger &logger)
-    : state_manager_{state_manager}, logger_{logger} {
+                       StateManager &state_manager, Logger &logger,
+                       beat_detector::BeatDetector &beat_detector)
+    : state_manager_{state_manager}, logger_{logger}, beat_detector_{
+                                                          beat_detector} {
 
   using namespace std::chrono;
 
