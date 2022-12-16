@@ -7,6 +7,7 @@ test-conan/out/
 **/*.wav
 *.tar.gz
 
+certs
 
 # General
 .DS_Store

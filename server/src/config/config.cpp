@@ -27,8 +27,10 @@ BeatledConfig::BeatledConfig(int argc, const char *argv[]) {
       lyra::opt(m_pool_size, "thread-pool size")["-n"]["--thread-pool-size"](
           fmt::format("The size of a thread pool to run server (default: {})",
                       m_pool_size)) |
-      lyra::arg(m_root_dir, "root-dir")(
-          fmt::format("server root dir (default: '{}')", m_root_dir));
+      lyra::opt(m_root_dir, "root-dir")["-r"]["--root-dir"](
+          fmt::format("server root dir (default: '{}')", m_root_dir)) |
+      lyra::opt(m_certs_dir, "certs dir")["--certs-dir"](
+          fmt::format("server certs dir (default: '{}')", m_certs_dir));
 
   auto parser_result = cli.parse(lyra::args(argc, argv));
   if (!parser_result) {
@@ -50,7 +52,8 @@ server::server_parameters_t BeatledConfig::server_parameters() const {
           {
               m_address,   // address
               m_http_port, // port
-              m_root_dir   // root_dir
+              m_root_dir,  // root_dir
+              m_certs_dir, // cert_dir
           },
       .udp = {m_udp_port},
       .broadcasting = {m_broadcasting_address, m_broadcasting_port},

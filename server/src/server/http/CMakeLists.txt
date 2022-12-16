@@ -7,6 +7,8 @@ target_link_libraries(beatled_http_server PUBLIC
   beatled_logger
   beatled_state_manager
   beat_detector
+  OpenSSL::SSL
+  OpenSSL::Crypto
 )
 
 target_include_directories(beatled_http_server PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include)

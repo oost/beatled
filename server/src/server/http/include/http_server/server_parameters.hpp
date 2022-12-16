@@ -10,6 +10,7 @@ struct http_server_parameters_t {
   const std::string address;
   std::uint16_t port;
   const std::string root_dir;
+  const std::string certs_dir;
 };
 
 } // namespace server

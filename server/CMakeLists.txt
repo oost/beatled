@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.18)
 
+# Clan Tidy "-DCMAKE_CXX_CLANG_TIDY=/usr/bin/clang-tidy-3.9;-checks=*"
+# CppCheck "-DCMAKE_CXX_CPPCHECK=/usr/bin/cppcheck;--std=c++11"
+# IWYU "-DCMAKE_CXX_INCLUDE_WHAT_YOU_USE=/usr/bin/iwyu;--transitive_includes_only"
+# LWYU cmake -DCMAKE_LINK_WHAT_YOU_USE=TRUE
+
 project(RPIZBeatServer VERSION 0.1)
 
 set (CMAKE_CXX_STANDARD 20)
@@ -24,7 +29,11 @@ find_package(asio CONFIG REQUIRED)
 find_package(date CONFIG REQUIRED)
 find_package(portaudio CONFIG REQUIRED)
 find_package(AudioFile CONFIG REQUIRED)
-
+find_package(OpenSSL)
+IF ( OPENSSL_FOUND )
+  message("OpenSSL include dir: ${OPENSSL_INCLUDE_DIR}")
+  message("OpenSSL libraries: ${OPENSSL_LIBRARIES}")
+ENDIF ( OPENSSL_FOUND )
 
 add_subdirectory(external)
 set(BEATLED_PROTOCOL_PATH "${CMAKE_CURRENT_LIST_DIR}/external/pico-w-beatled/lib/beatled_protocol")

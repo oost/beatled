@@ -1,12 +1,14 @@
-#ifndef BEATLED_CONFIG__CONFIG_H
-#define BEATLED_CONFIG__CONFIG_H
+#ifndef SERVER_SRC_CONFIG_INCLUDE_CONFIG_CONFIG_HPP_
+#define SERVER_SRC_CONFIG_INCLUDE_CONFIG_CONFIG_HPP_
+
+#include <map>
+#include <memory>
+#include <string>
+#include <thread>
 
 #include <fmt/format.h>
 #include <iostream>
 #include <lyra/lyra.hpp>
-#include <map>
-#include <memory>
-#include <thread>
 
 #include "server/server.hpp"
 
@@ -29,6 +31,7 @@ private:
   std::uint16_t m_broadcasting_port{8765};
   std::size_t m_pool_size{2};
   std::string m_root_dir{"."};
+  std::string m_certs_dir{"./certs"};
 };
 
-#endif // BEATLED_CONFIG__CONFIG_H
+#endif // SERVER_SRC_CONFIG_INCLUDE_CONFIG_CONFIG_HPP_

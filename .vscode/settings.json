@@ -6,7 +6,10 @@
       "--start-udp",
       "--start-http",
       // "--start-broadcast",
-      "${workspaceFolder}/client/build"
+      "--root-dir",
+      "${workspaceFolder}/client/build",
+      "--certs-dir",
+      "${workspaceFolder}/server/certs"
       // "track"
       // "record",
       // "-d",
