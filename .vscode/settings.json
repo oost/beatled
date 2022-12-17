@@ -7,7 +7,8 @@
       "--start-http",
       // "--start-broadcast",
       "--root-dir",
-      "${workspaceFolder}/client/build",
+      // "${workspaceFolder}/client/build"
+      "${workspaceFolder}/client-new/beatled-client/dist",
       "--certs-dir",
       "${workspaceFolder}/server/certs"
       // "track"

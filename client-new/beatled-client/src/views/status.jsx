@@ -42,20 +42,51 @@ ChartJS.register(
   Legend
 );
 import { useLoaderData, Form, useFetcher } from "react-router-dom";
-import { useState } from "react";
 import { useInterval } from "../hooks/interval";
+import { getStatus } from "../lib/status";
 
 const props = [
   { label: "Status", key: "status", format: (v) => v },
   {
     label: "Tempo",
     key: "tempo",
-    format: (v) => <FormattedNumber value={v} maximumFractionDigits={1} />,
+    format: (v) => (
+      <FormattedNumber
+        value={v}
+        minimumFractionDigits={1}
+        maximumFractionDigits={2}
+      />
+    ),
   },
   {
     label: "Last update",
-    key: "updateTime",
-    format: (v) => v.format("h:mm:ss a"),
+    key: "x",
+    format: (v) => moment(v).format("h:mm:ss a"),
+  },
+  {
+    label: "Beat Detector",
+    key: "beat_detector",
+    format: (v) => (v ? "On" : "Off"),
+  },
+  {
+    label: "Broadcaster",
+    key: "broadcaster",
+    format: (v) => (v ? "On" : "Off"),
+  },
+  {
+    label: "UDP Server",
+    key: "udp_server",
+    format: (v) => (v ? "On" : "Off"),
+  },
+  {
+    label: "HTTP Server",
+    key: "http_server",
+    format: (v) => (v ? "On" : "Off"),
+  },
+  {
+    label: "Message",
+    key: "message",
+    format: (v) => (v ? "On" : "Off"),
   },
 ];
 
@@ -64,17 +95,15 @@ const MAX_HISTORY = 30;
 
 export async function loader({ request }) {
   console.log("Loading status");
-  const tempo = 120 + 40 * 2 * (Math.random() - 0.5);
-  tempoHistory.push({ x: new Date(), y: tempo });
+  const status = await getStatus();
+  // const tempo = 120 + 40 * 2 * (Math.random() - 0.5);
+  const last = { x: new Date(), y: status.tempo || NaN, ...status };
+  tempoHistory.push(last);
   if (tempoHistory.length > MAX_HISTORY) {
     tempoHistory.slice(tempoHistory.length - MAX_HISTORY);
   }
   return {
-    last: {
-      status: "Running",
-      tempo,
-      updateTime: new Date(),
-    },
+    last,
     history: tempoHistory,
   };
 }
@@ -94,7 +123,7 @@ export default function Status() {
     }
   }, 2 * 1000);
 
-  const data = fetcher.data.last ? fetcher.data : statusData.last;
+  const data = fetcher.data ? fetcher.data.last : statusData.last;
   return (
     <>
       <PanelHeader
@@ -149,8 +178,7 @@ export default function Status() {
               </CardFooter>
             </Card>
           </Col>
-        </Row>
-        <Row>
+
           <Col xs={12} md={4}>
             <BeatChart />
           </Col>

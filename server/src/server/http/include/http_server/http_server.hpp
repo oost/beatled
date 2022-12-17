@@ -27,7 +27,7 @@ private:
   }
   std::filesystem::path key_file_path() { return certs_dir_ / "key.pem"; }
   std::filesystem::path dh_params_file_path() {
-    return certs_dir_ / "dh_params.pem";
+    return certs_dir_ / "dh_param.pem";
   }
 
   StateManager &state_manager_;

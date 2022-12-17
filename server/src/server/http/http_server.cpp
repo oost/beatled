@@ -9,11 +9,11 @@
 #include <restinio/tls.hpp>
 #include <spdlog/spdlog.h>
 
-#include "file_extensions.hpp"
+#include "./file_extensions.hpp"
 #include "http_server/http_server.hpp"
 
 using json = nlohmann::json;
-using namespace server;
+using server::HTTPServer;
 
 namespace rr = restinio::router;
 using router_t = rr::express_router_t<>;
@@ -33,12 +33,17 @@ auto HTTPServer::server_handler(const std::string &root_dir) {
 
   // router->add_handler(http_method_head(), route_path, std::move(handler));
 
-  router->http_get("/api/status", [](auto req, auto) {
+  router->http_get("/api/status", [this](auto req, auto) {
     // create an empty structure (null)
     json j;
 
     // to an object)
     j["message"] = "It's all good!";
+    j["http_server"] = false;
+    j["udp_server"] = false;
+    j["broadcaster"] = false;
+    j["beat_detector"] = beat_detector_.is_running();
+    j["tempo"] = state_manager_.get_tempo_ref().tempo;
 
     init_resp(req->create_response())
         .append_header(restinio::http_field::content_type,
