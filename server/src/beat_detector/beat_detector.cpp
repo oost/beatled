@@ -57,9 +57,6 @@ void BeatDetector::do_detect_tempo() {
   AudioInput audio_input(audio_buffer_pool, sample_rate_,
                          constants::audio_buffer_size);
 
-  // AudioInput audio_input(audio_buffer_pool, sample_rate_,
-  // frames_per_buffer_);
-
   if (!audio_input.open()) {
     throw AudioInputException("Couldn't open device.");
   }
@@ -70,9 +67,6 @@ void BeatDetector::do_detect_tempo() {
 
   SPDLOG_INFO("Audio input active: {}", audio_input.is_active());
 
-  // int idx = 0;
-  // const int cycle_per_second =
-  //     static_cast<int>(sample_rate_) / constants::audio_buffer_size;
   is_running_ = true;
   while (true) {
     AudioBuffer::Ptr buffer = audio_buffer_pool.dequeue_blocking();
@@ -83,30 +77,15 @@ void BeatDetector::do_detect_tempo() {
     if (beat_tracker.beatDueInCurrentFrame()) {
       uint64_t timeref = Clock::time_since_epoch_us();
 
-      SPDLOG_INFO("Beat: tempo: {}, timestamp: {} ",
-                  beat_tracker.getCurrentTempoEstimate(), timeref);
-      // << "Current time: " << buf << '.' << ts.tv_nsec << "
-      // UTC\n"
+      SPDLOG_DEBUG("Beat: tempo: {}, timestamp: {} ",
+                   beat_tracker.getCurrentTempoEstimate(), timeref);
 
       state_manager_.update_tempo(beat_tracker.getCurrentTempoEstimate(),
                                   timeref);
-
-    } else {
-      // SPDLOG_INFO(".");
     }
-    // const audio_buffer_data_t &buffer_data = buffer->data();
-    // for (int i = 0; i < elements_to_copy; i++) {
-    //   audio_data.push_back(buffer_data[i]);
-    // }
+
     audio_buffer_pool.release_buffer(std::move(buffer));
 
-    // idx++;
-    // if (idx % cycle_per_second == 0) {
-    //   std::cout << fmt::format("Recorded {} seconds",
-    //                            idx * constants::audio_buffer_size /
-    //                                sample_rate_)
-    //             << std::endl;
-    // }
     if (stop_requested_.load()) {
       SPDLOG_INFO("Stopping thread");
       audio_input.stop();

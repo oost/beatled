@@ -1,3 +1,6 @@
+import { useLoaderData, Form, useFetcher } from "react-router-dom";
+import { useInterval } from "../hooks/interval";
+import { getStatus } from "../lib/status";
 import PanelHeader from "../components/PanelHeader";
 import {
   Row,
@@ -5,45 +8,16 @@ import {
   Card,
   CardHeader,
   CardTitle,
-  UncontrolledDropdown,
-  DropdownToggle,
-  DropdownMenu,
-  DropdownItem,
   CardBody,
   CardFooter,
   Table,
-  FormGroup,
-  Label,
-  Input,
-  Button,
-  UncontrolledTooltip,
 } from "reactstrap";
-import { Line, Bar } from "react-chartjs-2";
 import { FormattedNumber } from "react-intl";
 
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Tooltip,
-  Legend,
-} from "chart.js";
-import moment from "moment";
 import BeatChart from "../components/status/BeatChart";
+import { format } from "date-fns";
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Tooltip,
-  Legend
-);
-import { useLoaderData, Form, useFetcher } from "react-router-dom";
-import { useInterval } from "../hooks/interval";
-import { getStatus } from "../lib/status";
+// import BeatChart from "../components/status/BeatChart";
 
 const props = [
   { label: "Status", key: "status", format: (v) => v },
@@ -61,7 +35,7 @@ const props = [
   {
     label: "Last update",
     key: "x",
-    format: (v) => moment(v).format("h:mm:ss a"),
+    format: (v) => format(v, "h:mm:ss a"),
   },
   {
     label: "Beat Detector",
@@ -100,7 +74,7 @@ export async function loader({ request }) {
   const last = { x: new Date(), y: status.tempo || NaN, ...status };
   tempoHistory.push(last);
   if (tempoHistory.length > MAX_HISTORY) {
-    tempoHistory.slice(tempoHistory.length - MAX_HISTORY);
+    tempoHistory.splice(0, tempoHistory.length - MAX_HISTORY);
   }
   return {
     last,
@@ -109,7 +83,6 @@ export async function loader({ request }) {
 }
 
 export async function action({ request, params }) {
-  // let formData = await request.formData();
   return true;
 }
 
@@ -124,6 +97,7 @@ export default function Status() {
   }, 2 * 1000);
 
   const data = fetcher.data ? fetcher.data.last : statusData.last;
+  const historyData = fetcher.data ? fetcher.data.history : statusData.history;
   return (
     <>
       <PanelHeader
@@ -159,7 +133,6 @@ export default function Status() {
                 </fetcher.Form>
               </CardHeader>
               <CardBody>
-                {" "}
                 <Table responsive>
                   <tbody>
                     {props.map((prop) => {
@@ -180,7 +153,7 @@ export default function Status() {
           </Col>
 
           <Col xs={12} md={4}>
-            <BeatChart />
+            <BeatChart historyData={historyData} />
           </Col>
         </Row>
       </div>

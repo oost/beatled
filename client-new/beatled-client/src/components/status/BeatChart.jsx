@@ -18,7 +18,10 @@ import {
   LineElement,
   Tooltip,
   Legend,
+  TimeScale,
 } from "chart.js";
+import "chartjs-adapter-date-fns";
+import { enUS } from "date-fns/locale";
 
 ChartJS.register(
   CategoryScale,
@@ -26,39 +29,57 @@ ChartJS.register(
   PointElement,
   LineElement,
   Tooltip,
-  Legend
+  Legend,
+  TimeScale
 );
 
-import demoData from "../../demo/variables/charts";
+function getChartConfig(historyData) {
+  return {
+    data: {
+      datasets: [
+        {
+          label: "Tempo",
+          borderColor: "#f96332",
+          pointBorderColor: "#FFF",
+          pointBackgroundColor: "#f96332",
+          pointBorderWidth: 2,
+          pointHoverRadius: 4,
+          pointHoverBorderWidth: 1,
+          pointRadius: 4,
+          // fill: true,
+          // backgroundColor: gradientFill,
+          borderWidth: 2,
+          tension: 0.4,
+          data: historyData,
+        },
+      ],
+    },
+    options: {
+      scales: {
+        x: {
+          type: "time",
+          adapters: {
+            date: {
+              locale: enUS,
+            },
+          },
+        },
+      },
+    },
+  };
+}
 
-export default function BeatChart() {
+export default function BeatChart({ historyData }) {
+  const chartConfig = getChartConfig(historyData);
   return (
     <>
       <Card className="card-chart">
         <CardHeader>
-          <h5 className="card-category">Global Sales</h5>
-          <CardTitle tag="h4">Shipped Products</CardTitle>
-          <UncontrolledDropdown>
-            <DropdownToggle
-              className="btn-round btn-outline-default btn-icon"
-              color="default"
-            >
-              <i className="now-ui-icons loader_gear" />
-            </DropdownToggle>
-            <DropdownMenu end>
-              <DropdownItem>Action</DropdownItem>
-              <DropdownItem>Another Action</DropdownItem>
-              <DropdownItem>Something else here</DropdownItem>
-              <DropdownItem className="text-danger">Remove data</DropdownItem>
-            </DropdownMenu>
-          </UncontrolledDropdown>
+          <CardTitle tag="h4">Beat History</CardTitle>
         </CardHeader>
         <CardBody>
           <div className="chart-area">
-            <Line
-              data={demoData.dashboardShippedProductsChart.data}
-              options={demoData.dashboardShippedProductsChart.options}
-            />
+            <Line data={chartConfig.data} options={chartConfig.options} />
           </div>
         </CardBody>
         <CardFooter>

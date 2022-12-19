@@ -31,7 +31,7 @@ import Sidebar from "./Sidebar";
 
 var ps;
 
-function Admin(props) {
+function RootContainer(props) {
   const location = useLocation();
   const [backgroundColor, setBackgroundColor] = React.useState("blue");
   const mainPanel = React.useRef();
@@ -64,4 +64,4 @@ function Admin(props) {
   );
 }
 
-export default Admin;
+export default RootContainer;
