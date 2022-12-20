@@ -17,7 +17,7 @@ import {
   PointElement,
   LineElement,
   Tooltip,
-  Legend,
+  // Legend,
   TimeScale,
 } from "chart.js";
 import "chartjs-adapter-date-fns";
@@ -29,7 +29,6 @@ ChartJS.register(
   PointElement,
   LineElement,
   Tooltip,
-  Legend,
   TimeScale
 );
 
@@ -55,6 +54,8 @@ function getChartConfig(historyData) {
       ],
     },
     options: {
+      responsive: true,
+
       scales: {
         x: {
           type: "time",
@@ -72,22 +73,8 @@ function getChartConfig(historyData) {
 export default function BeatChart({ historyData }) {
   const chartConfig = getChartConfig(historyData);
   return (
-    <>
-      <Card className="card-chart">
-        <CardHeader>
-          <CardTitle tag="h4">Beat History</CardTitle>
-        </CardHeader>
-        <CardBody>
-          <div className="chart-area">
-            <Line data={chartConfig.data} options={chartConfig.options} />
-          </div>
-        </CardBody>
-        <CardFooter>
-          <div className="stats">
-            <i className="now-ui-icons arrows-1_refresh-69" /> Just Updated
-          </div>
-        </CardFooter>
-      </Card>
-    </>
+    <div className="chart-area" style={{ position: "relative" }}>
+      <Line data={chartConfig.data} options={chartConfig.options} />
+    </div>
   );
 }

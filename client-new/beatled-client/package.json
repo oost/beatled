@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "bootstrap": "^5.2.3",
+    "bootstrap-icons": "^1.10.2",
     "chart.js": "4.0.1",
     "chartjs-adapter-date-fns": "^3.0.0",
     "date-fns": "^2.29.3",
@@ -17,6 +18,7 @@
     "match-sorter": "^6.3.1",
     "perfect-scrollbar": "^1.5.5",
     "react": "^18.2.0",
+    "react-bootstrap-icons": "^1.10.2",
     "react-chartjs-2": "5.0.1",
     "react-dom": "^18.2.0",
     "react-intl": "^6.2.5",

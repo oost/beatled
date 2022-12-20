@@ -1,28 +1,37 @@
 import ErrorPage from "../views/error-page";
 import Index from "../views/index";
-import Status, {
+import StatusPage, {
   loader as statusLoader,
   action as statusAction,
 } from "../views/status";
+import ProgramPage from "../views/program";
+import LogPage from "../views/log";
 import RootContainer from "../components/RootContainer";
+import { RootErrorBoundary } from "../views/root-error-boundary";
 
 const routes = [
   {
     path: "/",
     element: <RootContainer />,
-    errorElement: <ErrorPage />,
+    errorElement: <RootErrorBoundary />,
     children: [
       { index: true, element: <Index /> },
       {
         path: "status",
-        element: <Status />,
+        element: <StatusPage />,
         loader: statusLoader,
         action: statusAction,
-        errorElement: <div>Oops! There was an error.</div>,
+        errorElement: <ErrorPage />,
       },
       {
         path: "program",
-        errorElement: <div>Oops! There was an error.</div>,
+        element: <ProgramPage />,
+        errorElement: <ErrorPage />,
+      },
+      {
+        path: "log",
+        element: <LogPage />,
+        errorElement: <ErrorPage />,
       },
     ],
   },

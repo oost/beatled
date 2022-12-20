@@ -5,6 +5,13 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Launch Chrome",
+      "request": "launch",
+      "type": "chrome",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/client-new/beatled-client"
+    },
+    {
       "name": "(lldb) Launch",
       "type": "cppdbg",
       "request": "launch",
@@ -15,6 +22,6 @@
       "environment": [],
       "externalConsole": false,
       "MIMode": "lldb"
-    }
-  ]
+    },
+  ],
 }

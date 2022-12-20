@@ -9,7 +9,9 @@
 #include <restinio/tls.hpp>
 #include <spdlog/spdlog.h>
 
+#include "./api_handler.hpp"
 #include "./file_extensions.hpp"
+#include "./file_handler.hpp"
 #include "http_server/http_server.hpp"
 
 using json = nlohmann::json;
@@ -21,181 +23,45 @@ using router_t = rr::express_router_t<>;
 auto HTTPServer::server_handler(const std::string &root_dir) {
   auto router = std::make_unique<router_t>();
 
-  std::string server_root_dir;
+  auto file_handler = std::make_shared<FileHandler>(root_dir);
 
-  if (root_dir.empty()) {
-    server_root_dir = "./";
-  } else if (root_dir.back() != '/' && root_dir.back() != '\\') {
-    server_root_dir = root_dir + '/';
-  } else {
-    server_root_dir = root_dir;
-  }
+  auto by_file_handler = [&](auto method) {
+    using namespace std::placeholders;
+    return std::bind(method, file_handler, _1, _2);
+  };
 
-  // router->add_handler(http_method_head(), route_path, std::move(handler));
+  auto api_handler =
+      std::make_shared<APIHandler>(state_manager_, logger_, beat_detector_);
+  auto by_api_handler = [&](auto method) {
+    using namespace std::placeholders;
+    return std::bind(method, api_handler, _1, _2);
+  };
 
-  router->http_get("/api/status", [this](auto req, auto) {
-    // create an empty structure (null)
-    json j;
+  router->http_get("/api/status", by_api_handler(&APIHandler::on_status));
 
-    // to an object)
-    j["message"] = "It's all good!";
-    j["http_server"] = false;
-    j["udp_server"] = false;
-    j["broadcaster"] = false;
-    j["beat_detector"] = beat_detector_.is_running();
-    j["tempo"] = state_manager_.get_tempo_ref().tempo;
+  router->http_get("/api/beat-detector/start",
+                   by_api_handler(&APIHandler::on_beat_detector_start));
 
-    init_resp(req->create_response())
-        .append_header(restinio::http_field::content_type,
-                       "text/json; charset=utf-8")
-        .set_body(j.dump())
-        .done();
+  router->http_get("/api/beat-detector/stop",
+                   by_api_handler(&APIHandler::on_beat_detector_stop));
 
-    return restinio::request_accepted();
-  });
+  router->http_get("/api/beat-detector/status",
+                   by_api_handler(&APIHandler::on_beat_detector_status));
 
-  router->http_get("/api/beat-detector/start", [this](auto req, auto) {
-    beat_detector_.run();
-    json j;
-    j["OK"] = true;
+  router->http_get("/api/tempo", by_api_handler(&APIHandler::on_tempo));
 
-    init_resp(req->create_response())
-        .append_header(restinio::http_field::content_type,
-                       "text/json; charset=utf-8")
-        .set_body(j.dump())
-        .done();
-    return restinio::request_accepted();
-  });
+  router->http_post("/api/update-program",
+                    by_api_handler(&APIHandler::on_update_program));
 
-  router->http_get("/api/beat-detector/stop", [this](auto req, auto) {
-    beat_detector_.request_stop();
-    json j;
-    j["OK"] = true;
-
-    init_resp(req->create_response())
-        .append_header(restinio::http_field::content_type,
-                       "text/json; charset=utf-8")
-        .set_body(j.dump())
-        .done();
-    return restinio::request_accepted();
-  });
-
-  router->http_get("/api/beat-detector/status", [this](auto req, auto) {
-    json j;
-    j["is_running"] = beat_detector_.is_running();
-
-    init_resp(req->create_response())
-        .append_header(restinio::http_field::content_type,
-                       "text/json; charset=utf-8")
-        .set_body(j.dump())
-        .done();
-    return restinio::request_accepted();
-  });
-
-  router->http_get("/api/tempo", [this](auto req, auto) {
-    // create an empty structure (null)
-    tempo_ref_t tr = state_manager_.get_tempo_ref();
-
-    json j;
-
-    // to an object)
-    j["tempo"] = tr.tempo;
-    j["time_ref"] = tr.beat_time_ref;
-    // j["tv_sec"] = tv_sec;
-    // j["tv_nsec"] = tv_nsec;
-
-    init_resp(req->create_response())
-        .append_header(restinio::http_field::content_type,
-                       "text/json; charset=utf-8")
-        .set_body(j.dump())
-        .done();
-
-    return restinio::request_accepted();
-  });
-
-  router->http_post(
-      "/api/update-program", [](const auto &req, const auto &params) {
-        // create an empty structure (null)
-        json body = json::parse(req->body());
-
-        json resp_body;
-        // to an object)
-        resp_body["message"] =
-            "Update program to " + body["programId"].get<std::string>();
-
-        init_resp(req->create_response())
-            .append_header(restinio::http_field::content_type,
-                           "text/json; charset=utf-8")
-            .set_body(resp_body.dump())
-            .done();
-
-        return restinio::request_accepted();
-      });
-
-  router->http_get("/api/log", [this](const auto &req, const auto &params) {
-    init_resp(req->create_response())
-        .append_header(restinio::http_field::content_type,
-                       "text/json; charset=utf-8")
-        .set_body(logger_.log_tail().dump())
-        .done();
-
-    return restinio::request_accepted();
-  });
+  router->http_get("/api/log", by_api_handler(&APIHandler::on_log));
 
   // GET request to homepage.
-  router->http_get(
-      R"(/:path(.*)\.:ext(.*))", restinio::path2regex::options_t{}.strict(true),
-      [server_root_dir](auto req, auto params) {
-        auto path = req->header().path();
-
-        if (std::string::npos == path.find("..")) {
-          // A nice path.
-
-          const auto file_path =
-              server_root_dir + std::string{path.data(), path.size()};
-
-          try {
-            auto sf = restinio::sendfile(file_path);
-            auto modified_at =
-                restinio::make_date_field_value(sf.meta().last_modified_at());
-
-            auto expires_at = restinio::make_date_field_value(
-                std::chrono::system_clock::now() + std::chrono::hours(24 * 7));
-
-            return req->create_response()
-                .append_header(restinio::http_field::server, "RESTinio")
-                .append_header_date_field()
-                .append_header(restinio::http_field::last_modified,
-                               std::move(modified_at))
-                .append_header(restinio::http_field::expires,
-                               std::move(expires_at))
-                .append_header(restinio::http_field::content_type,
-                               content_type_by_file_extention(params["ext"]))
-                .set_body(std::move(sf))
-                .done();
-          } catch (const std::exception &) {
-            return req->create_response(restinio::status_not_found())
-                .append_header_date_field()
-                .connection_close()
-                .done();
-          }
-        } else {
-          // Bad path.
-          return req->create_response(restinio::status_forbidden())
-              .append_header_date_field()
-              .connection_close()
-              .done();
-        }
-      });
+  router->http_get(R"(/:path(.*)\.:ext(.*))",
+                   restinio::path2regex::options_t{}.strict(true),
+                   by_file_handler(&FileHandler::on_file_request));
 
   // GET request to homepage.
-  router->http_get("/", [](auto req, auto) {
-    return req->create_response(restinio::status_temporary_redirect())
-        .append_header(restinio::http_field::location, "/index.html")
-        .append_header_date_field()
-        .connection_close()
-        .done();
-  });
+  router->http_get("/", by_file_handler(&FileHandler::on_root_request));
 
   router->non_matched_request_handler([](auto req) {
     if (restinio::http_method_get() == req->header().method())
@@ -213,8 +79,7 @@ auto HTTPServer::server_handler(const std::string &root_dir) {
   return router;
 }
 
-HTTPServer::HTTPServer(asio::io_context &io_context,
-                       const http_server_parameters_t &http_server_parameters,
+HTTPServer::HTTPServer(const http_server_parameters_t &http_server_parameters,
                        StateManager &state_manager, Logger &logger,
                        beat_detector::BeatDetector &beat_detector)
     : state_manager_{state_manager}, logger_{logger},
@@ -226,10 +91,9 @@ HTTPServer::HTTPServer(asio::io_context &io_context,
   SPDLOG_INFO("Starting HTTP server, listening on: {}:{}",
               http_server_parameters.address, http_server_parameters.port);
 
-  using traits_t = restinio::single_thread_tls_traits_t<
-      restinio::asio_timer_manager_t,
-      // restinio::null_logger_t,
-      restinio::single_threaded_ostream_logger_t, router_t>;
+  using traits_t = restinio::tls_traits_t<restinio::asio_timer_manager_t,
+                                          //  restinio::shared_ostream_logger_t,
+                                          restinio::null_logger_t, router_t>;
 
   // Since RESTinio supports both stand-alone ASIO and boost::ASIO
   // we specify an alias for a concrete asio namesace.
@@ -261,13 +125,13 @@ HTTPServer::HTTPServer(asio::io_context &io_context,
 
   tls_context.use_tmp_dh_file(dh_params_file_path());
 
-  restinio::run(io_context, restinio::on_this_thread<traits_t>()
-                                .address(http_server_parameters.address)
-                                .port(http_server_parameters.port)
-                                .request_handler(server_handler(
-                                    http_server_parameters.root_dir))
-                                .read_next_http_message_timelimit(10s)
-                                .write_http_response_timelimit(1s)
-                                .handle_request_timeout(1s)
-                                .tls_context(std::move(tls_context)));
+  restinio::run(
+      restinio::on_this_thread<traits_t>()
+          .address(http_server_parameters.address)
+          .port(http_server_parameters.port)
+          .request_handler(server_handler(http_server_parameters.root_dir))
+          .read_next_http_message_timelimit(10s)
+          .write_http_response_timelimit(1s)
+          .handle_request_timeout(1s)
+          .tls_context(std::move(tls_context)));
 }

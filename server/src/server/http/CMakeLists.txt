@@ -1,4 +1,8 @@
-add_library(beatled_http_server STATIC http_server.cpp)
+add_library(beatled_http_server STATIC 
+  http_server.cpp
+  api_handler.cpp 
+  file_handler.cpp
+)
 
 target_link_libraries(beatled_http_server PUBLIC 
   asio asio::asio 

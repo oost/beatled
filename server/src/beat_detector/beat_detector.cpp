@@ -6,8 +6,8 @@
 #include <spdlog/spdlog.h>
 #include <sys/time.h>
 
-#include "audio_exception.hpp"
-#include "audio_input.hpp"
+#include "./audio_exception.hpp"
+#include "./audio_input.hpp"
 #include "beat_detector/beat_detector.hpp"
 #include "state_manager/clock.hpp"
 #include "state_manager/state_manager.hpp"

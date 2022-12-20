@@ -11,7 +11,7 @@ BeatledApplication::BeatledApplication(const BeatledConfig &beatled_config)
 
 void BeatledApplication::start() {
 
-  start_beat_detector();
+  // start_beat_detector();
   server_->run();
   SPDLOG_INFO("Stopped servers. Waiting for beat detection thread.");
   beat_detector_.stop_blocking();

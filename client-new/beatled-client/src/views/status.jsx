@@ -11,11 +11,15 @@ import {
   CardBody,
   CardFooter,
   Table,
+  Input,
+  FormGroup,
+  Label,
 } from "reactstrap";
 import { FormattedNumber } from "react-intl";
 
 import BeatChart from "../components/status/BeatChart";
 import { format } from "date-fns";
+import { ArrowClockwise } from "react-bootstrap-icons";
 
 // import BeatChart from "../components/status/BeatChart";
 
@@ -40,7 +44,12 @@ const props = [
   {
     label: "Beat Detector",
     key: "beat_detector",
-    format: (v) => (v ? "On" : "Off"),
+    format: (v) => (
+      <FormGroup switch disabled>
+        <Input type="switch" checked={v} onChange={() => {}} />
+        <Label check>Default switch checkbox input</Label>
+      </FormGroup>
+    ),
   },
   {
     label: "Broadcaster",
@@ -60,7 +69,7 @@ const props = [
   {
     label: "Message",
     key: "message",
-    format: (v) => (v ? "On" : "Off"),
+    format: (v) => v,
   },
 ];
 
@@ -86,7 +95,7 @@ export async function action({ request, params }) {
   return true;
 }
 
-export default function Status() {
+export default function StatusPage() {
   const fetcher = useFetcher();
   const statusData = useLoaderData();
 
@@ -109,12 +118,12 @@ export default function Status() {
       />
       <div className="content">
         <Row>
-          <Col xs={12} md={4}>
-            <Card className="card-chart">
-              <CardHeader>
-                {/* <h5 className="card-category">Status</h5> */}
-                <CardTitle tag="h4">Beatled Status</CardTitle>
-                <fetcher.Form method="post">
+          <Col xs={12} md={6}>
+            <fetcher.Form method="post">
+              <Card className="card-chart">
+                <CardHeader>
+                  {/* <h5 className="card-category">Status</h5> */}
+                  <CardTitle tag="h4">Beatled Status</CardTitle>
                   <div
                     onClick={(event) => {
                       fetcher.submit();
@@ -127,35 +136,63 @@ export default function Status() {
                       aria-expanded="true"
                       className="btn-round btn-outline-default btn-icon btn btn-default"
                     >
-                      <i className="now-ui-icons arrows-1_refresh-69" />
+                      <ArrowClockwise />
                     </button>
                   </div>
-                </fetcher.Form>
+                </CardHeader>
+                <CardBody>
+                  <Table responsive>
+                    <tbody>
+                      {props.map((prop) => {
+                        return (
+                          <tr key={prop.key}>
+                            <th>{prop.label}</th>
+                            <td>{prop.format(data[prop.key])}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </Table>
+                </CardBody>
+                <CardFooter>
+                  <div className="stats"></div>
+                </CardFooter>
+              </Card>
+            </fetcher.Form>
+          </Col>
+
+          <Col xs={12} md={6}>
+            <Card className="card-chart">
+              <CardHeader>
+                <CardTitle tag="h4">Beat History</CardTitle>
               </CardHeader>
               <CardBody>
-                <Table responsive>
-                  <tbody>
-                    {props.map((prop) => {
-                      return (
-                        <tr key={prop.key}>
-                          <th>{prop.label}</th>
-                          <td>{prop.format(data[prop.key])}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </Table>
+                <BeatChart historyData={historyData} />
               </CardBody>
               <CardFooter>
-                <div className="stats"></div>
+                <div className="stats">
+                  <i className="now-ui-icons arrows-1_refresh-69" /> Just
+                  Updated
+                </div>
               </CardFooter>
             </Card>
           </Col>
-
-          <Col xs={12} md={4}>
-            <BeatChart historyData={historyData} />
-          </Col>
         </Row>
+        <FormGroup switch disabled>
+          <Input type="switch" checked={true} onChange={() => {}} />
+          <Label check>Default switch checkbox input</Label>
+        </FormGroup>
+        <div className="form-check form-switch">
+          <input
+            className="form-check-input"
+            type="checkbox"
+            role="switch"
+            id="flexSwitchCheckDefault"
+          />
+          <label className="form-check-label" htmlFor="flexSwitchCheckDefault">
+            Default switch checkbox input
+          </label>
+        </div>
       </div>
     </>
   );

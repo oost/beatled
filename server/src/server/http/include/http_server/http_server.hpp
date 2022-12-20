@@ -16,8 +16,7 @@ namespace server {
 
 class HTTPServer {
 public:
-  HTTPServer(asio::io_context &io_context,
-             const http_server_parameters_t &http_server_parameters,
+  HTTPServer(const http_server_parameters_t &http_server_parameters,
              StateManager &state_manager, Logger &logger,
              beat_detector::BeatDetector &beat_detector);
 

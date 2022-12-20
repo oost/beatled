@@ -84,9 +84,8 @@ void Server::run() {
         state_manager_);
   }
   if (server_parameters_.start_http_server) {
-    http_server =
-        std::make_unique<HTTPServer>(io_context_, server_parameters_.http,
-                                     state_manager_, logger_, beat_detector_);
+    http_server = std::make_unique<HTTPServer>(
+        server_parameters_.http, state_manager_, logger_, beat_detector_);
   }
 
   SPDLOG_INFO("Waiting for threads to join");
