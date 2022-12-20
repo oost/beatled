@@ -17,20 +17,29 @@
 */
 /*eslint-disable*/
 import React from "react";
-import { NavLink } from "react-router-dom";
+import { useLocation, NavLink } from "react-router-dom";
 import { Nav } from "reactstrap";
+
 // javascript plugin used to create scrollbars on windows
 import PerfectScrollbar from "perfect-scrollbar";
 
 import logo from "./logo-white.svg";
+import { GearWideConnected } from "react-bootstrap-icons";
 
 var ps;
 
-function Sidebar(props) {
+const SIDEBAR_ROUTES = [
+  { name: "Status", path: "/status", icon:  },
+  { name: "Program", path: "/program" },
+  { name: "Log", path: "/log" },
+];
+
+function Sidebar({ backgroundColor }) {
+  const location = useLocation();
   const sidebar = React.useRef();
   // verifies if routeName is the one active (in browser input)
   const activeRoute = (routeName) => {
-    return props.location.pathname.indexOf(routeName) > -1 ? "active" : "";
+    return location.pathname.indexOf(routeName) > -1 ? "active" : "";
   };
   React.useEffect(() => {
     if (navigator.platform.indexOf("Win") > -1) {
@@ -46,7 +55,7 @@ function Sidebar(props) {
     };
   });
   return (
-    <div className="sidebar" data-color={props.backgroundColor}>
+    <div className="sidebar" data-color={backgroundColor}>
       <div className="logo">
         <a href="/" className="simple-text logo-mini" target="_blank">
           <div className="logo-img">
@@ -59,6 +68,18 @@ function Sidebar(props) {
       </div>
       <div className="sidebar-wrapper" ref={sidebar}>
         <Nav>
+          {SIDEBAR_ROUTES.map((route) => {
+            return (
+              <li className={activeRoute(route.path)} key={route.path}>
+                <NavLink to={route.path} className="nav-link">
+                  <p>
+                    <GearWideConnected /> {route.name}
+                  </p>
+                </NavLink>
+              </li>
+            );
+          })}
+
           {/* {props.routes.map((prop, key) => {
             if (prop.redirect) return null;
             return (
