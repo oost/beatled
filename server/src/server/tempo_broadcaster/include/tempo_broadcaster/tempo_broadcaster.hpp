@@ -23,7 +23,7 @@ public:
   void stop_sync() override;
 
 private:
-  const char *SERVICE_NAME = "HTTP Server";
+  const char *SERVICE_NAME = "Tempo Broadcaster";
   const char *service_name() const override { return SERVICE_NAME; }
 
   void do_broadcast_beat();

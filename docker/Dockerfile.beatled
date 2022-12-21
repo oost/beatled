@@ -35,6 +35,6 @@ RUN npm install && npm run build
 FROM scratch
 WORKDIR / 
 COPY --from=build-server /home/final/bin server
-COPY --from=build-client /home/build client
+COPY --from=build-client /home/dist client
 COPY scripts scripts
 

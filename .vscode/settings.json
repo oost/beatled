@@ -8,7 +8,7 @@
       // "--start-broadcast",
       "--root-dir",
       // "${workspaceFolder}/client/build"
-      "${workspaceFolder}/client-new/beatled-client/dist",
+      "${workspaceFolder}/client/dist",
       "--certs-dir",
       "${workspaceFolder}/server/certs"
       // "track"

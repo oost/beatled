@@ -22,11 +22,14 @@ UDPServer::UDPServer(const std::string &id, asio::io_context &io_context,
     : ServiceControllerInterface{id},
       socket_{io_context, udp::endpoint(udp::v4(), server_parameters.port)},
       state_manager_{state_manager} {
-  SPDLOG_INFO("Creating {}, listening on: {}", name(),
-              fmt::streamed(socket_.local_endpoint()));
+  SPDLOG_INFO("Creating {}", name());
 }
 
-void UDPServer::start_sync() { do_receive(); }
+void UDPServer::start_sync() {
+  SPDLOG_INFO("{}: listening on {}", name(),
+              fmt::streamed(socket_.local_endpoint()));
+  do_receive();
+}
 void UDPServer::stop_sync() { socket_.cancel(); }
 
 void UDPServer::do_receive() {

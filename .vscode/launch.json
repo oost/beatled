@@ -9,7 +9,7 @@
       "request": "launch",
       "type": "chrome",
       "url": "http://localhost:5173",
-      "webRoot": "${workspaceFolder}/client-new/beatled-client"
+      "webRoot": "${workspaceFolder}/client"
     },
     {
       "name": "(lldb) Launch",
@@ -20,7 +20,7 @@
         "--start-http",
         "--root-dir",
         // "${workspaceFolder}/client/build"
-        "${workspaceFolder}/client-new/beatled-client/dist",
+        "${workspaceFolder}/client/dist",
         "--certs-dir",
         "${workspaceFolder}/server/certs"
       ],

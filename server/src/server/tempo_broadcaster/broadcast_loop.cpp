@@ -34,7 +34,7 @@ BroadcastLoop::~BroadcastLoop() {
 
 void BroadcastLoop::do_broadcast() {
   ResponseBuffer::Ptr response_buffer_ptr = prepare_buffer_();
-  SPDLOG_INFO("Broadcasting: {::x}", *response_buffer_ptr);
+  SPDLOG_DEBUG("Broadcasting: {::x}", *response_buffer_ptr);
 
   socket_->async_send_to(
       asio::buffer(response_buffer_ptr->data(), response_buffer_ptr->size()),
@@ -45,8 +45,6 @@ void BroadcastLoop::do_broadcast() {
 
           return;
         }
-
-        SPDLOG_INFO("Bytes sent={}", l);
 
         // Need to check if we haven't passed beyond next time.
         auto next_time = timer_.expiry();

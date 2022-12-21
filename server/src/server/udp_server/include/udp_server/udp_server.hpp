@@ -21,7 +21,7 @@ public:
   void stop_sync() override;
 
 private:
-  const char *SERVICE_NAME = "HTTP Server";
+  const char *SERVICE_NAME = "UDP Server";
   const char *service_name() const override { return SERVICE_NAME; }
 
   void do_receive();

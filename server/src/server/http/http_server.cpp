@@ -79,11 +79,9 @@ HTTPServer::HTTPServer(const std::string &id,
     : ServiceControllerInterface{id}, service_manager_{service_manager},
       io_context_{io_context}, logger_{logger},
       certs_dir_{http_server_parameters.certs_dir} {
+  SPDLOG_INFO("Creating {}", name());
 
   using std::literals::chrono_literals::operator""s;
-
-  SPDLOG_INFO("Creating HTTP server, listening on: {}:{}",
-              http_server_parameters.address, http_server_parameters.port);
 
   using traits_t = restinio::tls_traits_t<restinio::asio_timer_manager_t,
                                           //  restinio::shared_ostream_logger_t,
@@ -119,16 +117,8 @@ HTTPServer::HTTPServer(const std::string &id,
 
   tls_context.use_tmp_dh_file(dh_params_file_path());
 
-  // restinio::run(io_context_, restinio::on_this_thread<traits_t>()
-  //                                .address(http_server_parameters.address)
-  //                                .port(http_server_parameters.port)
-  //                                .request_handler(server_handler(
-  //                                    http_server_parameters.root_dir))
-  //                                .read_next_http_message_timelimit(10s)
-  //                                .write_http_response_timelimit(1s)
-  //                                .handle_request_timeout(1s)
-  //                                .tls_context(std::move(tls_context)));
-
+  SPDLOG_INFO("{}: listening on {}:{}", name(), http_server_parameters.address,
+              http_server_parameters.port);
   restinio_server_ = std::make_unique<http_server_t>(
       restinio::external_io_context(io_context),
       settings_t{}
@@ -142,12 +132,10 @@ HTTPServer::HTTPServer(const std::string &id,
 }
 
 void HTTPServer::start_sync() {
-  SPDLOG_ERROR("Need to refactor to support starting and stopping");
 
   asio::post(io_context_, [&] { restinio_server_->open_sync(); });
 }
 
 void HTTPServer::stop_sync() {
-  SPDLOG_ERROR("Need to refactor to support starting and stopping");
   asio::post(io_context_, [&] { restinio_server_->close_sync(); });
 }

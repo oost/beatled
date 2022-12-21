@@ -2,13 +2,18 @@
 #define CORE__SERVICE_INTERFACE_H
 
 #include <atomic>
-#include <fmt/format.h>
+#include <memory>
 #include <mutex>
+
+#include <fmt/format.h>
 #include <spdlog/spdlog.h>
 
 class ServiceControllerInterface {
 public:
+  using Ptr = std::unique_ptr<ServiceControllerInterface>;
+
   ServiceControllerInterface(const std::string &id) : id_{id} {}
+
   virtual ~ServiceControllerInterface() =
       default; // generate a virtual default destructor
 

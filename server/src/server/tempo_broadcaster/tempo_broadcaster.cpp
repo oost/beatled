@@ -27,7 +27,6 @@ TempoBroadcaster::TempoBroadcaster(
           asio::ip::make_address_v4(broadcasting_server_parameters.address)),
       program_idx_(0), state_manager_{state_manager},
       broadcasting_server_parameters_{broadcasting_server_parameters} {
-
   SPDLOG_INFO("Creating {}", name());
 
   socket_->open(udp::v4());
@@ -69,6 +68,6 @@ void TempoBroadcaster::start_sync() {
 }
 
 void TempoBroadcaster::stop_sync() {
-  loops_.clear();
   socket_->cancel();
+  loops_.clear();
 }

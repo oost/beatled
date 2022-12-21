@@ -1,5 +1,6 @@
 #!/bin/sh
 
+set -e
 set -x
 
 sudo cp beat-server/scripts/beat-server.service /etc/systemd/system

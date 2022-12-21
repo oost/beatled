@@ -29,7 +29,7 @@ COPY server/cmake/arm64-linux-custom.cmake /tmp/vcpkg/triplets
 ENV VCPKG_HOME=/tmp/vcpkg
 ENV TARGET_TRIPLET=arm64-linux-custom
 
-RUN ${VCPKG_HOME}/vcpkg install --triplet=${TARGET_TRIPLET} fmt spdlog restinio asio nlohmann-json date fftw3 portaudio bfgroup-lyra audiofile libsamplerate catch2 kissfft 
+RUN ${VCPKG_HOME}/vcpkg install --triplet=${TARGET_TRIPLET} fmt spdlog restinio asio nlohmann-json date fftw3 portaudio bfgroup-lyra audiofile libsamplerate catch2 kissfft openssl 
 # alsa portaudio 
 
 # RUN ${VCPKG_HOME}/vcpkg install --triplet=${TARGET_TRIPLET}-dynamic portaudio
