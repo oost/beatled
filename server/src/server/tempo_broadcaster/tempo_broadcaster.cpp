@@ -22,7 +22,6 @@ TempoBroadcaster::TempoBroadcaster(
       alarm_period_(alarm_period), program_alarm_period_(program_alarm_period),
       count_(0), program_timer_(asio::high_resolution_timer(
                      io_context_, program_alarm_period_)),
-      timer_(asio::high_resolution_timer(io_context_, alarm_period)),
       socket_(std::make_shared<asio::ip::udp::socket>(io_context)),
       broadcast_address_(
           asio::ip::make_address_v4(broadcasting_server_parameters.address)),
@@ -70,6 +69,6 @@ void TempoBroadcaster::start_sync() {
 }
 
 void TempoBroadcaster::stop_sync() {
-  socket_->cancel();
   loops_.clear();
+  socket_->cancel();
 }

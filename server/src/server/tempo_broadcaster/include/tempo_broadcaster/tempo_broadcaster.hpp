@@ -36,7 +36,6 @@ private:
   StateManager &state_manager_;
   asio::io_context &io_context_;
 
-  asio::high_resolution_timer timer_;
   std::chrono::nanoseconds alarm_period_;
 
   asio::high_resolution_timer program_timer_;

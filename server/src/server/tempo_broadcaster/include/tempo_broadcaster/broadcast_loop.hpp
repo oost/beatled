@@ -16,6 +16,7 @@ public:
       std::chrono::nanoseconds alarm_period,
       std::function<ResponseBuffer::Ptr(void)> prepare_buffer,
       const broadcasting_server_parameters_t &broadcasting_server_parameters);
+  ~BroadcastLoop();
 
 private:
   void do_broadcast();
