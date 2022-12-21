@@ -13,11 +13,12 @@ using asio::ip::udp;
 using namespace server;
 
 TempoBroadcaster::TempoBroadcaster(
-    asio::io_context &io_context, std::chrono::nanoseconds alarm_period,
+    const std::string &id, asio::io_context &io_context,
+    std::chrono::nanoseconds alarm_period,
     std::chrono::nanoseconds program_alarm_period,
     const broadcasting_server_parameters_t &broadcasting_server_parameters,
     StateManager &state_manager)
-    : ServiceControllerInterface{"Tempo Broadcaster"}, io_context_(io_context),
+    : ServiceControllerInterface{id}, io_context_(io_context),
       alarm_period_(alarm_period), program_alarm_period_(program_alarm_period),
       count_(0), program_timer_(asio::high_resolution_timer(
                      io_context_, program_alarm_period_)),
@@ -28,7 +29,7 @@ TempoBroadcaster::TempoBroadcaster(
       program_idx_(0), state_manager_{state_manager},
       broadcasting_server_parameters_{broadcasting_server_parameters} {
 
-  SPDLOG_INFO("Starting TempoBroadcaster ");
+  SPDLOG_INFO("Creating {}", name());
 
   socket_->open(udp::v4());
   if (!socket_->is_open()) {
@@ -39,7 +40,7 @@ TempoBroadcaster::TempoBroadcaster(
   socket_->set_option(asio::socket_base::broadcast(true));
 
   // socket_->bind(udp::endpoint(broadcast_address_, port_));
-  SPDLOG_INFO("TempoBroadcaster broadcasting on UDP through {} {}",
+  SPDLOG_INFO("{} broadcasting on UDP through {} {}", name(),
               fmt::streamed(socket_->local_endpoint()),
               fmt::streamed(broadcast_address_));
 

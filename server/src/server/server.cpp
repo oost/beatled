@@ -46,7 +46,7 @@ Server::Server(const server_parameters_t &server_parameters)
 }
 
 void Server::run() {
-  SPDLOG_INFO("Starting server");
+  SPDLOG_INFO("Running server");
   std::exception_ptr exception_caught;
 
   // Create a pool of threads to run all of the io_contexts.

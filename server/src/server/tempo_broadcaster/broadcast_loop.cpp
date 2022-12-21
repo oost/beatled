@@ -21,7 +21,7 @@ BroadcastLoop::BroadcastLoop(
       broadcast_address_{udp::endpoint(
           asio::ip::make_address_v4(broadcasting_server_parameters.address),
           broadcasting_server_parameters.port)} {
-  SPDLOG_INFO("Starting Broadcast loop ");
+  SPDLOG_INFO("Creating Broadcast loop ");
 
   do_broadcast();
 }

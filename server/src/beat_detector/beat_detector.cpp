@@ -15,9 +15,10 @@
 using namespace beat_detector;
 using namespace std::chrono_literals;
 
-BeatDetector::BeatDetector(StateManager &state_manager, uint32_t sample_rate)
-    : ServiceControllerInterface{"Beat Detector"},
-      state_manager_{state_manager}, sample_rate_{sample_rate} {}
+BeatDetector::BeatDetector(const std::string &id, StateManager &state_manager,
+                           uint32_t sample_rate)
+    : ServiceControllerInterface{id}, state_manager_{state_manager},
+      sample_rate_{sample_rate} {}
 
 void BeatDetector::stop_sync() {
   SPDLOG_INFO("Requesting Beat Detector to stop");

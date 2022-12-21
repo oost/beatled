@@ -38,14 +38,8 @@ auto HTTPServer::server_handler(const std::string &root_dir) {
 
   router->http_get("/api/status", by_api_handler(&APIHandler::on_status));
 
-  router->http_get("/api/beat-detector/start",
-                   by_api_handler(&APIHandler::on_beat_detector_start));
-
-  router->http_get("/api/beat-detector/stop",
-                   by_api_handler(&APIHandler::on_beat_detector_stop));
-
-  router->http_get("/api/beat-detector/status",
-                   by_api_handler(&APIHandler::on_beat_detector_status));
+  router->http_post("/api/service/control",
+                    by_api_handler(&APIHandler::on_service_control));
 
   router->http_get("/api/tempo", by_api_handler(&APIHandler::on_tempo));
 
@@ -78,16 +72,17 @@ auto HTTPServer::server_handler(const std::string &root_dir) {
   return router;
 }
 
-HTTPServer::HTTPServer(const http_server_parameters_t &http_server_parameters,
+HTTPServer::HTTPServer(const std::string &id,
+                       const http_server_parameters_t &http_server_parameters,
                        ServiceManagerInterface &service_manager,
                        asio::io_context &io_context, Logger &logger)
-    : ServiceControllerInterface{"HTTP Server"},
-      service_manager_{service_manager}, io_context_{io_context},
-      logger_{logger}, certs_dir_{http_server_parameters.certs_dir} {
+    : ServiceControllerInterface{id}, service_manager_{service_manager},
+      io_context_{io_context}, logger_{logger},
+      certs_dir_{http_server_parameters.certs_dir} {
 
   using std::literals::chrono_literals::operator""s;
 
-  SPDLOG_INFO("Starting HTTP server, listening on: {}:{}",
+  SPDLOG_INFO("Creating HTTP server, listening on: {}:{}",
               http_server_parameters.address, http_server_parameters.port);
 
   using traits_t = restinio::tls_traits_t<restinio::asio_timer_manager_t,

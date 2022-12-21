@@ -13,7 +13,8 @@ namespace server {
 class TempoBroadcaster : public ServiceControllerInterface {
 public:
   TempoBroadcaster(
-      asio::io_context &io_context, std::chrono::nanoseconds alarm_period,
+      const std::string &id, asio::io_context &io_context,
+      std::chrono::nanoseconds alarm_period,
       std::chrono::nanoseconds program_alarm_period,
       const broadcasting_server_parameters_t &broadcasting_server_parameters,
       StateManager &state_manager);
@@ -22,6 +23,9 @@ public:
   void stop_sync() override;
 
 private:
+  const char *SERVICE_NAME = "HTTP Server";
+  const char *service_name() const override { return SERVICE_NAME; }
+
   void do_broadcast_beat();
   void do_broadcast_program();
   void do_broadcast(const char *sendBuf, uint16_t sendBuf_l,

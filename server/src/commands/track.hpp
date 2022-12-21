@@ -42,7 +42,7 @@ struct track_beat_command {
       constexpr int sample_rate = 41000;
       StateManager state_manager;
 
-      BeatDetector bd{state_manager, sample_rate};
+      BeatDetector bd{"beat-detector", state_manager, sample_rate};
 
       bd.start();
       SPDLOG_INFO("Started Beat Detector");

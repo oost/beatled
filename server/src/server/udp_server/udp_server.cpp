@@ -16,13 +16,13 @@
 using namespace server;
 using asio::ip::udp;
 
-UDPServer::UDPServer(asio::io_context &io_context,
+UDPServer::UDPServer(const std::string &id, asio::io_context &io_context,
                      const udp_server_parameters_t &server_parameters,
                      StateManager &state_manager)
-    : ServiceControllerInterface{"UDP Server"},
+    : ServiceControllerInterface{id},
       socket_{io_context, udp::endpoint(udp::v4(), server_parameters.port)},
       state_manager_{state_manager} {
-  SPDLOG_INFO("Starting UDP server, listening on: {}",
+  SPDLOG_INFO("Creating {}, listening on: {}", name(),
               fmt::streamed(socket_.local_endpoint()));
 }
 

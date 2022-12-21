@@ -18,12 +18,10 @@ public:
   APIHandler(ServiceManagerInterface &service_manager, Logger &logger);
 
   req_status_t on_status(const req_handle_t &req, route_params_t params);
-  req_status_t on_beat_detector_start(const req_handle_t &req,
-                                      route_params_t params);
-  req_status_t on_beat_detector_stop(const req_handle_t &req,
-                                     route_params_t params);
-  req_status_t on_beat_detector_status(const req_handle_t &req,
-                                       route_params_t params);
+
+  req_status_t on_service_control(const req_handle_t &req,
+                                  route_params_t params);
+
   req_status_t on_tempo(const req_handle_t &req, route_params_t params);
 
   req_status_t on_update_program(const req_handle_t &req,

@@ -16,11 +16,12 @@ APIHandler::req_status_t APIHandler::on_status(const req_handle_t &req,
 
   // to an object)
   j["message"] = "It's all good!";
-  j["http_server"] = service_manager_.http_server().is_running();
-  j["udp_server"] = service_manager_.udp_server().is_running();
-  j["broadcaster"] = service_manager_.temp_broadcaster().is_running();
-  j["beat_detector"] = service_manager_.beat_detector().is_running();
 
+  json status;
+  for (auto &&[first, second] : service_manager_.services()) {
+    status[second->id()] = second->is_running();
+  }
+  j["status"] = status;
   j["tempo"] = service_manager_.state_manager().get_tempo_ref().tempo;
 
   init_resp(req->create_response())
@@ -32,48 +33,50 @@ APIHandler::req_status_t APIHandler::on_status(const req_handle_t &req,
   return restinio::request_accepted();
 }
 
-APIHandler::req_status_t
-APIHandler::on_beat_detector_start(const req_handle_t &req,
-                                   route_params_t params) {
-  service_manager_.beat_detector().start();
-  json j;
-  j["OK"] = true;
+APIHandler::req_status_t APIHandler::on_service_control(const req_handle_t &req,
+                                                        route_params_t params) {
+  json response_body;
 
-  init_resp(req->create_response())
-      .append_header(restinio::http_field::content_type,
-                     "text/json; charset=utf-8")
-      .set_body(j.dump())
-      .done();
-  return restinio::request_accepted();
-}
+  try {
+    json request_body = json::parse(req->body());
+    std::string service_name = request_body["id"].get<std::string>();
+    bool requested_status = request_body["status"].get<bool>();
+    ServiceControllerInterface *service =
+        service_manager_.service(service_name);
 
-APIHandler::req_status_t
-APIHandler::on_beat_detector_stop(const req_handle_t &req,
-                                  route_params_t params) {
-  service_manager_.beat_detector().stop();
-  json j;
-  j["OK"] = true;
+    if (service) {
+      if (requested_status) {
+        service->start();
+      } else {
+        service->stop();
+      }
+      auto resp = init_resp(req->create_response())
+                      .append_header(restinio::http_field::content_type,
+                                     "text/json; charset=utf-8");
+      response_body["status"] = service->is_running();
 
-  init_resp(req->create_response())
-      .append_header(restinio::http_field::content_type,
-                     "text/json; charset=utf-8")
-      .set_body(j.dump())
-      .done();
-  return restinio::request_accepted();
-}
+      resp.set_body(response_body.dump()).done();
+      return restinio::request_accepted();
 
-APIHandler::req_status_t
-APIHandler::on_beat_detector_status(const req_handle_t &req,
-                                    route_params_t params) {
-  json j;
-  j["is_running"] = service_manager_.beat_detector().is_running();
+    } else {
+      response_body["error"] = "Not found";
 
-  init_resp(req->create_response())
-      .append_header(restinio::http_field::content_type,
-                     "text/json; charset=utf-8")
-      .set_body(j.dump())
-      .done();
-  return restinio::request_accepted();
+      return req->create_response(restinio::status_not_found())
+          .append_header_date_field()
+          .set_body(response_body.dump())
+          .connection_close()
+          .done();
+    }
+  } catch (const std::exception &e) {
+    response_body["error"] = "Error";
+
+    SPDLOG_ERROR("Error with request: {}", e.what());
+    return req->create_response(restinio::status_bad_request())
+        .append_header_date_field()
+        .set_body(response_body.dump())
+        .connection_close()
+        .done();
+  }
 }
 
 APIHandler::req_status_t APIHandler::on_tempo(const req_handle_t &req,

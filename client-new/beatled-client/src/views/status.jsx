@@ -1,6 +1,6 @@
 import { useLoaderData, useFetcher } from "react-router-dom";
 import { useInterval } from "../hooks/interval";
-import { getStatus, startBeatDetector, stopBeatDetector } from "../lib/status";
+import { getStatus, serviceControl } from "../lib/status";
 import PanelHeader from "../components/PanelHeader";
 import {
   Row,
@@ -20,55 +20,6 @@ import { FormattedNumber } from "react-intl";
 import BeatChart from "../components/status/BeatChart";
 import { format } from "date-fns";
 import { HiOutlineRefresh } from "react-icons/hi";
-
-const props = [
-  { label: "Status", key: "status", format: (v) => v },
-  {
-    label: "Tempo",
-    key: "tempo",
-    format: (v) => (
-      <FormattedNumber
-        value={v}
-        minimumFractionDigits={1}
-        maximumFractionDigits={2}
-      />
-    ),
-  },
-  {
-    label: "Last update",
-    key: "x",
-    format: (v) => format(v, "h:mm:ss a"),
-  },
-  {
-    label: "Beat Detector",
-    key: "beat_detector",
-    format: (v, onChange) => (
-      <FormGroup switch disabled>
-        <Input type="switch" checked={v} onChange={onChange} />
-      </FormGroup>
-    ),
-  },
-  {
-    label: "Broadcaster",
-    key: "broadcaster",
-    format: (v) => (v ? "On" : "Off"),
-  },
-  {
-    label: "UDP Server",
-    key: "udp_server",
-    format: (v) => (v ? "On" : "Off"),
-  },
-  {
-    label: "HTTP Server",
-    key: "http_server",
-    format: (v) => (v ? "On" : "Off"),
-  },
-  {
-    label: "Message",
-    key: "message",
-    format: (v) => v,
-  },
-];
 
 const tempoHistory = [];
 const MAX_HISTORY = 30;
@@ -102,12 +53,8 @@ export default function StatusPage() {
     }
   }, 2 * 1000);
 
-  const onChange = async (e) => {
-    if (e.target.checked) {
-      await startBeatDetector();
-    } else {
-      await stopBeatDetector();
-    }
+  const toggleService = async (serviceId, status) => {
+    await serviceControl(serviceId, status);
 
     return fetcher.submit();
   };
@@ -150,14 +97,46 @@ export default function StatusPage() {
                 <CardBody>
                   <Table responsive>
                     <tbody>
-                      {props.map((prop) => {
-                        return (
-                          <tr key={prop.key}>
-                            <th>{prop.label}</th>
-                            <td>{prop.format(data[prop.key], onChange)}</td>
-                          </tr>
-                        );
-                      })}
+                      <tr>
+                        <th>Last update</th>
+                        <td>{format(data.x, "h:mm:ss a")}</td>
+                      </tr>
+
+                      <tr>
+                        <th>Tempo</th>
+                        <td>
+                          <FormattedNumber
+                            value={data.tempo}
+                            minimumFractionDigits={1}
+                            maximumFractionDigits={2}
+                          />
+                        </td>
+                      </tr>
+
+                      {data.status &&
+                        Object.entries(data.status).map(
+                          ([controllerId, controllerStatus]) => {
+                            return (
+                              <tr key={controllerId}>
+                                <th>{controllerId}</th>
+                                <td>
+                                  <FormGroup switch disabled>
+                                    <Input
+                                      type="switch"
+                                      checked={controllerStatus}
+                                      onChange={(e) =>
+                                        toggleService(
+                                          controllerId,
+                                          e.target.checked
+                                        )
+                                      }
+                                    />
+                                  </FormGroup>
+                                </td>
+                              </tr>
+                            );
+                          }
+                        )}
                     </tbody>
                   </Table>
                 </CardBody>

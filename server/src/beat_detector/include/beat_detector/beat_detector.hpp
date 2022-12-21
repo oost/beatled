@@ -10,14 +10,18 @@
 namespace beat_detector {
 class BeatDetector : public ServiceControllerInterface {
 public:
-  BeatDetector(StateManager &state_manager, uint32_t sample_rate);
+  BeatDetector(const std::string &id, StateManager &state_manager,
+               uint32_t sample_rate);
 
   void start_sync() override;
   void stop_sync() override;
   void stop_blocking();
 
 private:
+  const char *SERVICE_NAME = "Beat Detector";
   void do_detect_tempo();
+
+  const char *service_name() const override { return SERVICE_NAME; }
 
   std::future<void> bd_thread_future_;
   std::atomic_bool stop_requested_;

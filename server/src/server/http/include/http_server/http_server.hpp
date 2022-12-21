@@ -28,7 +28,8 @@ public:
   using http_server_t = restinio::http_server_t<traits_t>;
   using settings_t = restinio::server_settings_t<traits_t>;
 
-  HTTPServer(const http_server_parameters_t &http_server_parameters,
+  HTTPServer(const std::string &id,
+             const http_server_parameters_t &http_server_parameters,
              ServiceManagerInterface &service_manager,
              asio::io_context &io_context, Logger &logger);
 
@@ -36,6 +37,9 @@ public:
   void stop_sync() override;
 
 private:
+  const char *SERVICE_NAME = "HTTP Server";
+  const char *service_name() const override { return SERVICE_NAME; }
+
   std::filesystem::path certificate_file_path() {
     return certs_dir_ / "cert.pem";
   }

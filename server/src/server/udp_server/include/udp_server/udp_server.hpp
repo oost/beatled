@@ -13,7 +13,7 @@ namespace server {
 
 class UDPServer : public ServiceControllerInterface {
 public:
-  UDPServer(asio::io_context &io_context,
+  UDPServer(const std::string &id, asio::io_context &io_context,
             const udp_server_parameters_t &server_parameters,
             StateManager &state_manager);
 
@@ -21,6 +21,9 @@ public:
   void stop_sync() override;
 
 private:
+  const char *SERVICE_NAME = "HTTP Server";
+  const char *service_name() const override { return SERVICE_NAME; }
+
   void do_receive();
 
   asio::ip::udp::socket socket_;
