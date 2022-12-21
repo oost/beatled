@@ -2,7 +2,7 @@
 #include <iostream>
 #include <spdlog/spdlog.h>
 
-#include "state_manager/state_manager.hpp"
+#include "core/state_manager.hpp"
 
 StateManager::StateManager() {}
 

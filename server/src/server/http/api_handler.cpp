@@ -6,10 +6,8 @@
 using json = nlohmann::json;
 using namespace server;
 
-APIHandler::APIHandler(StateManager &state_manager, Logger &logger,
-                       beat_detector::BeatDetector &beat_detector)
-    : state_manager_{state_manager}, logger_{logger}, beat_detector_{
-                                                          beat_detector} {}
+APIHandler::APIHandler(ServiceManagerInterface &service_manager, Logger &logger)
+    : service_manager_{service_manager}, logger_{logger} {}
 
 APIHandler::req_status_t APIHandler::on_status(const req_handle_t &req,
                                                route_params_t params) {
@@ -18,11 +16,12 @@ APIHandler::req_status_t APIHandler::on_status(const req_handle_t &req,
 
   // to an object)
   j["message"] = "It's all good!";
-  j["http_server"] = false;
-  j["udp_server"] = false;
-  j["broadcaster"] = false;
-  j["beat_detector"] = beat_detector_.is_running();
-  j["tempo"] = state_manager_.get_tempo_ref().tempo;
+  j["http_server"] = service_manager_.http_server().is_running();
+  j["udp_server"] = service_manager_.udp_server().is_running();
+  j["broadcaster"] = service_manager_.temp_broadcaster().is_running();
+  j["beat_detector"] = service_manager_.beat_detector().is_running();
+
+  j["tempo"] = service_manager_.state_manager().get_tempo_ref().tempo;
 
   init_resp(req->create_response())
       .append_header(restinio::http_field::content_type,
@@ -36,7 +35,7 @@ APIHandler::req_status_t APIHandler::on_status(const req_handle_t &req,
 APIHandler::req_status_t
 APIHandler::on_beat_detector_start(const req_handle_t &req,
                                    route_params_t params) {
-  beat_detector_.run();
+  service_manager_.beat_detector().start();
   json j;
   j["OK"] = true;
 
@@ -51,7 +50,7 @@ APIHandler::on_beat_detector_start(const req_handle_t &req,
 APIHandler::req_status_t
 APIHandler::on_beat_detector_stop(const req_handle_t &req,
                                   route_params_t params) {
-  beat_detector_.request_stop();
+  service_manager_.beat_detector().stop();
   json j;
   j["OK"] = true;
 
@@ -67,7 +66,7 @@ APIHandler::req_status_t
 APIHandler::on_beat_detector_status(const req_handle_t &req,
                                     route_params_t params) {
   json j;
-  j["is_running"] = beat_detector_.is_running();
+  j["is_running"] = service_manager_.beat_detector().is_running();
 
   init_resp(req->create_response())
       .append_header(restinio::http_field::content_type,
@@ -80,7 +79,7 @@ APIHandler::on_beat_detector_status(const req_handle_t &req,
 APIHandler::req_status_t APIHandler::on_tempo(const req_handle_t &req,
                                               route_params_t params) {
   // create an empty structure (null)
-  tempo_ref_t tr = state_manager_.get_tempo_ref();
+  tempo_ref_t tr = service_manager_.state_manager().get_tempo_ref();
 
   json j;
 

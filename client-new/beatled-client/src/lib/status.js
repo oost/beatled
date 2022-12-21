@@ -16,3 +16,13 @@ export async function getStatus() {
   const res = await getEndpoint("/api/status");
   return res.json();
 }
+
+export async function startBeatDetector() {
+  const res = await getEndpoint("/api/beat-detector/start");
+  return res.json();
+}
+
+export async function stopBeatDetector() {
+  const res = await getEndpoint("/api/beat-detector/stop");
+  return res.json();
+}

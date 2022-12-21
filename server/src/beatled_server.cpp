@@ -24,7 +24,7 @@ int main(int argc, char const *argv[]) {
     if (!beatled_config.help()) {
       BeatledApplication app(beatled_config);
 
-      app.start();
+      app.run();
     }
   } catch (const std::exception &ex) {
     SPDLOG_ERROR("Caught exception: {}", ex.what());

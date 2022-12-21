@@ -14,6 +14,7 @@ target_link_libraries(beatled_server PUBLIC
   beatled_udp_server 
   beatled_tempo_broadcaster 
   beatled_logger
+  beatled_core
   beat_detector
 )
 

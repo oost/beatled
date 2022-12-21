@@ -19,13 +19,15 @@ using asio::ip::udp;
 UDPServer::UDPServer(asio::io_context &io_context,
                      const udp_server_parameters_t &server_parameters,
                      StateManager &state_manager)
-    : socket_{io_context, udp::endpoint(udp::v4(), server_parameters.port)},
+    : ServiceControllerInterface{"UDP Server"},
+      socket_{io_context, udp::endpoint(udp::v4(), server_parameters.port)},
       state_manager_{state_manager} {
   SPDLOG_INFO("Starting UDP server, listening on: {}",
               fmt::streamed(socket_.local_endpoint()));
-
-  do_receive();
 }
+
+void UDPServer::start_sync() { do_receive(); }
+void UDPServer::stop_sync() { socket_.cancel(); }
 
 void UDPServer::do_receive() {
   std::unique_ptr<UDPRequestBuffer> request_buffer_ptr =
@@ -67,15 +69,3 @@ void UDPServer::do_receive() {
         do_receive();
       });
 }
-
-// void UDPServer::send_response(const std::string &sendBuf,
-//                               const asio::ip::udp::endpoint &remote_endpoint)
-//                               {
-//   // TODO : Is this correct? Does the string need to be moved?
-//   SPDLOG_INFO("Sending: " << sendBuf << " to " << remote_endpoint <<
-//   std::endl;
-
-//   socket_.async_send_to(
-//       asio::buffer(sendBuf), remote_endpoint,
-//       [this](std::error_code /*ec*/, std::size_t /*bytes_sent*/) {});
-// }

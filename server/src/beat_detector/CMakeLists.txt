@@ -15,7 +15,7 @@ target_link_libraries(beat_detector
       FFTW3::fftw3 
       AudioFile 
       btrack
-      beatled_state_manager
+      beatled_core
       spdlog::spdlog
 )
 

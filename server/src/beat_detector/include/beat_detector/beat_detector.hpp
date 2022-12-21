@@ -4,17 +4,17 @@
 #include <asio.hpp>
 #include <atomic>
 
-#include "state_manager/state_manager.hpp"
+#include "core/interfaces/service_controller.hpp"
+#include "core/state_manager.hpp"
 
 namespace beat_detector {
-class BeatDetector {
+class BeatDetector : public ServiceControllerInterface {
 public:
   BeatDetector(StateManager &state_manager, uint32_t sample_rate);
 
-  void run();
-  void request_stop();
+  void start_sync() override;
+  void stop_sync() override;
   void stop_blocking();
-  bool is_running();
 
 private:
   void do_detect_tempo();

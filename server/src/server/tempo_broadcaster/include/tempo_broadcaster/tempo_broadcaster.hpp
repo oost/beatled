@@ -5,17 +5,21 @@
 #include <chrono>
 
 #include "broadcast_loop.hpp"
+#include "core/interfaces/service_controller.hpp"
+#include "core/state_manager.hpp"
 #include "server_parameters.hpp"
-#include "state_manager/state_manager.hpp"
 
 namespace server {
-class TempoBroadcaster {
+class TempoBroadcaster : public ServiceControllerInterface {
 public:
   TempoBroadcaster(
       asio::io_context &io_context, std::chrono::nanoseconds alarm_period,
       std::chrono::nanoseconds program_alarm_period,
       const broadcasting_server_parameters_t &broadcasting_server_parameters,
       StateManager &state_manager);
+
+  void start_sync() override;
+  void stop_sync() override;
 
 private:
   void do_broadcast_beat();
@@ -42,6 +46,7 @@ private:
 
   std::vector<std::unique_ptr<BroadcastLoop>> loops_;
   int program_idx_;
+  const broadcasting_server_parameters_t &broadcasting_server_parameters_;
 };
 } // namespace server
 

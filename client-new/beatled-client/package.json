@@ -21,6 +21,7 @@
     "react-bootstrap-icons": "^1.10.2",
     "react-chartjs-2": "5.0.1",
     "react-dom": "^18.2.0",
+    "react-icons": "^4.7.1",
     "react-intl": "^6.2.5",
     "react-router-dom": "^6.4.5",
     "reactstrap": "^9.1.5",

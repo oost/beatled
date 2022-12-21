@@ -3,7 +3,7 @@
 #include <iostream>
 #include <spdlog/spdlog.h>
 
-#include "state_manager/state_manager.hpp"
+#include "core/state_manager.hpp"
 #include "tempo_broadcaster/broadcast_loop.hpp"
 
 using asio::ip::udp;

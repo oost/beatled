@@ -5,7 +5,7 @@
 #include <string>
 
 #include "beat_detector/beat_detector.hpp"
-#include "state_manager/state_manager.hpp"
+#include "core/state_manager.hpp"
 
 /*******************************************************************/
 struct track_beat_command {
@@ -44,12 +44,12 @@ struct track_beat_command {
 
       BeatDetector bd{state_manager, sample_rate};
 
-      bd.run();
+      bd.start();
       SPDLOG_INFO("Started Beat Detector");
       std::this_thread::sleep_for(
           std::chrono::seconds(static_cast<int>(duration)));
       SPDLOG_INFO(" Requesting stop");
-      bd.request_stop();
+      bd.stop();
 
       // std::this_thread::sleep_for(2000ms);
       // bd.run();

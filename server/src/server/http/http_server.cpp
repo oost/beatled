@@ -30,8 +30,7 @@ auto HTTPServer::server_handler(const std::string &root_dir) {
     return std::bind(method, file_handler, _1, _2);
   };
 
-  auto api_handler =
-      std::make_shared<APIHandler>(state_manager_, logger_, beat_detector_);
+  auto api_handler = std::make_shared<APIHandler>(service_manager_, logger_);
   auto by_api_handler = [&](auto method) {
     using namespace std::placeholders;
     return std::bind(method, api_handler, _1, _2);
@@ -80,11 +79,11 @@ auto HTTPServer::server_handler(const std::string &root_dir) {
 }
 
 HTTPServer::HTTPServer(const http_server_parameters_t &http_server_parameters,
-                       StateManager &state_manager, Logger &logger,
-                       beat_detector::BeatDetector &beat_detector)
-    : state_manager_{state_manager}, logger_{logger},
-      beat_detector_{beat_detector}, certs_dir_{
-                                         http_server_parameters.certs_dir} {
+                       ServiceManagerInterface &service_manager,
+                       asio::io_context &io_context, Logger &logger)
+    : ServiceControllerInterface{"HTTP Server"},
+      service_manager_{service_manager}, io_context_{io_context},
+      logger_{logger}, certs_dir_{http_server_parameters.certs_dir} {
 
   using std::literals::chrono_literals::operator""s;
 
@@ -125,8 +124,19 @@ HTTPServer::HTTPServer(const http_server_parameters_t &http_server_parameters,
 
   tls_context.use_tmp_dh_file(dh_params_file_path());
 
-  restinio::run(
-      restinio::on_this_thread<traits_t>()
+  // restinio::run(io_context_, restinio::on_this_thread<traits_t>()
+  //                                .address(http_server_parameters.address)
+  //                                .port(http_server_parameters.port)
+  //                                .request_handler(server_handler(
+  //                                    http_server_parameters.root_dir))
+  //                                .read_next_http_message_timelimit(10s)
+  //                                .write_http_response_timelimit(1s)
+  //                                .handle_request_timeout(1s)
+  //                                .tls_context(std::move(tls_context)));
+
+  restinio_server_ = std::make_unique<http_server_t>(
+      restinio::external_io_context(io_context),
+      settings_t{}
           .address(http_server_parameters.address)
           .port(http_server_parameters.port)
           .request_handler(server_handler(http_server_parameters.root_dir))
@@ -134,4 +144,15 @@ HTTPServer::HTTPServer(const http_server_parameters_t &http_server_parameters,
           .write_http_response_timelimit(1s)
           .handle_request_timeout(1s)
           .tls_context(std::move(tls_context)));
+}
+
+void HTTPServer::start_sync() {
+  SPDLOG_ERROR("Need to refactor to support starting and stopping");
+
+  asio::post(io_context_, [&] { restinio_server_->open_sync(); });
+}
+
+void HTTPServer::stop_sync() {
+  SPDLOG_ERROR("Need to refactor to support starting and stopping");
+  asio::post(io_context_, [&] { restinio_server_->close_sync(); });
 }

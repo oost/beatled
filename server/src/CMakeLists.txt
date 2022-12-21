@@ -1,10 +1,19 @@
 
 add_subdirectory(server)
-add_subdirectory(state_manager)
-add_subdirectory(config)
+add_subdirectory(core)
 add_subdirectory(beat_detector)
 
-add_executable(${BEAT_SERVER} beatled_server.cpp application.cpp)
+# Add here for circular dependencies
+target_link_libraries(beatled_core PUBLIC 
+  beatled_server
+  beatled_protocol
+)
+
+
+add_executable(${BEAT_SERVER} 
+  beatled_server.cpp
+  application.cpp
+)
 
 
 string(TIMESTAMP RPIZ_BS_BUILDTIME "%Y-%m-%d %H:%M")
@@ -12,9 +21,8 @@ configure_file(build_constants.h.in build_constants.h)
 target_include_directories(${BEAT_SERVER} PUBLIC "${PROJECT_BINARY_DIR}/src")
 target_link_libraries(${BEAT_SERVER} PRIVATE 
   beatled_server 
-  beatled_state_manager 
   beat_detector
-  beatled_config
+  beatled_core
 
   Threads::Threads
   asio asio::asio 

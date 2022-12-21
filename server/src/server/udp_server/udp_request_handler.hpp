@@ -4,7 +4,7 @@
 #include <asio.hpp>
 #include <vector>
 
-#include "state_manager/state_manager.hpp"
+#include "core/state_manager.hpp"
 #include "udp/udp_buffer.hpp"
 
 namespace server {

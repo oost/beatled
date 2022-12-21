@@ -16,7 +16,14 @@
       "type": "cppdbg",
       "request": "launch",
       "program": "${command:cmake.launchTargetPath}",
-      "args": [],
+      "args": [
+        "--start-http",
+        "--root-dir",
+        // "${workspaceFolder}/client/build"
+        "${workspaceFolder}/client-new/beatled-client/dist",
+        "--certs-dir",
+        "${workspaceFolder}/server/certs"
+      ],
       "stopAtEntry": false,
       "cwd": "${fileDirname}",
       "environment": [],

@@ -1,6 +1,6 @@
-import { useLoaderData, Form, useFetcher } from "react-router-dom";
+import { useLoaderData, useFetcher } from "react-router-dom";
 import { useInterval } from "../hooks/interval";
-import { getStatus } from "../lib/status";
+import { getStatus, startBeatDetector, stopBeatDetector } from "../lib/status";
 import PanelHeader from "../components/PanelHeader";
 import {
   Row,
@@ -19,9 +19,7 @@ import { FormattedNumber } from "react-intl";
 
 import BeatChart from "../components/status/BeatChart";
 import { format } from "date-fns";
-import { ArrowClockwise } from "react-bootstrap-icons";
-
-// import BeatChart from "../components/status/BeatChart";
+import { HiOutlineRefresh } from "react-icons/hi";
 
 const props = [
   { label: "Status", key: "status", format: (v) => v },
@@ -44,10 +42,9 @@ const props = [
   {
     label: "Beat Detector",
     key: "beat_detector",
-    format: (v) => (
+    format: (v, onChange) => (
       <FormGroup switch disabled>
-        <Input type="switch" checked={v} onChange={() => {}} />
-        <Label check>Default switch checkbox input</Label>
+        <Input type="switch" checked={v} onChange={onChange} />
       </FormGroup>
     ),
   },
@@ -105,6 +102,16 @@ export default function StatusPage() {
     }
   }, 2 * 1000);
 
+  const onChange = async (e) => {
+    if (e.target.checked) {
+      await startBeatDetector();
+    } else {
+      await stopBeatDetector();
+    }
+
+    return fetcher.submit();
+  };
+
   const data = fetcher.data ? fetcher.data.last : statusData.last;
   const historyData = fetcher.data ? fetcher.data.history : statusData.history;
   return (
@@ -136,7 +143,7 @@ export default function StatusPage() {
                       aria-expanded="true"
                       className="btn-round btn-outline-default btn-icon btn btn-default"
                     >
-                      <ArrowClockwise />
+                      <HiOutlineRefresh />
                     </button>
                   </div>
                 </CardHeader>
@@ -147,7 +154,7 @@ export default function StatusPage() {
                         return (
                           <tr key={prop.key}>
                             <th>{prop.label}</th>
-                            <td>{prop.format(data[prop.key])}</td>
+                            <td>{prop.format(data[prop.key], onChange)}</td>
                           </tr>
                         );
                       })}
@@ -178,21 +185,6 @@ export default function StatusPage() {
             </Card>
           </Col>
         </Row>
-        <FormGroup switch disabled>
-          <Input type="switch" checked={true} onChange={() => {}} />
-          <Label check>Default switch checkbox input</Label>
-        </FormGroup>
-        <div className="form-check form-switch">
-          <input
-            className="form-check-input"
-            type="checkbox"
-            role="switch"
-            id="flexSwitchCheckDefault"
-          />
-          <label className="form-check-label" htmlFor="flexSwitchCheckDefault">
-            Default switch checkbox input
-          </label>
-        </div>
       </div>
     </>
   );

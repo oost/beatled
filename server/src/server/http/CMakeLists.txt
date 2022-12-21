@@ -9,7 +9,7 @@ target_link_libraries(beatled_http_server PUBLIC
   restinio::restinio 
   nlohmann_json::nlohmann_json
   beatled_logger
-  beatled_state_manager
+  beatled_core
   beat_detector
   OpenSSL::SSL
   OpenSSL::Crypto

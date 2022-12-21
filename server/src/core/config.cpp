@@ -1,7 +1,7 @@
 #include <fmt/ostream.h>
 #include <spdlog/spdlog.h>
 
-#include "config/config.hpp"
+#include "core/config.hpp"
 
 BeatledConfig::BeatledConfig(int argc, const char *argv[]) {
 

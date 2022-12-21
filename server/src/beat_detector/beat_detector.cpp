@@ -9,22 +9,23 @@
 #include "./audio_exception.hpp"
 #include "./audio_input.hpp"
 #include "beat_detector/beat_detector.hpp"
-#include "state_manager/clock.hpp"
-#include "state_manager/state_manager.hpp"
+#include "core/clock.hpp"
+#include "core/state_manager.hpp"
 
 using namespace beat_detector;
 using namespace std::chrono_literals;
 
 BeatDetector::BeatDetector(StateManager &state_manager, uint32_t sample_rate)
-    : state_manager_{state_manager}, sample_rate_{sample_rate} {}
+    : ServiceControllerInterface{"Beat Detector"},
+      state_manager_{state_manager}, sample_rate_{sample_rate} {}
 
-void BeatDetector::request_stop() {
+void BeatDetector::stop_sync() {
   SPDLOG_INFO("Requesting Beat Detector to stop");
   stop_requested_ = true;
 }
 
 void BeatDetector::stop_blocking() {
-  request_stop();
+  stop();
   SPDLOG_INFO("Waiting for Beat Detector to stop");
   if (bd_thread_future_.valid()) {
     bd_thread_future_.wait();
@@ -32,11 +33,7 @@ void BeatDetector::stop_blocking() {
   }
 }
 
-bool BeatDetector::is_running() { return is_running_; }
-
-void BeatDetector::run() {
-  SPDLOG_INFO("Starting Beat Detector");
-
+void BeatDetector::start_sync() {
   if (!bd_thread_future_.valid() ||
       bd_thread_future_.wait_for(0s) == std::future_status::ready) {
     SPDLOG_INFO("Starting thread");

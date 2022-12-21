@@ -14,6 +14,7 @@
 #include <spdlog/spdlog.h>
 #include <vector>
 
+#include "core/interfaces/service_manager.hpp"
 #include "http_server/http_server.hpp"
 #include "server/server.hpp"
 #include "tempo_broadcaster/tempo_broadcaster.hpp"
@@ -21,14 +22,10 @@
 
 using namespace server;
 
-Server::Server(StateManager &state_manager,
-               beat_detector::BeatDetector &beat_detector,
-               const server_parameters_t &server_parameters)
-    : state_manager_{state_manager}, beat_detector_{beat_detector},
-      signals_{io_context_}, server_parameters_{server_parameters},
-      logger_(server_parameters.logger) {
+Server::Server(const server_parameters_t &server_parameters)
+    : signals_{io_context_}, server_parameters_{server_parameters} {
 
-  logger_.log_message("INFO", "Initializing server");
+  SPDLOG_INFO("Initializing server");
   // Register to handle the signals that indicate when the server should
   // exit. It is safe to register for the same signal multiple times in a
   // program, provided all registration for the specified signal is made
@@ -67,25 +64,6 @@ void Server::run() {
           }
         }));
     threads.push_back(thread);
-  }
-
-  std::unique_ptr<UDPServer> udp_server;
-  std::unique_ptr<TempoBroadcaster> tempo_broadcaster;
-  std::unique_ptr<HTTPServer> http_server;
-
-  if (server_parameters_.start_udp_server) {
-    udp_server = std::make_unique<UDPServer>(
-        io_context_, server_parameters_.udp, state_manager_);
-  }
-  if (server_parameters_.start_broadcaster) {
-    tempo_broadcaster = std::make_unique<TempoBroadcaster>(
-        io_context_, std::chrono::milliseconds((60 * 1000) / 120),
-        std::chrono::seconds(2), server_parameters_.broadcasting,
-        state_manager_);
-  }
-  if (server_parameters_.start_http_server) {
-    http_server = std::make_unique<HTTPServer>(
-        server_parameters_.http, state_manager_, logger_, beat_detector_);
   }
 
   SPDLOG_INFO("Waiting for threads to join");

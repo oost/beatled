@@ -10,7 +10,7 @@ target_link_libraries(beatled_tempo_broadcaster
     asio::asio 
   PUBLIC 
     beatled_udp 
-    beatled_state_manager
+    beatled_core
 )
 
 target_include_directories(beatled_tempo_broadcaster PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include)

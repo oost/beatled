@@ -25,13 +25,15 @@ import PerfectScrollbar from "perfect-scrollbar";
 
 import logo from "./logo-white.svg";
 import { GearWideConnected } from "react-bootstrap-icons";
+import { BsGearWideConnected, BsMusicPlayer } from "react-icons/bs";
+import { HiOutlineClipboardDocumentList } from "react-icons/hi2";
 
 var ps;
 
 const SIDEBAR_ROUTES = [
-  { name: "Status", path: "/status", icon:  },
-  { name: "Program", path: "/program" },
-  { name: "Log", path: "/log" },
+  { name: "Status", path: "/status", icon: <BsGearWideConnected /> },
+  { name: "Program", path: "/program", icon: <BsMusicPlayer /> },
+  { name: "Log", path: "/log", icon: <HiOutlineClipboardDocumentList /> },
 ];
 
 function Sidebar({ backgroundColor }) {
@@ -73,7 +75,7 @@ function Sidebar({ backgroundColor }) {
               <li className={activeRoute(route.path)} key={route.path}>
                 <NavLink to={route.path} className="nav-link">
                   <p>
-                    <GearWideConnected /> {route.name}
+                    {route.icon} {route.name}
                   </p>
                 </NavLink>
               </li>
