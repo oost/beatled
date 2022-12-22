@@ -9,6 +9,11 @@ import LogPage, {
   loader as logLoader,
   action as logAction,
 } from "../views/log";
+import ConfigPage, {
+  loader as configLoader,
+  action as configAction,
+} from "../views/config";
+
 import RootContainer from "../components/RootContainer";
 import { RootErrorBoundary } from "../views/root-error-boundary";
 
@@ -36,6 +41,13 @@ const routes = [
         element: <LogPage />,
         loader: logLoader,
         action: logAction,
+        errorElement: <ErrorPage />,
+      },
+      {
+        path: "config",
+        element: <ConfigPage />,
+        loader: configLoader,
+        action: configAction,
         errorElement: <ErrorPage />,
       },
     ],

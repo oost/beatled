@@ -28,6 +28,8 @@ public:
                                  route_params_t params);
   req_status_t on_log(const req_handle_t &req, route_params_t params);
 
+  req_status_t on_preflight(const req_handle_t &req, route_params_t params);
+
 private:
   ServiceManagerInterface &service_manager_;
   Logger &logger_;

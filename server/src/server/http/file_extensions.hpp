@@ -3,14 +3,6 @@
 
 #include <restinio/all.hpp>
 
-template <typename RESP> RESP init_resp(RESP resp) {
-  resp.append_header(restinio::http_field::server,
-                     "RESTinio sample server /v.0.2");
-  resp.append_header_date_field();
-
-  return resp;
-}
-
 static const char *
 content_type_by_file_extention(const restinio::string_view_t &ext) {
   // Incomplete list of mime types from here:
@@ -141,7 +133,8 @@ content_type_by_file_extention(const restinio::string_view_t &ext) {
     return "video/3gpp2";
   if (ext == "7z")
     return "application/x-7z-compressed";
-
+  if (ext == "webmanifest")
+    return "application/manifest+json";
   return "application/text";
 }
 

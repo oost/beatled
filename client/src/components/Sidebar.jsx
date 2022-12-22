@@ -34,6 +34,7 @@ const SIDEBAR_ROUTES = [
   { name: "Status", path: "/status", icon: <BsGearWideConnected /> },
   { name: "Program", path: "/program", icon: <BsMusicPlayer /> },
   { name: "Log", path: "/log", icon: <HiOutlineClipboardDocumentList /> },
+  { name: "Config", path: "/config", icon: <HiOutlineClipboardDocumentList /> },
 ];
 
 function Sidebar({ backgroundColor }) {

@@ -21,13 +21,17 @@ BeatledApplication::BeatledApplication(const BeatledConfig &beatled_config)
 
   registerController(std::make_unique<beat_detector::BeatDetector>(
       BEAT_DETECTOR_ID, state_manager_, 44100));
+
   registerController(std::make_unique<server::UDPServer>(
       UDP_SERVER_ID, io_context_, server_parameters_.udp, state_manager_));
+
   registerController(std::make_unique<server::HTTPServer>(
       HTTP_SERVER_ID, server_parameters_.http, *this, io_context_, logger_));
+
   registerController(std::make_unique<server::TempoBroadcaster>(
       TEMPO_BROADCASTER_ID, io_context_,
-      std::chrono::milliseconds((60 * 1000) / 120), std::chrono::seconds(2),
+      // std::chrono::milliseconds((60 * 1000) / 120),
+      std::chrono::seconds(2), std::chrono::seconds(2),
       server_parameters_.broadcasting, state_manager_));
 
   initialize_io_context();

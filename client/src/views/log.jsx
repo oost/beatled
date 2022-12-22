@@ -77,7 +77,11 @@ export default function LogPage() {
                   </div>
                 </CardHeader>
                 <CardBody>
-                  <pre>{logs.map((logLine) => logLine)}</pre>
+                  {logs?.error ? (
+                    <p>{logs.status}</p>
+                  ) : (
+                    <pre>{logs.map((logLine) => logLine)}</pre>
+                  )}
                 </CardBody>
                 <CardFooter>
                   <div className="stats"></div>

@@ -6,6 +6,7 @@
 #include <fmt/std.h>
 #include <nlohmann/json.hpp>
 #include <restinio/all.hpp>
+#include <restinio/http_headers.hpp>
 #include <restinio/tls.hpp>
 #include <spdlog/spdlog.h>
 
@@ -55,6 +56,11 @@ auto HTTPServer::server_handler(const std::string &root_dir) {
 
   // GET request to homepage.
   router->http_get("/", by_file_handler(&FileHandler::on_root_request));
+
+  router->http_head(R"(/:path(.*))", by_api_handler(&APIHandler::on_preflight));
+
+  router->add_handler(restinio::http_method_options(), R"(/:path(.*))",
+                      by_api_handler(&APIHandler::on_preflight));
 
   router->non_matched_request_handler([](auto req) {
     if (restinio::http_method_get() == req->header().method())

@@ -2,6 +2,7 @@
 
 #include "./api_handler.hpp"
 #include "./file_extensions.hpp"
+#include "./utils.hpp"
 
 using json = nlohmann::json;
 using namespace server;
@@ -25,7 +26,7 @@ APIHandler::req_status_t APIHandler::on_status(const req_handle_t &req,
   response_body["tempo"] =
       service_manager_.state_manager().get_tempo_ref().tempo;
 
-  return init_resp(req->create_response(restinio::status_ok()))
+  return init_resp_cors(req->create_response(restinio::status_ok()))
       .append_header(restinio::http_field::content_type,
                      "text/json; charset=utf-8")
       .set_body(response_body.dump())
@@ -51,7 +52,7 @@ APIHandler::req_status_t APIHandler::on_service_control(const req_handle_t &req,
       }
       response_body["status"] = service->is_running();
 
-      return init_resp(req->create_response(restinio::status_ok()))
+      return init_resp_cors(req->create_response(restinio::status_ok()))
           .append_header(restinio::http_field::content_type,
                          "text/json; charset=utf-8")
           .set_body(response_body.dump())
@@ -60,7 +61,7 @@ APIHandler::req_status_t APIHandler::on_service_control(const req_handle_t &req,
     } else {
       response_body["error"] = "Not found";
 
-      return init_resp(req->create_response(restinio::status_not_found()))
+      return init_resp_cors(req->create_response(restinio::status_not_found()))
           .append_header_date_field()
           .set_body(response_body.dump())
           .connection_close()
@@ -70,7 +71,7 @@ APIHandler::req_status_t APIHandler::on_service_control(const req_handle_t &req,
     response_body["error"] = "Error";
 
     SPDLOG_ERROR("Error with request: {}", e.what());
-    return init_resp(req->create_response(restinio::status_bad_request()))
+    return init_resp_cors(req->create_response(restinio::status_bad_request()))
         .append_header_date_field()
         .set_body(response_body.dump())
         .connection_close()
@@ -87,7 +88,7 @@ APIHandler::req_status_t APIHandler::on_tempo(const req_handle_t &req,
   response_body["tempo"] = tr.tempo;
   response_body["time_ref"] = tr.beat_time_ref;
 
-  return init_resp(req->create_response(restinio::status_ok()))
+  return init_resp_cors(req->create_response(restinio::status_ok()))
       .append_header(restinio::http_field::content_type,
                      "text/json; charset=utf-8")
       .set_body(response_body.dump())
@@ -104,7 +105,7 @@ APIHandler::req_status_t APIHandler::on_update_program(const req_handle_t &req,
   response_body["message"] =
       "Update program to " + request_body["programId"].get<std::string>();
 
-  return init_resp(req->create_response(restinio::status_ok()))
+  return init_resp_cors(req->create_response(restinio::status_ok()))
       .append_header(restinio::http_field::content_type,
                      "text/json; charset=utf-8")
       .set_body(response_body.dump())
@@ -113,9 +114,17 @@ APIHandler::req_status_t APIHandler::on_update_program(const req_handle_t &req,
 
 APIHandler::req_status_t APIHandler::on_log(const req_handle_t &req,
                                             route_params_t params) {
-  return init_resp(req->create_response(restinio::status_ok()))
+  return init_resp_cors(req->create_response(restinio::status_ok()))
       .append_header(restinio::http_field::content_type,
                      "text/json; charset=utf-8")
       .set_body(logger_.log_tail().dump())
+      .done();
+}
+
+APIHandler::req_status_t APIHandler::on_preflight(const req_handle_t &req,
+                                                  route_params_t params) {
+  return init_resp_cors(req->create_response(restinio::status_ok()))
+      .append_header(restinio::http_field::content_type,
+                     "text/json; charset=utf-8")
       .done();
 }

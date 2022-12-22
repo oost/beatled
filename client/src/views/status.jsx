@@ -100,52 +100,56 @@ export default function StatusPage() {
                   </div>
                 </CardHeader>
                 <CardBody>
-                  <Table responsive>
-                    <tbody>
-                      <tr>
-                        <th>Last update</th>
-                        <td>{data.x && format(data.x, "h:mm:ss a")}</td>
-                      </tr>
+                  {data.error ? (
+                    <p>{data.status}</p>
+                  ) : (
+                    <Table responsive>
+                      <tbody>
+                        <tr>
+                          <th>Last update</th>
+                          <td>{data.x && format(data.x, "h:mm:ss a")}</td>
+                        </tr>
 
-                      <tr>
-                        <th>Tempo</th>
-                        <td>
-                          {data.tempo && (
-                            <FormattedNumber
-                              value={data.tempo}
-                              minimumFractionDigits={1}
-                              maximumFractionDigits={2}
-                            />
+                        <tr>
+                          <th>Tempo</th>
+                          <td>
+                            {data.tempo && (
+                              <FormattedNumber
+                                value={data.tempo}
+                                minimumFractionDigits={1}
+                                maximumFractionDigits={2}
+                              />
+                            )}
+                          </td>
+                        </tr>
+
+                        {data.status &&
+                          Object.entries(data.status).map(
+                            ([controllerId, controllerStatus]) => {
+                              return (
+                                <tr key={controllerId}>
+                                  <th>{controllerId}</th>
+                                  <td>
+                                    <FormGroup switch disabled>
+                                      <Input
+                                        type="switch"
+                                        checked={controllerStatus}
+                                        onChange={(e) =>
+                                          toggleService(
+                                            controllerId,
+                                            e.target.checked
+                                          )
+                                        }
+                                      />
+                                    </FormGroup>
+                                  </td>
+                                </tr>
+                              );
+                            }
                           )}
-                        </td>
-                      </tr>
-
-                      {data.status &&
-                        Object.entries(data.status).map(
-                          ([controllerId, controllerStatus]) => {
-                            return (
-                              <tr key={controllerId}>
-                                <th>{controllerId}</th>
-                                <td>
-                                  <FormGroup switch disabled>
-                                    <Input
-                                      type="switch"
-                                      checked={controllerStatus}
-                                      onChange={(e) =>
-                                        toggleService(
-                                          controllerId,
-                                          e.target.checked
-                                        )
-                                      }
-                                    />
-                                  </FormGroup>
-                                </td>
-                              </tr>
-                            );
-                          }
-                        )}
-                    </tbody>
-                  </Table>
+                      </tbody>
+                    </Table>
+                  )}
                 </CardBody>
                 <CardFooter>
                   <div className="stats"></div>
@@ -160,7 +164,11 @@ export default function StatusPage() {
                 <CardTitle tag="h4">Beat History</CardTitle>
               </CardHeader>
               <CardBody>
-                <BeatChart historyData={historyData} />
+                {data.error ? (
+                  <p>{data.status}</p>
+                ) : (
+                  <BeatChart historyData={historyData} />
+                )}
               </CardBody>
               <CardFooter>
                 <div className="stats">
