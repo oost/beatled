@@ -124,7 +124,7 @@ bool AudioInput::is_active() {
 bool AudioInput::stop() {
   if (stream_ == 0)
     return false;
-  SPDLOG_INFO("Stopping stream\n");
+  SPDLOG_INFO("Stopping stream");
 
   PaError err = Pa_StopStream(stream_);
 
@@ -168,4 +168,4 @@ int AudioInput::paCallbackMethod(const void *inputBuffer, void *outputBuffer,
   return paContinue;
 }
 
-void AudioInput::paStreamFinishedMethod() { SPDLOG_INFO("Stream Completed\n"); }
+void AudioInput::paStreamFinishedMethod() { SPDLOG_INFO("Stream Completed"); }

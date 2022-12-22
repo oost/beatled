@@ -1,4 +1,5 @@
 import { useLoaderData, useFetcher } from "react-router-dom";
+import { useEffect } from "react";
 import { useInterval } from "../hooks/interval";
 import { getStatus, serviceControl } from "../lib/status";
 import PanelHeader from "../components/PanelHeader";
@@ -13,7 +14,6 @@ import {
   Table,
   Input,
   FormGroup,
-  Label,
 } from "reactstrap";
 import { FormattedNumber } from "react-intl";
 
@@ -45,7 +45,6 @@ export async function action({ request, params }) {
 
 export default function StatusPage() {
   const fetcher = useFetcher();
-  const statusData = useLoaderData();
 
   useInterval(() => {
     if (fetcher.state === "idle") {
@@ -59,8 +58,14 @@ export default function StatusPage() {
     return fetcher.submit();
   };
 
-  const data = fetcher.data ? fetcher.data.last : statusData.last;
-  const historyData = fetcher.data ? fetcher.data.history : statusData.history;
+  useEffect(() => {
+    if (fetcher.state === "idle" && !fetcher.data) {
+      fetcher.submit();
+    }
+  }, [fetcher]);
+
+  const data = fetcher.data?.last || {};
+  const historyData = fetcher.data?.history || {};
   return (
     <>
       <PanelHeader
@@ -99,17 +104,19 @@ export default function StatusPage() {
                     <tbody>
                       <tr>
                         <th>Last update</th>
-                        <td>{format(data.x, "h:mm:ss a")}</td>
+                        <td>{data.x && format(data.x, "h:mm:ss a")}</td>
                       </tr>
 
                       <tr>
                         <th>Tempo</th>
                         <td>
-                          <FormattedNumber
-                            value={data.tempo}
-                            minimumFractionDigits={1}
-                            maximumFractionDigits={2}
-                          />
+                          {data.tempo && (
+                            <FormattedNumber
+                              value={data.tempo}
+                              minimumFractionDigits={1}
+                              maximumFractionDigits={2}
+                            />
+                          )}
                         </td>
                       </tr>
 

@@ -24,15 +24,10 @@ class Logger {
 public:
   Logger(const logger_parameters_t &logger_parameters);
 
-  // void log_message(const char *level, const char *message);
-
   json log_tail();
 
 private:
   std::shared_ptr<spdlog::sinks::ringbuffer_sink_mt> ringbuffer_;
-
-  // std::deque<LogMessage> log_queue_;
-  // std::size_t max_queue_size_;
 };
 
 } // namespace server

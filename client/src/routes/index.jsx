@@ -5,7 +5,10 @@ import StatusPage, {
   action as statusAction,
 } from "../views/status";
 import ProgramPage from "../views/program";
-import LogPage from "../views/log";
+import LogPage, {
+  loader as logLoader,
+  action as logAction,
+} from "../views/log";
 import RootContainer from "../components/RootContainer";
 import { RootErrorBoundary } from "../views/root-error-boundary";
 
@@ -31,6 +34,8 @@ const routes = [
       {
         path: "log",
         element: <LogPage />,
+        loader: logLoader,
+        action: logAction,
         errorElement: <ErrorPage />,
       },
     ],
