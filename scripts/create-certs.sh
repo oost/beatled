@@ -1,10 +1,10 @@
-#!/bin/sh
+#!/bin/bash
 
 set -e 
 
-mkdir certs 
+mkdir ~/certs 
 
-cd certs 
+cd ~/certs 
 
 # Create CSR
 openssl req -new -newkey rsa:4096 -nodes -keyout key.pem -out cert.csr             
