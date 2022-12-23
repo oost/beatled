@@ -19,5 +19,26 @@
         }
       }
     }
+  },
+  "prod": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-beatled-prod-175212-authRole",
+      "UnauthRoleArn": "arn:aws:iam::548154196457:role/amplify-beatled-prod-175212-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::548154196457:role/amplify-beatled-prod-175212-authRole",
+      "Region": "us-east-1",
+      "DeploymentBucketName": "amplify-beatled-prod-175212-deployment",
+      "UnauthRoleName": "amplify-beatled-prod-175212-unauthRole",
+      "StackName": "amplify-beatled-prod-175212",
+      "StackId": "arn:aws:cloudformation:us-east-1:548154196457:stack/amplify-beatled-prod-175212/46e3dd90-824b-11ed-ac52-0aa499dc60e3",
+      "AmplifyAppId": "d2us1qe6tn8kcr"
+    },
+    "categories": {
+      "hosting": {
+        "amplifyhosting": {
+          "appId": "d2us1qe6tn8kcr",
+          "type": "manual"
+        }
+      }
+    }
   }
 }

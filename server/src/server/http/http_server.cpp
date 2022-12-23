@@ -21,7 +21,8 @@ using server::HTTPServer;
 namespace rr = restinio::router;
 using router_t = rr::express_router_t<>;
 
-auto HTTPServer::server_handler(const std::string &root_dir) {
+std::unique_ptr<router_t>
+HTTPServer::server_handler(const std::string &root_dir) {
   auto router = std::make_unique<router_t>();
 
   auto file_handler = std::make_shared<FileHandler>(root_dir);
@@ -57,9 +58,10 @@ auto HTTPServer::server_handler(const std::string &root_dir) {
   // GET request to homepage.
   router->http_get("/", by_file_handler(&FileHandler::on_root_request));
 
-  router->http_head(R"(/:path(.*))", by_api_handler(&APIHandler::on_preflight));
+  router->http_head(R"(/api/:path(.*))",
+                    by_api_handler(&APIHandler::on_preflight));
 
-  router->add_handler(restinio::http_method_options(), R"(/:path(.*))",
+  router->add_handler(restinio::http_method_options(), R"(/api/:path(.*))",
                       by_api_handler(&APIHandler::on_preflight));
 
   router->non_matched_request_handler([](auto req) {
@@ -138,7 +140,6 @@ HTTPServer::HTTPServer(const std::string &id,
 }
 
 void HTTPServer::start_sync() {
-
   asio::post(io_context_, [&] { restinio_server_->open_sync(); });
 }
 

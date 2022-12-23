@@ -24,7 +24,6 @@ import { Nav } from "reactstrap";
 import PerfectScrollbar from "perfect-scrollbar";
 
 import logo from "./logo-white.svg";
-import { GearWideConnected } from "react-bootstrap-icons";
 import { BsGearWideConnected, BsMusicPlayer } from "react-icons/bs";
 import { HiOutlineClipboardDocumentList } from "react-icons/hi2";
 

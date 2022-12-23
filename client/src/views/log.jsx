@@ -14,11 +14,12 @@ import {
   CardFooter,
 } from "reactstrap";
 import { HiOutlineRefresh } from "react-icons/hi";
+import { getConsoleLogs } from "../lib/console";
 
 export async function loader({ request }) {
   console.log("Loading status");
 
-  return { logs: await getLogs() };
+  return { logs: await getLogs(), consoleLogs: getConsoleLogs() };
 }
 
 export async function action({ request, params }) {
@@ -43,6 +44,7 @@ export default function LogPage() {
 
   // const logs = fetcher.data ? fetcher.data.logs : statusData.logs;
   const logs = fetcher.data?.logs || [];
+  const consoleLogs = fetcher.data?.consoleLogs || [];
 
   return (
     <>
@@ -54,9 +56,9 @@ export default function LogPage() {
         }
       />
       <div className="content">
-        <Row>
-          <Col xs={12} md={12}>
-            <fetcher.Form method="post">
+        <fetcher.Form method="post">
+          <Row>
+            <Col xs={12} md={12}>
               <Card className="card-chart">
                 <CardHeader>
                   <CardTitle tag="h4">Beatled Logs</CardTitle>
@@ -87,9 +89,37 @@ export default function LogPage() {
                   <div className="stats"></div>
                 </CardFooter>
               </Card>
-            </fetcher.Form>
-          </Col>
-        </Row>
+            </Col>
+            <Col xs={12} md={12}>
+              <Card className="card-chart">
+                <CardHeader>
+                  <CardTitle tag="h4">Beatled Logs</CardTitle>
+                  <div
+                    onClick={(event) => {
+                      fetcher.submit();
+                    }}
+                    className="dropdown right"
+                  >
+                    <button
+                      type="button"
+                      aria-haspopup="true"
+                      aria-expanded="true"
+                      className="btn-round btn-outline-default btn-icon btn btn-default"
+                    >
+                      <HiOutlineRefresh />
+                    </button>
+                  </div>
+                </CardHeader>
+                <CardBody>
+                  <pre>{consoleLogs.map((logLine) => logLine)}</pre>
+                </CardBody>
+                <CardFooter>
+                  <div className="stats"></div>
+                </CardFooter>
+              </Card>
+            </Col>
+          </Row>
+        </fetcher.Form>
       </div>
     </>
   );

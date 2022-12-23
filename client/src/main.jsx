@@ -2,7 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { IntlProvider } from "react-intl";
-
+import { initializeConsole } from "./lib/console";
 import routes from "./routes";
 // Webpack CSS import
 import "./index.css";
@@ -16,6 +16,7 @@ const messagesInFrench = {
   myMessage: "Aujourd'hui, c'est le {ts, date, ::yyyyMMdd}",
 };
 
+initializeConsole();
 const router = createBrowserRouter(routes);
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>

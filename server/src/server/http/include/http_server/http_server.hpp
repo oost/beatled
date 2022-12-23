@@ -54,7 +54,7 @@ private:
   std::filesystem::path certs_dir_;
 
   std::unique_ptr<http_server_t> restinio_server_;
-  auto server_handler(const std::string &root_dir);
+  std::unique_ptr<router_t> server_handler(const std::string &root_dir);
 };
 } // namespace server
 #endif // HTTP_SERVER_H
