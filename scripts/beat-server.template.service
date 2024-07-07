@@ -1,0 +1,14 @@
+[Unit]
+Description=Beat Server service
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+ExecStart=$ROOT_DIR/server/beat_server -a 0.0.0.0 --root-dir $ROOT_DIR/client/ --certs-dir /home/${USERNAME}/certs/ --start-http --start-udp
+WorkingDirectory=$ROOT_DIR
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

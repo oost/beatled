@@ -1,0 +1,4 @@
+Dockerfile
+.git
+client/node_modules
+server/build

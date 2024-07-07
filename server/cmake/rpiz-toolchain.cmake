@@ -1,0 +1,10 @@
+# set(ARMCC_PREFIX "/home/toolchains/arm-rpi-linux-gnueabihf/x64-gcc-6.5.0/arm-rpi-linux-gnueabihf/bin/arm-rpi-linux-gnueabihf-")
+# set(ARMCC_FLAGS "-march=armv6 -mfpu=vfp -funsafe-math-optimizations")
+
+# set(CMAKE_C_COMPILER ${ARMCC_PREFIX}gcc)
+# set(CMAKE_CXX_COMPILER ${ARMCC_PREFIX}g++)
+# set(CMAKE_C_FLAGS "${ARMCC_FLAGS}")
+# set(CMAKE_CXX_FLAGS "${ARMCC_FLAGS}")
+# set(CMAKE_VERBOSE_MAKEFILE:BOOL ON)
+# set(CMAKE_SYSTEM_NAME Linux)
+# set(CMAKE_SYSTEM_PROCESSOR armv6)

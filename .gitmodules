@@ -1,6 +1,12 @@
-[submodule "lib/restbed"]
-	path = lib/restbed
-	url = https://github.com/corvusoft/restbed.git
-[submodule "lib/restinio"]
-	path = lib/restinio
-	url = https://github.com/stiffstream/restinio
+[submodule "server/external/kissfft"]
+	path = server/external/kissfft
+	url = https://github.com/mborgerding/kissfft.git
+[submodule "server/external/BTrack"]
+	path = server/external/BTrack
+	url = https://github.com/oost/BTrack.git
+[submodule "server/external/pico-w-beatled"]
+	path = server/external/pico-w-beatled
+	url = https://github.com/oost/pico-w-beatled.git
+[submodule "server/external/doxygen-awesome-css"]
+	path = server/external/doxygen-awesome-css
+	url = https://github.com/jothepro/doxygen-awesome-css.git

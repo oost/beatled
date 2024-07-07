@@ -1,0 +1,21 @@
+{
+  "name": "bealted-server",
+  "version-string": "0.1.0",
+  "dependencies": [
+    "spdlog",
+    "restinio",
+    "asio",
+    "nlohmann-json",
+    "date",
+    "fmt",
+    "bfgroup-lyra",
+    "portaudio",
+    "fftw3",
+    "audiofile",
+    "libsamplerate",
+    "catch2",
+    "kissfft",
+    "range-v3",
+    "openssl"
+  ]
+}
