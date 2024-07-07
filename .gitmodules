@@ -10,3 +10,6 @@
 [submodule "server/external/doxygen-awesome-css"]
 	path = server/external/doxygen-awesome-css
 	url = https://github.com/jothepro/doxygen-awesome-css.git
+[submodule "server/external/beatled-beat-tracker"]
+	path = server/external/beatled-beat-tracker
+	url = https://github.com/oost/beatled-beat-tracker.git

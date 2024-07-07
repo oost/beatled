@@ -6,6 +6,6 @@ set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 
 
 set(ENABLE_FFTW ON)
-add_subdirectory(BTrack)
+add_subdirectory(beatled-beat-tracker)
 
 
