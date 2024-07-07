@@ -39,7 +39,7 @@ IF ( OPENSSL_FOUND )
 ENDIF ( OPENSSL_FOUND )
 
 add_subdirectory(external)
-set(BEATLED_PROTOCOL_PATH "${CMAKE_CURRENT_LIST_DIR}/external/pico-w-beatled/lib/beatled_protocol")
+set(BEATLED_PROTOCOL_PATH "${CMAKE_CURRENT_LIST_DIR}/external/beatled-pico/lib/beatled_protocol")
 
 include("${CMAKE_CURRENT_LIST_DIR}/cmake/beatled_protocol_import.cmake")
 beatled_protocol_init()

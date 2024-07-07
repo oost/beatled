@@ -4,9 +4,9 @@
 [submodule "server/external/BTrack"]
 	path = server/external/BTrack
 	url = https://github.com/oost/BTrack.git
-[submodule "server/external/pico-w-beatled"]
-	path = server/external/pico-w-beatled
-	url = https://github.com/oost/pico-w-beatled.git
+[submodule "server/external/beatled-pico"]
+	path = server/external/beatled-pico
+	url = https://github.com/oost/beatled-pico.git
 [submodule "server/external/doxygen-awesome-css"]
 	path = server/external/doxygen-awesome-css
 	url = https://github.com/jothepro/doxygen-awesome-css.git
