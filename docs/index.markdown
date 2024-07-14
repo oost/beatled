@@ -10,7 +10,7 @@ Welcome to the `Beatled` project.
 ## Prerequisites
 
 - A Raspberry Pi 4 or 5
-- One or more Raspberry Pico
+- One or more Raspberry Pico W
 - A Unix/Linux based machine with Docker (not strictly necessary but it may be easier to use your laptop to cross compile the code)
 
 ## Repos
