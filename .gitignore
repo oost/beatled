@@ -8,6 +8,8 @@ test-conan/out/
 **/*.wav
 *.tar.gz
 
+.jekyll-cache/
+
 certs
 
 # General

@@ -1,4 +1,5 @@
 source "https://rubygems.org"
+
 # Hello! This is where you manage which Jekyll version is used to run.
 # When you want to use a different version, change it below, save the
 # file and run `bundle install`. Run Jekyll with `bundle exec`, like so:
@@ -20,6 +21,10 @@ group :jekyll_plugins do
   gem "jekyll-feed", "~> 0.12"
 end
 
+gem "jekyll-github-metadata", ">= 2.15"
+gem "jekyll-include-cache", group: :jekyll_plugins
+gem "html-proofer", "~> 5.0", :group => :development
+
 # Windows and JRuby does not include zoneinfo files, so bundle the tzinfo-data gem
 # and associated library.
 platforms :mingw, :x64_mingw, :mswin, :jruby do
@@ -37,5 +42,10 @@ gem "http_parser.rb", "~> 0.6.0", :platforms => [:jruby]
 
 gem "webrick", "~> 1.8"
 
-gem "just-the-docs", "0.8.2" # pinned to the current release
-# gem "just-the-docs"        # always download the latest release
+# gem "just-the-docs", "0.8.2" # pinned to the current release
+gem "just-the-docs"        # always download the latest release
+
+
+
+
+
