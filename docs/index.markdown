@@ -19,6 +19,10 @@ Welcome to the `Beatled` project.
 - The [Beatled Pico](https://github.com/oost/beatled-pico) repo contains the Pico C code to be flashed on your Pico devices.
 - The [Beatled Beat Tracker](https://github.com/oost/beatled-beat-tracker) repo contains a fork from [BTrack](https://github.com/adamstark/BTrack) that is used for live beat tracking.
 
+[Beatled Server](/beatled/server.html)
+[Beatled Pico](/beatled/pico.html)
+[Beatled Client](/beatled/client.html)
+
 ---
 
 [^1]: [It can take up to 10 minutes for changes to your site to publish after you push the changes to GitHub](https://docs.github.com/en/pages/setting-up-a-github-pages-site-with-jekyll/creating-a-github-pages-site-with-jekyll#creating-your-site).
