@@ -37,5 +37,5 @@ gem "http_parser.rb", "~> 0.6.0", :platforms => [:jruby]
 
 gem "webrick", "~> 1.8"
 
-# gem "just-the-docs", "0.8.2" # pinned to the current release
-gem "just-the-docs"        # always download the latest release
+gem "just-the-docs", "0.8.2" # pinned to the current release
+# gem "just-the-docs"        # always download the latest release
