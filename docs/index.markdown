@@ -1,29 +1,56 @@
 ---
 title: Home
 layout: home
+nav_order: 1
+permalink: /
 ---
 
 Welcome to the `Beatled` project.
 
-This is a _bare-minimum_ template to create a Jekyll site that uses the [Just the Docs] theme. You can easily set the created site to be published on [GitHub Pages] – the [README] file explains how to do that, along with other details.
+## Prerequisites
 
-If [Jekyll] is installed on your computer, you can also build and preview the created site _locally_. This lets you test changes before committing them, and avoids waiting for GitHub Pages.[^1] And you will be able to deploy your local build to a different platform than GitHub Pages.
+- A Raspberry Pi 4 or 5
+- One or more Raspberry Pico
+- A Unix/Linux based machine with Docker (not strictly necessary but it may be easier to use your laptop to cross compile the code)
 
-More specifically, the created site:
+## Repos
 
-- uses a gem-based approach, i.e. uses a `Gemfile` and loads the `just-the-docs` gem
-- uses the [GitHub Pages / Actions workflow] to build and publish the site on GitHub Pages
+- This repo contains the C++ server code and the React frontend.
+- The [Beatled Pico](https://github.com/oost/beatled-pico) repo contains the Pico C code to be flashed on your Pico devices.
+- The [Beatled Beat Tracker](https://github.com/oost/beatled-beat-tracker) repo contains a fork from [BTrack](https://github.com/adamstark/BTrack) that is used for live beat tracking.
 
-Other than that, you're free to customize sites that you create with this template, however you like. You can easily change the versions of `just-the-docs` and Jekyll it uses, as well as adding further plugins.
+## Cross Compilation
 
-[Browse our documentation][Just the Docs] to learn more about how to use this theme.
+In this step, we cross-compile the various server for the Raspberry Pi. We also build the React front and package it in a tarball.
 
-To get started with creating a site, simply:
+1. Download submodule dependencies.
 
-1. click "[use this template]" to create a GitHub repository
-2. go to Settings > Pages > Build and deployment > Source, and select GitHub Actions
+   ```
+   git sumbodule update
+   ```
 
-If you want to maintain your docs in the `docs` directory of an existing project repo, see [Hosting your docs from an existing project repo](https://github.com/just-the-docs/just-the-docs-template/blob/main/README.md#hosting-your-docs-from-an-existing-project-repo) in the template README.
+2. Build builder image:
+
+   ```
+   utils/build-docker-builder.sh
+   ```
+
+3. Build Raspberry Pi executable:
+
+   ```
+   utils/build-beatled-server.sh
+   ```
+
+4. Copy your files to the raspberry pi:
+
+   ```
+   utils/copy-tar-files.sh ${RPI_USERNAME} ${RPI_HOST}
+   ```
+
+## Requirements
+
+- On MacOS
+  - `brew install pkg-config cmake libtool automake autoconf autoconf-archive`
 
 ---
 
