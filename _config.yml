@@ -34,8 +34,8 @@ destination: ./docs/_site
 # Build settings
 # theme: jekyll-theme-minimal
 
-theme: just-the-docs
-# remote_theme: just-the-docs/just-the-docs
+# theme: just-the-docs
+remote_theme: just-the-docs/just-the-docs
 # plugins:
 #   - jekyll-feed
 # Exclude from processing.
