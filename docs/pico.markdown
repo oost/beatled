@@ -12,7 +12,7 @@ nav_order: 3
 - AAA Battery holder ([link to Adafruit](https://www.adafruit.com/product/727))
 - Wire ([link to Adafruit](https://www.adafruit.com/product/2517))
 - WS2812 LED Strip ([link to Sparkfun](https://www.sparkfun.com/products/retired/15206))
-- A hat to mount it on ([example](https://www.amazon.com/dp/B09YCHTGWZ?psc=1&ref=ppx_yo2ov_dt_b_product_details))
+- A hat or clothes to mount it on ([example](https://www.amazon.com/dp/B09YCHTGWZ?psc=1&ref=ppx_yo2ov_dt_b_product_details))
 
 ## Compilation
 
@@ -53,6 +53,6 @@ nav_order: 3
 
 ## Wiring Diagram
 
-    ![Image](/beatled/assets/images/circuit.png)
+![Image](/beatled/assets/images/circuit.png)
 
-    [Circuit](https://crcit.net/c/e7308720163247329f2c2b24adeabc57)
+[Circuit](https://crcit.net/c/e7308720163247329f2c2b24adeabc57)
