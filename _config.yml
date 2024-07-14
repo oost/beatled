@@ -30,7 +30,7 @@ url: "https://oost.github.io/beatled/" # the base hostname & protocol for your s
 repository: "oost/beatled" # for github-metadata
 
 source: ./docs
-# destination: ./docs/_site
+destination: ./docs/_site
 # Build settings
 # theme: jekyll-theme-minimal
 

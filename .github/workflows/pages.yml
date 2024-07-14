@@ -51,7 +51,7 @@ jobs:
         uses: actions/jekyll-build-pages@v1
         with:
           source: ./docs
-          destination: ./_site
+          destination: ./docs/_site
       # - name: Build with Jekyll
       #   # Outputs to the './_site' directory by default
       #   run: cd docs && bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path }}"
