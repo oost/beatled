@@ -1,7 +1,7 @@
 #ifndef HTTP_SERVER__API_HANDLER_HPP
 #define HTTP_SERVER__API_HANDLER_HPP
 
-#include <restinio/all.hpp>
+#include <restinio/core.hpp>
 
 #include "./response_handler.hpp"
 #include "beat_detector/beat_detector.hpp"

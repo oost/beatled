@@ -1,20 +1,41 @@
-#!/bin/bash
+#! /bin/bash
+
+# https://devopscube.com/create-self-signed-certificates-openssl/
 
 set -e 
+# set -x
 
+echo -e "- Creating certs folder 📂\n"
 mkdir -p ~/certs 
 
 cd ~/certs 
 
-# https://devopscube.com/create-self-signed-certificates-openssl/
+if [ "$#" -ne 1 ]
+then
+  echo "Error: No domain name argument provided"
+  echo "Usage: Provide a domain name as an argument"
+  exit 1
+fi
 
-# Create RootCA
-openssl req -x509 -sha256 -days 356 -nodes -newkey rsa:2048 -subj "/CN=raspberrypi1.local/C=US/L=New York" \
+DOMAIN=$1
+
+# Create root CA & Private key
+echo "- Creating root certificate 🦷"
+
+openssl req -x509 \
+            -sha256 -days 356 \
+            -nodes \
+            -newkey rsa:2048 \
+            -subj "/CN=${DOMAIN}/C=US/L=New York" \
             -keyout rootCA.key -out rootCA.crt 
 
-# Create server key
-openssl genrsa -out server.key 2048
+# Generate Private key 
 
+echo "- Generating private key 🔑"
+
+openssl genrsa -out ${DOMAIN}.key 2048
+
+# Create csf conf
 
 cat > csr.conf <<EOF
 [ req ]
@@ -30,23 +51,26 @@ ST = New York
 L = New York City
 O = Beatled
 OU = Beatled
-CN = raspberrypi1.local
+CN = ${DOMAIN}
 
 [ req_ext ]
 subjectAltName = @alt_names
 
 [ alt_names ]
-DNS.1 = raspberrypi1.local
-# DNS.2 = www.demo.mlopshub.com
-# IP.1 = 192.168.1.5
-# IP.2 = 192.168.1.6
+DNS.1 = ${DOMAIN}
+DNS.2 = www.${DOMAIN}
+IP.1 = 192.168.1.5 
+IP.2 = 192.168.1.6
 
 EOF
 
-# 3. Generate Certificate Signing Request (CSR) Using Server Private Key
-openssl req -new -key server.key -out server.csr -config csr.conf
+# create CSR request using private key
+echo "- Generating certificate signing request ✍️"
 
-# 4. Create a external file
+openssl req -new -key ${DOMAIN}.key -out ${DOMAIN}.csr -config csr.conf
+
+# Create a external config file for the certificate
+
 cat > cert.conf <<EOF
 
 authorityKeyIdentifier=keyid,issuer
@@ -55,24 +79,42 @@ keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
 subjectAltName = @alt_names
 
 [alt_names]
-DNS.1 = raspberrypi1.local
+DNS.1 = ${DOMAIN}
 
 EOF
 
-# 5. Generate SSL certificate With self signed CA
+# Create SSl with self signed CA
+
+echo "- Generating SSL with self signed CA"
 
 openssl x509 -req \
-    -in server.csr \
+    -in ${DOMAIN}.csr \
     -CA rootCA.crt -CAkey rootCA.key \
-    -CAcreateserial -out server.crt \
+    -CAcreateserial -out ${DOMAIN}.crt \
     -days 365 \
     -sha256 -extfile cert.conf
 
 # Create CSR
-openssl req -new -newkey rsa:4096 -nodes -keyout key.pem -out cert.csr             
+echo "- Generating PEM key"
+
+openssl req -new             \
+            -newkey rsa:4096 \
+            -nodes           \
+            -keyout key.pem  \
+            -out cert.csr    \
+            -subj "/CN=${DOMAIN}/C=US/L=New York" 
+
+        
 
 # Create PEM cert
-openssl x509 -req -sha256 -days 365 -in cert.csr -signkey key.pem -out cert.pem
+echo "- Generating PEM certificate"
+openssl x509 -req             \
+             -sha256          \
+             -days 365        \
+             -in cert.csr     \
+             -signkey key.pem \
+             -out cert.pem
 
 # Create DH Params
+echo "- Generating DH params"
 openssl dhparam -out dh_param.pem 2048

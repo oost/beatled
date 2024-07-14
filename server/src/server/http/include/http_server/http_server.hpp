@@ -6,7 +6,7 @@
 #include <string>
 
 #include <asio.hpp>
-#include <restinio/all.hpp>
+#include <restinio/core.hpp>
 #include <restinio/tls.hpp>
 
 #include "beat_detector/beat_detector.hpp"

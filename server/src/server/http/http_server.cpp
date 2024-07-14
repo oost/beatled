@@ -5,7 +5,7 @@
 
 #include <fmt/std.h>
 #include <nlohmann/json.hpp>
-#include <restinio/all.hpp>
+#include <restinio/core.hpp>
 #include <restinio/http_headers.hpp>
 #include <restinio/tls.hpp>
 #include <spdlog/spdlog.h>

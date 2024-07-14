@@ -23,3 +23,4 @@ sudo cp ${SCRIPT_DIR}/beat-server.service /etc/systemd/system
 sudo chmod 644 /etc/systemd/system/beat-server.service 
 sudo systemctl daemon-reload
 sudo systemctl start beat-server.service
+systemctl status --no-pager  beat-server.service

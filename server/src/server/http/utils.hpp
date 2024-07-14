@@ -3,7 +3,7 @@
 
 #include <utility>
 
-#include <restinio/all.hpp>
+#include <restinio/core.hpp>
 
 namespace beatled::server {
 template <typename RESP> RESP init_resp(RESP resp) {

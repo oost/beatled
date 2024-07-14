@@ -2,7 +2,7 @@
 #define HTTP_SERVER__FILE_HANDLER_HPP
 
 #include <filesystem>
-#include <restinio/all.hpp>
+#include <restinio/core.hpp>
 #include <string>
 
 #include "./response_handler.hpp"

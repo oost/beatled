@@ -1,7 +1,7 @@
 #ifndef HTTP_SERVER__RESPONSE_HANDLER_HPP
 #define HTTP_SERVER__RESPONSE_HANDLER_HPP
 
-#include <restinio/all.hpp>
+#include <restinio/core.hpp>
 #include <string_view>
 
 namespace beatled::server {
