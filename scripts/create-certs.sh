@@ -5,19 +5,20 @@
 set -e 
 # set -x
 
-echo -e "- Creating certs folder 📂\n"
-mkdir -p ~/certs 
+DOMAIN=$1
+CERTS_FOLDER=${2:-"~/certs"}
 
-cd ~/certs 
+echo "- Creating certs folder $CERTS_FOLDER 📂"
+mkdir -p $CERTS_FOLDER
 
-if [ "$#" -ne 1 ]
+cd $CERTS_FOLDER 
+
+if [[ $# -lt 1 ]]
 then
   echo "Error: No domain name argument provided"
   echo "Usage: Provide a domain name as an argument"
   exit 1
 fi
-
-DOMAIN=$1
 
 # Create root CA & Private key
 echo "- Creating root certificate 🦷"

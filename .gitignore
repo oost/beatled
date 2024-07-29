@@ -8,6 +8,12 @@ test-conan/out/
 **/*.wav
 *.tar.gz
 
+_site
+.sass-cache
+.jekyll-cache
+.jekyll-metadata
+vendor
+Gemfile.lock
 .jekyll-cache/
 
 certs

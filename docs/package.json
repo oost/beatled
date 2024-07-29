@@ -1,0 +1,18 @@
+{
+  "name": "docs",
+  "version": "1.0.0",
+  "description": "This is a _bare-minimum_ template to create a [Jekyll] site that:",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "graphs": "mmdc -i diagrams/flow.mmd -o assets/images/flow.svg && mmdc -i diagrams/comms.mmd -o assets/images/comms.svg"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@mermaid-js/mermaid-cli": "^10.9.1"
+  }
+}

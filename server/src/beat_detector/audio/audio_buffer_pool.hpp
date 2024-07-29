@@ -89,10 +89,11 @@ public:
     std::unique_lock<std::mutex> L{pool_buffer_queue_mutex_};
     if (pool_buffer_queue_.empty()) {
       total_pool_size_++;
-      SPDLOG_INFO("Creating new AudioBuffer. Total pool size: {}",
-                  total_pool_size_);
+      SPDLOG_INFO("Creating new AudioBuffer (id: {}). Total pool size: {}",
+                  buffer_count_, total_pool_size_);
 
-      return std::make_unique<AudioBuffer>(buffer_size_, sample_rate_);
+      return std::make_unique<AudioBuffer>(buffer_size_, sample_rate_,
+                                           buffer_count_++);
     }
 
     // Get first element
@@ -191,8 +192,9 @@ public:
 
 private:
   void add_buffer() {
-    pool_buffer_queue_.push(
-        std::move(std::make_unique<AudioBuffer>(buffer_size_, sample_rate_)));
+    pool_buffer_queue_.push(std::move(std::make_unique<AudioBuffer>(
+        buffer_size_, sample_rate_, buffer_count_)));
+    buffer_count_++;
     total_pool_size_++;
   }
 
@@ -230,6 +232,8 @@ private:
    * @brief Size of pool
    */
   std::size_t total_pool_size_ = 0;
+
+  std::size_t buffer_count_ = 0;
 
   /**
    * @brief sample rate of the audio buffers

@@ -1,0 +1,18 @@
+---
+title: Signal Flow
+---
+graph TD
+    subgraph music_thread [Music Recording Thread]
+    microphone["`USB Microphone (PortAudio)`"] --> port_audio_callback(PortAudio Callback)
+    port_audio_callback --> queue(Synchronized Queue)
+    end
+
+    subgraph beat_tracker_thread [Beat Tracker Thread]
+    queue -.- audio_interface(Audio Interface)
+    audio_interface --> beat_tracker(Beat Tracker)
+    end
+
+    subgraph server_thread [Server Thread]
+    beat_tracker -.- broadcaster(UDP Broadcaster)
+    end
+

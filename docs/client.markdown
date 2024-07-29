@@ -1,10 +1,10 @@
 ---
-title: Beatled Client
+title: Beatled Controller
 layout: default
 nav_order: 4
 ---
 
-# Beatled Client
+# Beatled WebApp Client Controller
 
 In order to control the system, users can access to a webapp via the browser. The app is build in React and is located in the `client` folder.
 

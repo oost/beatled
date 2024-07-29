@@ -61,7 +61,7 @@ void BeatDetector::start_sync() {
 
 void BeatDetector::Impl::do_detect_tempo() {
   // Use frame_rate = 0 to let the OS choose the frame rate (potentially
-  // dynamcially)
+  // dynamically)
   AudioInput audio_input(audio_buffer_pool_.get(), sample_rate_, 512);
 
   if (!audio_input.open()) {
@@ -86,14 +86,11 @@ void BeatDetector::Impl::do_detect_tempo() {
       audio_input.stop();
       break;
     }
-    auto diff = static_cast<int64_t>(previous_buffer_time) -
-                static_cast<int64_t>(audio_buffer_->start_time());
-    if (abs(diff) < 2) {
-      SPDLOG_INFO("Got same buffer twice (diff {})... Hmmm. Dropping it.",
-                  diff);
-      audio_buffer_pool_->release_buffer(std::move(audio_buffer_));
-      continue;
-    }
+    auto diff = audio_buffer_->start_time() - previous_buffer_time;
+
+    SPDLOG_INFO(
+        "New buffer. Processing it. Start stream time {}, id {}, time diff {}",
+        audio_buffer_->start_time(), audio_buffer_->buffer_id(), diff);
 
     auto hop_data = audio_buffer_->data();
     beat_tracker_.process_audio_frame(hop_data);

@@ -74,6 +74,7 @@ public:
 protected:
   virtual const PaStreamParameters *get_input_parameters() { return NULL; }
   virtual const PaStreamParameters *get_output_parameters() { return NULL; }
+  void log_parameters(const PaStreamParameters *parameters);
 
   /* The instance callback, where we have access to every method/variable in
    * object of class Sine */
@@ -108,7 +109,7 @@ protected:
   }
 
   void copy_to_buffer(float *input_buffer, unsigned long frame_count,
-                      float input_output_time);
+                      double input_output_time, double current_time);
 
   PortaudioHandle port_audio_handler_;
 

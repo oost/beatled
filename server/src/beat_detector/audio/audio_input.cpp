@@ -67,11 +67,13 @@ int AudioInput::paCallbackMethod(const void *inputBuffer, void *outputBuffer,
                                  PaStreamCallbackFlags statusFlags) {
 
   float *input = (float *)inputBuffer;
+  copy_to_buffer(input, frameCount, timeInfo->inputBufferAdcTime,
+                 timeInfo->currentTime);
 
-  copy_to_buffer(input, frameCount, timeInfo->inputBufferAdcTime);
-
+  if (statusFlags) {
+    SPDLOG_ERROR(" *** PortAudio stream status %lu", statusFlags);
+  }
   (void)outputBuffer;
-  (void)statusFlags;
 
   return paContinue;
 }

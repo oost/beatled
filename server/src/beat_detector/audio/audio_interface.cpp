@@ -24,15 +24,35 @@ AudioInterface::~AudioInterface() {
   close();
 }
 
+void AudioInterface::log_parameters(const PaStreamParameters *parameters) {
+  if (!parameters) {
+    SPDLOG_INFO("   - No device connected");
+    return;
+  }
+  SPDLOG_INFO("   - device: {}", parameters->device);
+  SPDLOG_INFO("   - channelCount: {}", parameters->channelCount);
+  SPDLOG_INFO("   - sampleFormat: {}", parameters->sampleFormat);
+  SPDLOG_INFO("   - suggestedLatency: {}", parameters->suggestedLatency);
+}
+
 bool AudioInterface::open() {
-  PaError err = Pa_OpenStream(&stream_, get_input_parameters(),
-                              get_output_parameters(), /* &outputParameters, */
-                              sample_rate_, frames_per_buffer_,
-                              paClipOff, /* we won't output out of range samples
-                                            so don't bother clipping them */
-                              &AudioInterface::paCallback,
-                              this /* Using 'this' for userData so we can
-                            cast to AudioInterface* in paCallback method */
+  const PaStreamParameters *input_parameters = get_input_parameters();
+  const PaStreamParameters *output_parameters = get_output_parameters();
+  SPDLOG_INFO("Starting PortAudio stream with");
+  SPDLOG_INFO(" - sampleRate: {}", sample_rate_);
+  SPDLOG_INFO(" - framesPerBuffer: {}", frames_per_buffer_);
+  SPDLOG_INFO(" - Input Device:");
+  log_parameters(input_parameters);
+  SPDLOG_INFO(" - Output Device:");
+  log_parameters(output_parameters);
+
+  PaError err = Pa_OpenStream(
+      &stream_, input_parameters, output_parameters, /* &outputParameters, */
+      sample_rate_, frames_per_buffer_,
+      paClipOff,                        /* we won't output out of range samples
+                                           so don't bother clipping them */
+      &AudioInterface::paCallback, this /* Using 'this' for userData so we can
+                                 cast to AudioInterface* in paCallback method */
   );
 
   const PaStreamInfo *stream_info = Pa_GetStreamInfo(stream_);
@@ -123,7 +143,12 @@ bool AudioInterface::stop() {
 
 void AudioInterface::copy_to_buffer(float *input_buffer,
                                     unsigned long frame_count,
-                                    float input_output_time) {
+                                    double input_output_time,
+                                    double current_time) {
+
+  PaTime stream_time = Pa_GetStreamTime(stream_);
+  SPDLOG_INFO("Copy to Buffer {:.4f} {:.4f} {:4f}", input_output_time,
+              current_time, stream_time);
 
   int elements_copied = 0;
   while (elements_copied < frame_count) {
@@ -132,9 +157,7 @@ void AudioInterface::copy_to_buffer(float *input_buffer,
       // Set time here...
       uint64_t now = Clock::time_us_64();
       uint64_t buffer_time =
-          now - static_cast<uint64_t>(
-                    1000000 * (Pa_GetStreamTime(stream_) - input_output_time) +
-                    (float)elements_copied / this->sample_rate_);
+          now - static_cast<uint64_t>(1e6 * (stream_time - input_output_time));
       current_buffer_->set_start_time(buffer_time);
       // SPDLOG_INFO("Setting start time. Elements copied {}, frame count {}",
       //             elements_copied, frame_count);
@@ -147,8 +170,6 @@ void AudioInterface::copy_to_buffer(float *input_buffer,
     if (current_buffer_->is_full()) {
       audio_buffer_pool_->enqueue(std::move(current_buffer_));
       current_buffer_ = audio_buffer_pool_->get_new_buffer();
-      // SPDLOG_INFO("New buffer. Elements copied {}, frame count {}",
-      //             elements_copied, frame_count);
     }
   }
 }

@@ -1,0 +1,10 @@
+---
+title: Communications
+---
+graph TD
+    phone[Phone] -- HTTP --> rpi[Raspberry Pi Server]
+    pico1[Raspberry Pico] -- TCP --> rpi
+    rpi -.->|UDP broadcast|pico1
+    rpi -.->|UDP broadcast|pico2[Raspberry Pico]
+    rpi -.->|UDP broadcast|pico3[Raspberry Pico]
+

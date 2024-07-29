@@ -28,8 +28,8 @@ public:
    * @brief Constructor
    * @param buffer_size Size of audio buffer
    */
-  AudioBuffer(std::size_t buffer_size, double sample_rate)
-      : sample_rate_{sample_rate} {
+  AudioBuffer(std::size_t buffer_size, double sample_rate, size_t buffer_id)
+      : sample_rate_{sample_rate}, buffer_id_{buffer_id} {
     data_.reserve(buffer_size);
   }
 
@@ -42,7 +42,7 @@ public:
    * @brief Start time at which the buffer was captured
    * @return
    */
-  uint64_t start_time() const { return buffer_start_time_; }
+  inline uint64_t start_time() const { return buffer_start_time_; }
 
   /**
    * @brief Time at the middle of the buffer
@@ -104,6 +104,8 @@ public:
    */
   inline const audio_buffer_data_t &data() const { return data_; }
 
+  inline const size_t buffer_id() const { return buffer_id_; }
+
 private:
   AudioBuffer &operator=(const AudioBuffer &) = delete;
   AudioBuffer(const AudioBuffer &) = delete;
@@ -119,6 +121,7 @@ private:
   uint64_t buffer_start_time_{0};
 
   double sample_rate_;
+  size_t buffer_id_;
 };
 
 } // namespace beatled::detector

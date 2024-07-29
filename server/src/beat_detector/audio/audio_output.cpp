@@ -65,7 +65,8 @@ int AudioOutput::paCallbackMethod(const void *inputBuffer, void *outputBuffer,
 
   read_index_ = read_index_ + elements_to_read;
 
-  copy_to_buffer(out, frameCount, timeInfo->outputBufferDacTime);
+  copy_to_buffer(out, frameCount, timeInfo->outputBufferDacTime,
+                 timeInfo->currentTime);
 
   (void)statusFlags; /* Prevent unused variable warnings. */
   (void)inputBuffer;
