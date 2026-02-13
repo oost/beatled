@@ -118,6 +118,7 @@ export default function StatusPage() {
                             <Switch
                               checked={controllerStatus as boolean}
                               onCheckedChange={(checked) => toggleService(controllerId, checked)}
+                              aria-label={`Toggle ${controllerId}`}
                             />
                           </TableCell>
                         </TableRow>

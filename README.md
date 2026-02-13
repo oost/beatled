@@ -53,7 +53,7 @@ In this step, we cross-compile the various server for the Raspberry Pi. We also 
 1. Download submodule dependencies.
 
    ```
-   git sumbodule update
+   git submodule update
    ```
 
 2. Build builder image:

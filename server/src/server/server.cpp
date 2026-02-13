@@ -58,8 +58,7 @@ void Server::run() {
               server_parameters_.thread_pool_size);
 
   for (std::size_t i = 0; i < server_parameters_.thread_pool_size; ++i) {
-    std::shared_ptr<asio::thread> thread(
-        new asio::thread([this, &exception_mtx, &exception_caught]() {
+    auto thread = std::make_shared<asio::thread>([this, &exception_mtx, &exception_caught]() {
           try {
             io_context_.run();
           } catch (...) {
@@ -69,7 +68,7 @@ void Server::run() {
             }
             io_context_.stop();
           }
-        }));
+        });
     threads.push_back(thread);
   }
 

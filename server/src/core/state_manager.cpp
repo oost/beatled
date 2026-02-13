@@ -15,10 +15,12 @@ void StateManager::update_tempo(float tempo, uint64_t timeref) {
 
 tempo_ref_t StateManager::get_tempo_ref() const {
   std::unique_lock lk(tempo_mtx_);
-  tempo_ref_t tr = {.beat_time_ref = time_ref_,
-                    .tempo_period_us =
-                        static_cast<uint32_t>(60 * 1000000UL / tempo_),
-                    .tempo = tempo_};
+  tempo_ref_t tr = {
+      .beat_time_ref = time_ref_,
+      .tempo_period_us = tempo_ > 0.0f
+                             ? static_cast<uint32_t>(60 * 1000000UL / tempo_)
+                             : 0,
+      .tempo = tempo_};
   return tr;
 }
 

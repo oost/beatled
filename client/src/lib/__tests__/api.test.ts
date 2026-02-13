@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
 import { getEndpoint, postEndpoint, getAPIHost, setAPIHost, getAPIToken, setAPIToken } from "../api";
 
-const localStorageMock = (() => {
+const sessionStorageMock = (() => {
   let store: Record<string, string> = {};
   return {
     getItem: vi.fn((key: string) => store[key] ?? null),
@@ -13,11 +13,11 @@ const localStorageMock = (() => {
   };
 })();
 
-Object.defineProperty(globalThis, "localStorage", { value: localStorageMock, writable: true });
+Object.defineProperty(globalThis, "sessionStorage", { value: sessionStorageMock, writable: true });
 
 describe("API token configuration", () => {
   beforeEach(() => {
-    localStorageMock.clear();
+    sessionStorageMock.clear();
   });
 
   it("returns empty string when no token set", () => {
@@ -51,7 +51,7 @@ describe("API host configuration", () => {
 describe("getEndpoint", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    localStorageMock.clear();
+    sessionStorageMock.clear();
     setAPIHost("https://localhost:8080");
   });
 
@@ -88,7 +88,7 @@ describe("getEndpoint", () => {
 describe("getEndpoint with auth token", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    localStorageMock.clear();
+    sessionStorageMock.clear();
     setAPIHost("https://localhost:8080");
   });
 
@@ -117,7 +117,7 @@ describe("getEndpoint with auth token", () => {
 describe("postEndpoint", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    localStorageMock.clear();
+    sessionStorageMock.clear();
     setAPIHost("https://localhost:8080");
   });
 

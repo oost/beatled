@@ -30,12 +30,18 @@ RUN   apt-get update \
 
 WORKDIR /home
 COPY client /home 
-RUN npm install && npm run build 
+RUN npm ci && npm run build
 
 
-FROM scratch
-WORKDIR / 
+FROM debian:bookworm-slim
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates libasound2 libportaudio2 libfftw3-single3 \
+  && rm -rf /var/lib/apt/lists/* \
+  && useradd -r -s /usr/sbin/nologin beatled
+WORKDIR /
 COPY --from=build-server /home/final/bin server
 COPY --from=build-client /home/dist client
 COPY scripts scripts
+EXPOSE 8443 9090
+USER beatled
 

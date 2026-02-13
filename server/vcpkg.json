@@ -1,5 +1,5 @@
 {
-  "name": "bealted-server",
+  "name": "beatled-server",
   "version-string": "0.1.0",
   "dependencies": [
     "spdlog",

@@ -68,7 +68,7 @@ export default function LogPage() {
               ) : (
                 <pre className="max-h-80 overflow-auto rounded-lg bg-muted/50 p-3 font-mono text-xs leading-relaxed">
                   {(logs as string[]).map((logLine: string, idx: number) => (
-                    <span key={idx}>{logLine}</span>
+                    <span key={`server-${idx}-${logLine.slice(0, 32)}`}>{logLine}</span>
                   ))}
                 </pre>
               )}
@@ -92,7 +92,7 @@ export default function LogPage() {
             <CardContent>
               <pre className="max-h-80 overflow-auto rounded-lg bg-muted/50 p-3 font-mono text-xs leading-relaxed">
                 {consoleLogs.map((logLine: string, idx: number) => (
-                  <span key={idx}>{logLine}</span>
+                  <span key={`console-${idx}-${logLine.slice(0, 32)}`}>{logLine}</span>
                 ))}
               </pre>
             </CardContent>

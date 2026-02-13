@@ -122,6 +122,8 @@ HTTPServer::HTTPServer(const std::string &id,
   tls_context.set_options(asio_ns::ssl::context::default_workarounds |
                           asio_ns::ssl::context::no_sslv2 |
                           asio_ns::ssl::context::no_sslv3 |
+                          asio_ns::ssl::context::no_tlsv1 |
+                          asio_ns::ssl::context::no_tlsv1_1 |
                           asio_ns::ssl::context::single_dh_use);
 
   tls_context.use_certificate_chain_file(certificate_file_path());

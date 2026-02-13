@@ -47,7 +47,7 @@ fi
 printf $PAD "We're done!!"
 echo " 🚀"
 
-printf $PAD "Let's go to https://${RPIZ_HOST}:8080/"
+printf $PAD "Let's go to https://${RPIZ_HOST}:8443/"
 echo " 🌎"
 if [[ $(uname -s) == "Darwin" ]]; then 
   echo ""
@@ -55,4 +55,4 @@ if [[ $(uname -s) == "Darwin" ]]; then
   echo "Please try with Chrome instead"
 fi
 
-python3 -m webbrowser "https://${RPIZ_HOST}:8080/"
+python3 -m webbrowser "https://${RPIZ_HOST}:8443/"

@@ -113,7 +113,7 @@ public:
     new_buffer->reset_buffer();
 
     // Return buffer
-    return std::move(new_buffer);
+    return new_buffer;
   }
 
   /**

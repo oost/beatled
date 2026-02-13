@@ -10,6 +10,7 @@
 #include <iterator>
 #include <memory>
 #include <span>
+#include <type_traits>
 
 #include "beatled/protocol.h"
 #include "udp_buffer.hpp"
@@ -46,6 +47,8 @@ public:
 
 protected:
   void set_data(const T &data) {
+    static_assert(std::is_trivially_copyable_v<T>,
+                  "ResponseBuffer type must be trivially copyable");
     memcpy(&data_, &data, sizeof(T));
     size_ = sizeof(T);
   }

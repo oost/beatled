@@ -49,10 +49,10 @@ private:
   StateManager &operator=(const StateManager &) = delete;
 
   uint16_t client_id_max_ = 0;
-  float tempo_;
-  uint64_t time_ref_;
-  std::atomic<uint64_t> next_beat_time_ref_;
-  std::atomic<uint16_t> program_id_;
+  float tempo_ = 0.0f;
+  uint64_t time_ref_ = 0;
+  std::atomic<uint64_t> next_beat_time_ref_{0};
+  std::atomic<uint16_t> program_id_{0};
   mutable std::mutex tempo_mtx_;
   mutable std::mutex client_mtx_;
   ClientStatus::client_map_t clients_;

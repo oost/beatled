@@ -1,4 +1,8 @@
 Dockerfile
 .git
+.vscode
+docs
+out
+*.md
 client/node_modules
 server/build

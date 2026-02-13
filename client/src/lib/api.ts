@@ -13,17 +13,19 @@ const API_TOKEN_KEY = "beatled_api_token";
 
 export function setAPIToken(token: string) {
   if (token) {
-    localStorage.setItem(API_TOKEN_KEY, token);
+    sessionStorage.setItem(API_TOKEN_KEY, token);
   } else {
-    localStorage.removeItem(API_TOKEN_KEY);
+    sessionStorage.removeItem(API_TOKEN_KEY);
   }
 }
 
 export function getAPIToken(): string {
-  return localStorage.getItem(API_TOKEN_KEY) ?? "";
+  return sessionStorage.getItem(API_TOKEN_KEY) ?? "";
 }
 
-async function executeFetch(endpoint: string, method: string, body?: unknown): Promise<Response> {
+type HttpMethod = "GET" | "POST" | "PUT" | "DELETE";
+
+async function executeFetch(endpoint: string, method: HttpMethod, body?: unknown): Promise<Response> {
   try {
     const response = await fetch(new URL(endpoint, API_HOST), {
       method,

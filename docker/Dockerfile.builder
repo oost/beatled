@@ -28,7 +28,7 @@ ENV VCPKG_FORCE_SYSTEM_BINARIES=1
 RUN cd /tmp \
     && git clone https://github.com/Microsoft/vcpkg.git -n \ 
     && cd vcpkg \
-    && git checkout master \
+    && git checkout 66c0373dc7fca549e5803087b9487edfe3aca0a1 \
     && ./bootstrap-vcpkg.sh
 
 COPY server/cmake/arm64-linux-custom.cmake /tmp/vcpkg/triplets
