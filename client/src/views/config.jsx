@@ -17,8 +17,8 @@ export async function action({ request, params }) {
 }
 
 const API_HOSTS = [
-  { name: "Localhost", value: "https://localhost:8080" },
-  { name: "Raspberry Pi", value: "https://raspberrypi1.local:8080" },
+  { name: "Localhost", value: "https://localhost:8443" },
+  { name: "Raspberry Pi", value: "https://raspberrypi1.local:8443" },
 ];
 
 export default function ConfigPage() {

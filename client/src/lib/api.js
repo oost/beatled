@@ -1,4 +1,4 @@
-let API_HOST = `https://${window.location.hostname}:8080`;
+let API_HOST = window.location.origin;
 
 export function setAPIHost(new_host) {
   console.log(`Changed API_HOST to ${new_host}`);

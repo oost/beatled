@@ -4,7 +4,7 @@ import { getEndpoint, postEndpoint, getAPIHost, setAPIHost } from "../api";
 describe("API host configuration", () => {
   it("returns default API host based on window.location", () => {
     const host = getAPIHost();
-    expect(host).toContain(":8080");
+    expect(host).toBe(window.location.origin);
   });
 
   it("allows setting and getting a custom API host", () => {
