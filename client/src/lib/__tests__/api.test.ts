@@ -1,14 +1,29 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
-import { getEndpoint, postEndpoint, getAPIHost, setAPIHost, getAPIToken, setAPIToken } from "../api";
+import {
+  getEndpoint,
+  postEndpoint,
+  getAPIHost,
+  setAPIHost,
+  getAPIToken,
+  setAPIToken,
+} from "../api";
 
 const sessionStorageMock = (() => {
   let store: Record<string, string> = {};
   return {
     getItem: vi.fn((key: string) => store[key] ?? null),
-    setItem: vi.fn((key: string, value: string) => { store[key] = value; }),
-    removeItem: vi.fn((key: string) => { delete store[key]; }),
-    clear: vi.fn(() => { store = {}; }),
-    get length() { return Object.keys(store).length; },
+    setItem: vi.fn((key: string, value: string) => {
+      store[key] = value;
+    }),
+    removeItem: vi.fn((key: string) => {
+      delete store[key];
+    }),
+    clear: vi.fn(() => {
+      store = {};
+    }),
+    get length() {
+      return Object.keys(store).length;
+    },
     key: vi.fn((i: number) => Object.keys(store)[i] ?? null),
   };
 })();

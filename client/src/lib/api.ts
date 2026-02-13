@@ -25,7 +25,11 @@ export function getAPIToken(): string {
 
 type HttpMethod = "GET" | "POST" | "PUT" | "DELETE";
 
-async function executeFetch(endpoint: string, method: HttpMethod, body?: unknown): Promise<Response> {
+async function executeFetch(
+  endpoint: string,
+  method: HttpMethod,
+  body?: unknown,
+): Promise<Response> {
   try {
     const response = await fetch(new URL(endpoint, API_HOST), {
       method,
