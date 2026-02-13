@@ -26,14 +26,14 @@ HTTPServer::server_handler(const std::string &root_dir) {
 
   auto file_handler = std::make_shared<FileHandler>(root_dir);
 
-  auto by_file_handler = [&](auto method) {
+  auto by_file_handler = [file_handler](auto method) {
     using namespace std::placeholders;
     return std::bind(method, file_handler, _1, _2);
   };
 
   auto api_handler =
       std::make_shared<APIHandler>(service_manager_, logger_, cors_origin_);
-  auto by_api_handler = [&](auto method) {
+  auto by_api_handler = [api_handler](auto method) {
     using namespace std::placeholders;
     return std::bind(method, api_handler, _1, _2);
   };
@@ -117,9 +117,10 @@ HTTPServer::HTTPServer(const std::string &id,
     }
   }
 
-  asio_ns::ssl::context tls_context{asio_ns::ssl::context::sslv23};
+  asio_ns::ssl::context tls_context{asio_ns::ssl::context::tls};
   tls_context.set_options(asio_ns::ssl::context::default_workarounds |
                           asio_ns::ssl::context::no_sslv2 |
+                          asio_ns::ssl::context::no_sslv3 |
                           asio_ns::ssl::context::single_dh_use);
 
   tls_context.use_certificate_chain_file(certificate_file_path());

@@ -1,4 +1,5 @@
 #include <memory>
+#include <mutex>
 #include <vector>
 
 #include <spdlog/sinks/stdout_color_sinks.h>
@@ -104,6 +105,7 @@ void Application::initialize_io_context() {
 
 void Application::start_threads() {
   SPDLOG_INFO("Running server");
+  std::mutex exception_mtx;
   std::exception_ptr exception_caught;
 
   // Create a pool of threads to run all of the io_contexts.
@@ -113,11 +115,15 @@ void Application::start_threads() {
 
   for (std::size_t i = 0; i < server_parameters_.thread_pool_size; ++i) {
     std::shared_ptr<asio::thread> thread(
-        new asio::thread([this, &exception_caught]() {
+        new asio::thread([this, &exception_mtx, &exception_caught]() {
           try {
             io_context_.run();
           } catch (...) {
-            exception_caught = std::current_exception();
+            std::lock_guard<std::mutex> lock(exception_mtx);
+            if (!exception_caught) {
+              exception_caught = std::current_exception();
+            }
+            io_context_.stop();
           }
         }));
     threads.push_back(thread);
