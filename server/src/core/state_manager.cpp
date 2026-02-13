@@ -85,4 +85,9 @@ void StateManager::register_client(ClientStatus::Ptr client_status) {
   clients_.push_back(client_status);
 }
 
+ClientStatus::client_map_t StateManager::get_clients() const {
+  std::unique_lock lk(client_mtx_);
+  return clients_;
+}
+
 } // namespace beatled::core

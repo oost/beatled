@@ -44,6 +44,8 @@ APIHandler::req_status_t APIHandler::on_get_status(const req_handle_t &req,
   response_body["status"] = service_status;
   response_body["tempo"] =
       service_manager_.state_manager().get_tempo_ref().tempo;
+  response_body["deviceCount"] =
+      service_manager_.state_manager().get_clients().size();
 
   return init_resp(req->create_response(restinio::status_ok()))
       .set_body(response_body.dump())
@@ -184,6 +186,32 @@ APIHandler::req_status_t APIHandler::on_get_log(const req_handle_t &req,
 
   return init_resp(req->create_response(restinio::status_ok()))
       .set_body(logger_.log_tail().dump())
+      .done();
+}
+
+APIHandler::req_status_t APIHandler::on_get_devices(const req_handle_t &req,
+                                                    route_params_t params) {
+  if (!check_auth(req)) {
+    return init_resp(req->create_response(restinio::status_unauthorized()))
+        .set_body(R"({"error":"Unauthorized"})")
+        .done();
+  }
+
+  auto clients = service_manager_.state_manager().get_clients();
+
+  json devices = json::array();
+  for (const auto &cs : clients) {
+    json device = *cs;
+    device["ip_address"] = cs->ip_address.to_string();
+    devices.push_back(device);
+  }
+
+  json response_body;
+  response_body["devices"] = devices;
+  response_body["count"] = clients.size();
+
+  return init_resp(req->create_response(restinio::status_ok()))
+      .set_body(response_body.dump())
       .done();
 }
 

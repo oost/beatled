@@ -58,6 +58,7 @@ DataBuffer::Ptr UDPRequestHandler::process_hello_request() {
 
   ClientStatus::Ptr cs = std::make_shared<ClientStatus>(
       hello_req->board_id, request_buffer_ptr_->remote_endpoint().address());
+  cs->last_status_time = Clock::time_us_64();
 
   state_manager_.register_client(cs);
   return std::make_unique<HelloResponseBuffer>(cs->client_id);
@@ -74,6 +75,12 @@ DataBuffer::Ptr UDPRequestHandler::process_time_request() {
   using namespace std::chrono;
   uint64_t ms_start = Clock::time_us_64();
 
+  auto cs = state_manager_.client_status(
+      request_buffer_ptr_->remote_endpoint().address());
+  if (cs) {
+    cs->last_status_time = ms_start;
+  }
+
   const auto *time_req_msg =
       reinterpret_cast<const beatled_message_time_request_t *>(
           &(request_buffer_ptr_->data()));
@@ -88,6 +95,13 @@ DataBuffer::Ptr UDPRequestHandler::process_time_request() {
 
 DataBuffer::Ptr UDPRequestHandler::process_tempo_request() {
   SPDLOG_INFO("Tempo request");
+
+  auto cs = state_manager_.client_status(
+      request_buffer_ptr_->remote_endpoint().address());
+  if (cs) {
+    cs->last_status_time = Clock::time_us_64();
+  }
+
   tempo_ref_t tr = state_manager_.get_tempo_ref();
   uint16_t pid = state_manager_.get_program_id();
 

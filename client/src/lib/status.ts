@@ -4,6 +4,7 @@ export interface StatusResponse {
   error?: boolean;
   status?: string | Record<string, boolean>;
   tempo?: number;
+  deviceCount?: number;
 }
 
 export async function getStatus(): Promise<StatusResponse> {

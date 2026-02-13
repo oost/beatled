@@ -38,6 +38,7 @@ public:
   client_status(const ClientStatus::board_id_t &board_id) const;
   ClientStatus::Ptr client_status(const asio::ip::address &ip_address) const;
   void register_client(ClientStatus::Ptr client_status);
+  ClientStatus::client_map_t get_clients() const;
 
   // Must be called during construction only (before threads start).
   void register_next_beat_cb(const on_next_beat_cb_t &cb) {

@@ -18,6 +18,7 @@ interface TempoHistoryEntry {
   error?: boolean;
   status?: string | Record<string, boolean>;
   tempo?: number;
+  deviceCount?: number;
 }
 
 const tempoHistory: TempoHistoryEntry[] = [];
@@ -107,6 +108,12 @@ export default function StatusPage() {
                             maximumFractionDigits={2}
                           />
                         )}
+                      </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">Devices</TableCell>
+                      <TableCell className="text-right">
+                        {data.deviceCount ?? 0}
                       </TableCell>
                     </TableRow>
                     {data.status &&

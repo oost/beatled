@@ -52,6 +52,9 @@ HTTPServer::server_handler(const std::string &root_dir) {
 
   router->http_get("/api/log", by_api_handler(&APIHandler::on_get_log));
 
+  router->http_get("/api/devices",
+                   by_api_handler(&APIHandler::on_get_devices));
+
   // GET request to homepage.
   router->http_get(R"(/:path(.*)\.:ext(.*))",
                    restinio::path2regex::options_t{}.strict(true),
