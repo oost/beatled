@@ -35,8 +35,6 @@ public:
     return std::next(data_.begin(), size_);
   }
 
-  // asio::buffer buffer() { return asio::buffer(data_, size_); }
-
 protected:
   buffer_t data_;
   std::size_t size_ = 0;
@@ -113,39 +111,5 @@ private:
 };
 
 } // namespace beatled::server
-
-// // template <>
-// // struct fmt::formatter<server::ResponseBuffer> : ostream_formatter {};
-// template <typename T>
-// struct fmt::formatter<
-//     T, std::enable_if_t<std::is_base_of<server::DataBuffer, T>::value, char>>
-//     : fmt::formatter<string_view> {
-
-//   // Formats the point p using the parsed format specification (presentation)
-//   // stored in this formatter.
-//   template <typename FormatContext>
-//   auto format(const T &buffer, FormatContext &ctx) const
-//       -> decltype(ctx.out()) {
-//     // ctx.out() is an output iterator to write to.
-//     auto begin = buffer.data().begin();
-//     auto end = std::next(begin, buffer.size());
-
-//     return fmt::format_to(ctx.out(), "{::x}", fmt::join(begin, end, ":"));
-//   }
-// };
-
-// template <>
-// struct fmt::formatter<server::ResponseBuffer> : ostream_formatter {};
-
-// template <>
-// struct fmt::formatter<server::ResponseBuffer> : formatter<std::string> {
-//   // parse is inherited from formatter<string_view>.
-//   template <typename FormatContext>
-//   auto format(server::ResponseBuffer buf, FormatContext &ctx) const {
-//     auto it = buf.data().begin();
-//     auto end = std::next(buf.data().begin(), buf.size());
-//     return formatter<std::string>::format(fmt::join(it, end, ":"), ctx);
-//   }
-// };
 
 #endif // UDP__UDP_BUFFER_H

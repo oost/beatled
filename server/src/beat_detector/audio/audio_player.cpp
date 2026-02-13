@@ -84,7 +84,7 @@ std::filesystem::path AudioPlayer::absolute_file_path() const {
     audio_file_path = fs::current_path() / audio_file_path;
   }
   if (!is_regular_file(audio_file_path)) {
-    throw new AudioException("File doesn't exist");
+    throw AudioException("File doesn't exist");
   }
   return audio_file_path;
 }

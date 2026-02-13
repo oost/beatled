@@ -10,7 +10,7 @@ using beatled::core::Clock;
 AudioInterface::AudioInterface(AudioBufferPool *audio_buffer_pool,
                                double desired_sample_rate,
                                unsigned long frames_per_buffer)
-    : stream_(0), audio_buffer_pool_{audio_buffer_pool},
+    : stream_(nullptr), audio_buffer_pool_{audio_buffer_pool},
       sample_rate_{desired_sample_rate}, frames_per_buffer_{frames_per_buffer} {
   if (frames_per_buffer_ == 0) {
     frames_per_buffer_ = paFramesPerBufferUnspecified;
@@ -76,7 +76,7 @@ bool AudioInterface::open() {
 
   if (err != paNoError) {
     Pa_CloseStream(stream_);
-    stream_ = 0;
+    stream_ = nullptr;
 
     return false;
   }
@@ -85,18 +85,18 @@ bool AudioInterface::open() {
 }
 
 bool AudioInterface::close() {
-  if (stream_ == 0)
+  if (stream_ == nullptr)
     return false;
   SPDLOG_INFO("Closing stream");
 
   PaError err = Pa_CloseStream(stream_);
-  stream_ = 0;
+  stream_ = nullptr;
 
   return (err == paNoError);
 }
 
 bool AudioInterface::start() {
-  if (stream_ == 0)
+  if (stream_ == nullptr)
     return false;
 
   current_buffer_ = audio_buffer_pool_->get_new_buffer();
@@ -132,7 +132,7 @@ bool AudioInterface::wait() {
 }
 
 bool AudioInterface::stop() {
-  if (stream_ == 0)
+  if (stream_ == nullptr)
     return false;
   SPDLOG_INFO("Stopping stream");
 

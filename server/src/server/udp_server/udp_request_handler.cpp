@@ -1,6 +1,4 @@
 #include <arpa/inet.h>
-#include <iomanip>
-#include <iostream>
 #include <spdlog/spdlog.h>
 #include <string>
 
@@ -48,7 +46,13 @@ DataBuffer::Ptr UDPRequestHandler::error_response(uint8_t error_code) {
 
 DataBuffer::Ptr UDPRequestHandler::process_hello_request() {
   SPDLOG_INFO("Hello request");
-  const beatled_message_hello_request_t *hello_req =
+
+  if (request_buffer_ptr_->size() < sizeof(beatled_message_hello_request_t)) {
+    SPDLOG_ERROR("Hello request too small: {} bytes", request_buffer_ptr_->size());
+    return error_response(BEATLED_ERROR_NO_DATA);
+  }
+
+  const auto *hello_req =
       reinterpret_cast<const beatled_message_hello_request_t *>(
           &(request_buffer_ptr_->data()));
 
@@ -56,23 +60,21 @@ DataBuffer::Ptr UDPRequestHandler::process_hello_request() {
       hello_req->board_id, request_buffer_ptr_->remote_endpoint().address());
 
   state_manager_.register_client(cs);
-
-  if (!cs) {
-    // FIXME: Handle error
-    SPDLOG_ERROR("Address already registered");
-    return std::make_unique<HelloResponseBuffer>(0);
-  } else {
-    return std::make_unique<HelloResponseBuffer>(cs->client_id);
-  }
+  return std::make_unique<HelloResponseBuffer>(cs->client_id);
 }
 
 DataBuffer::Ptr UDPRequestHandler::process_time_request() {
   SPDLOG_INFO("Time request");
 
+  if (request_buffer_ptr_->size() < sizeof(beatled_message_time_request_t)) {
+    SPDLOG_ERROR("Time request too small: {} bytes", request_buffer_ptr_->size());
+    return error_response(BEATLED_ERROR_NO_DATA);
+  }
+
   using namespace std::chrono;
   uint64_t ms_start = Clock::time_us_64();
 
-  const beatled_message_time_request_t *time_req_msg =
+  const auto *time_req_msg =
       reinterpret_cast<const beatled_message_time_request_t *>(
           &(request_buffer_ptr_->data()));
 

@@ -24,7 +24,7 @@ async function executeFetch(endpoint, method, body) {
       referrerPolicy: "no-referrer", // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
     });
     if (!response.ok) {
-      console.log(`fetch error ${response.statusCode}: ${response.statusText}`);
+      console.error(`fetch error ${response.status}: ${response.statusText}`);
       throw Error(response.statusText);
     }
     return response;

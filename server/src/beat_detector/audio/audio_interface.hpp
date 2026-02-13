@@ -1,13 +1,10 @@
 #ifndef SERVER__SRC__BEAT_DETECTOR__AUDIO__AUDIO_INTERFACE__HPP_
 #define SERVER__SRC__BEAT_DETECTOR__AUDIO__AUDIO_INTERFACE__HPP_
 
-// #include <AudioFile.h>
 #include <exception>
 #include <filesystem>
-#include <iostream>
-#include <math.h>
+#include <cmath>
 #include <portaudio.h>
-#include <stdio.h>
 #include <vector>
 
 #include "audio_buffer_pool.hpp"
@@ -117,7 +114,7 @@ protected:
    * @brief A PortAudio stream object
    */
 
-  PaStream *stream_;
+  PaStream *stream_ = nullptr;
 
   /**
    * @brief The AudioBufferPool to get and enqueue `AudioBuffer`s

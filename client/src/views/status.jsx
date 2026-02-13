@@ -65,7 +65,7 @@ export default function StatusPage() {
   }, [fetcher]);
 
   const data = fetcher.data?.last || {};
-  const historyData = fetcher.data?.history || {};
+  const historyData = fetcher.data?.history || [];
 
   return (
     <>
@@ -80,6 +80,7 @@ export default function StatusPage() {
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 text-muted-foreground"
+                aria-label="Refresh status"
                 onClick={() => fetcher.submit()}
               >
                 <RefreshCw className="h-4 w-4" />

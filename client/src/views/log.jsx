@@ -1,5 +1,5 @@
 import { getLogs } from "../lib/log";
-import { useFetcher, useLoaderData } from "react-router-dom";
+import { useFetcher } from "react-router-dom";
 import { useEffect } from "react";
 import { useInterval } from "../hooks/interval";
 import PageHeader from "../components/page-header";
@@ -19,7 +19,6 @@ export async function action({ request, params }) {
 
 export default function LogPage() {
   const fetcher = useFetcher();
-  const statusData = useLoaderData();
 
   useInterval(() => {
     if (fetcher.state === "idle") {
@@ -49,6 +48,7 @@ export default function LogPage() {
                 size="icon"
                 type="button"
                 className="h-8 w-8 text-muted-foreground"
+                aria-label="Refresh server logs"
                 onClick={() => fetcher.submit()}
               >
                 <RefreshCw className="h-4 w-4" />
@@ -59,7 +59,7 @@ export default function LogPage() {
                 <p className="text-sm text-muted-foreground">{logs.status}</p>
               ) : (
                 <pre className="max-h-80 overflow-auto rounded-lg bg-muted/50 p-3 font-mono text-xs leading-relaxed">
-                  {logs.map((logLine) => logLine)}
+                  {logs.map((logLine, idx) => <span key={idx}>{logLine}</span>)}
                 </pre>
               )}
             </CardContent>
@@ -73,6 +73,7 @@ export default function LogPage() {
                 size="icon"
                 type="button"
                 className="h-8 w-8 text-muted-foreground"
+                aria-label="Refresh console logs"
                 onClick={() => fetcher.submit()}
               >
                 <RefreshCw className="h-4 w-4" />
@@ -80,7 +81,7 @@ export default function LogPage() {
             </CardHeader>
             <CardContent>
               <pre className="max-h-80 overflow-auto rounded-lg bg-muted/50 p-3 font-mono text-xs leading-relaxed">
-                {consoleLogs.map((logLine) => logLine)}
+                {consoleLogs.map((logLine, idx) => <span key={idx}>{logLine}</span>)}
               </pre>
             </CardContent>
           </Card>

@@ -2,9 +2,7 @@
 #include <chrono>
 #include <fmt/format.h>
 #include <future>
-#include <iostream>
 #include <spdlog/spdlog.h>
-#include <sys/time.h>
 
 #include "audio/audio_exception.hpp"
 #include "audio/audio_input.hpp"
@@ -95,10 +93,6 @@ void BeatDetector::Impl::do_detect_tempo() {
     auto hop_data = audio_buffer_->data();
     beat_tracker_.process_audio_frame(hop_data);
 
-    // SPDLOG_INFO("Buffer time {}, previous {}, diff {}",
-    //             audio_buffer_->start_time(), previous_buffer_time,
-    //             static_cast<int64_t>(audio_buffer_->start_time()) -
-    //                 static_cast<int64_t>(previous_buffer_time));
     previous_buffer_time = audio_buffer_->start_time();
 
     audio_buffer_pool_->release_buffer(std::move(audio_buffer_));

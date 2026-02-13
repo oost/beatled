@@ -39,11 +39,9 @@ void UDPServer::do_receive() {
       request_buffer_ptr->remote_endpoint(),
       [this, request_buffer_ptr = std::move(request_buffer_ptr)](
           std::error_code ec, std::size_t bytes_recvd) mutable {
-        // TODO: Why do we need mutable here?
-
         if (!ec && bytes_recvd > 0) {
 
-          SPDLOG_INFO("Received request from  response: {}",
+          SPDLOG_INFO("Received request from {}",
                       fmt::streamed(request_buffer_ptr->remote_endpoint()));
 
           request_buffer_ptr->setSize(bytes_recvd);
@@ -56,11 +54,13 @@ void UDPServer::do_receive() {
           SPDLOG_INFO("Sending response: {::x} to {}", *response_buffer_ptr,
                       fmt::streamed(request_buffer_ptr->remote_endpoint()));
 
+          // Capture response_buffer_ptr to keep it alive until send completes.
           socket_.async_send_to(
               asio::buffer(response_buffer_ptr->data(),
                            response_buffer_ptr->size()),
               request_buffer_ptr->remote_endpoint(),
-              [this](std::error_code /*ec*/, std::size_t /*bytes_sent*/) {});
+              [resp = std::move(response_buffer_ptr)](
+                  std::error_code /*ec*/, std::size_t /*bytes_sent*/) {});
         }
 
         if (ec) {
