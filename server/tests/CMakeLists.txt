@@ -4,6 +4,7 @@ include(Catch)
 
 
 
+add_subdirectory(api_handler)
 add_subdirectory(fftw)
 add_subdirectory(logger)
 add_subdirectory(state_manager)
