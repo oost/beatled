@@ -31,8 +31,8 @@ HTTPServer::server_handler(const std::string &root_dir) {
     return std::bind(method, file_handler, _1, _2);
   };
 
-  auto api_handler =
-      std::make_shared<APIHandler>(service_manager_, logger_, cors_origin_);
+  auto api_handler = std::make_shared<APIHandler>(service_manager_, logger_,
+                                                    cors_origin_, api_token_);
   auto by_api_handler = [api_handler](auto method) {
     using namespace std::placeholders;
     return std::bind(method, api_handler, _1, _2);
@@ -90,6 +90,7 @@ HTTPServer::HTTPServer(const std::string &id,
       io_context_{io_context}, logger_{logger},
       certs_dir_{http_server_parameters.certs_dir},
       cors_origin_{http_server_parameters.cors_origin},
+      api_token_{http_server_parameters.api_token},
       address_{http_server_parameters.address},
       port_{http_server_parameters.port} {
   SPDLOG_INFO("Creating {}", name());

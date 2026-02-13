@@ -9,6 +9,20 @@ export function getAPIHost(): string {
   return API_HOST;
 }
 
+const API_TOKEN_KEY = "beatled_api_token";
+
+export function setAPIToken(token: string) {
+  if (token) {
+    localStorage.setItem(API_TOKEN_KEY, token);
+  } else {
+    localStorage.removeItem(API_TOKEN_KEY);
+  }
+}
+
+export function getAPIToken(): string {
+  return localStorage.getItem(API_TOKEN_KEY) ?? "";
+}
+
 async function executeFetch(endpoint: string, method: string, body?: unknown): Promise<Response> {
   try {
     const response = await fetch(new URL(endpoint, API_HOST), {
@@ -18,6 +32,7 @@ async function executeFetch(endpoint: string, method: string, body?: unknown): P
       credentials: "same-origin",
       headers: {
         "Content-Type": "application/json",
+        ...(getAPIToken() && { Authorization: `Bearer ${getAPIToken()}` }),
       },
       body: body ? JSON.stringify(body) : undefined,
       redirect: "follow",

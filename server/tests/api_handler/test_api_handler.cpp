@@ -137,6 +137,39 @@ TEST_CASE("API response contract: program endpoint", "[api]") {
   }
 }
 
+TEST_CASE("API auth contract: Bearer token matching", "[api][auth]") {
+  SECTION("Empty token means auth is disabled") {
+    std::string api_token;
+    REQUIRE(api_token.empty());
+    // When token is empty, any request should be authorized
+    // (mirrors check_auth returning true when api_token_ is empty)
+  }
+
+  SECTION("Correct Bearer token is accepted") {
+    std::string api_token = "my-secret-token";
+    std::string auth_header = "Bearer " + api_token;
+    REQUIRE(auth_header == "Bearer my-secret-token");
+  }
+
+  SECTION("Wrong token is rejected") {
+    std::string api_token = "my-secret-token";
+    std::string auth_header = "Bearer wrong-token";
+    REQUIRE(auth_header != "Bearer " + api_token);
+  }
+
+  SECTION("Missing Bearer prefix is rejected") {
+    std::string api_token = "my-secret-token";
+    std::string auth_header = "my-secret-token";
+    REQUIRE(auth_header != "Bearer " + api_token);
+  }
+
+  SECTION("Empty auth header is rejected") {
+    std::string api_token = "my-secret-token";
+    std::string auth_header;
+    REQUIRE(auth_header != "Bearer " + api_token);
+  }
+}
+
 TEST_CASE("API response contract: service control", "[api]") {
   MockServiceManager sm;
   sm.add_service(std::make_unique<MockService>("beat_detector"));

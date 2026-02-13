@@ -34,7 +34,8 @@ public:
     std::uint16_t port;
     const std::string root_dir;
     const std::string certs_dir;
-    std::string cors_origin{"*"};
+    std::string cors_origin;
+    std::string api_token;
   };
 
   HTTPServer(const std::string &id, const parameters_t &http_server_parameters,
@@ -61,6 +62,7 @@ private:
   ServiceManagerInterface &service_manager_;
   std::filesystem::path certs_dir_;
   std::string cors_origin_;
+  std::string api_token_;
   std::string address_;
   std::uint16_t port_;
 

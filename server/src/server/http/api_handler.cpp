@@ -14,12 +14,26 @@ struct Program {
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Program, name, id)
 
 APIHandler::APIHandler(ServiceManagerInterface &service_manager, Logger &logger,
-                       const std::string &cors_origin)
+                       const std::string &cors_origin,
+                       const std::string &api_token)
     : service_manager_{service_manager}, logger_{logger},
-      cors_origin_{cors_origin} {}
+      cors_origin_{cors_origin}, api_token_{api_token} {}
+
+bool APIHandler::check_auth(const req_handle_t &req) const {
+  if (api_token_.empty())
+    return true;
+  auto auth = req->header().opt_value_of(restinio::http_field::authorization);
+  return auth && *auth == "Bearer " + api_token_;
+}
 
 APIHandler::req_status_t APIHandler::on_get_status(const req_handle_t &req,
                                                    route_params_t params) {
+  if (!check_auth(req)) {
+    return init_resp(req->create_response(restinio::status_unauthorized()))
+        .set_body(R"({"error":"Unauthorized"})")
+        .done();
+  }
+
   json response_body;
   response_body["message"] = "It's all good!";
 
@@ -39,6 +53,12 @@ APIHandler::req_status_t APIHandler::on_get_status(const req_handle_t &req,
 APIHandler::req_status_t
 APIHandler::on_post_service_control(const req_handle_t &req,
                                     route_params_t params) {
+  if (!check_auth(req)) {
+    return init_resp(req->create_response(restinio::status_unauthorized()))
+        .set_body(R"({"error":"Unauthorized"})")
+        .done();
+  }
+
   json response_body;
 
   try {
@@ -81,6 +101,12 @@ APIHandler::on_post_service_control(const req_handle_t &req,
 
 APIHandler::req_status_t APIHandler::on_get_tempo(const req_handle_t &req,
                                                   route_params_t params) {
+  if (!check_auth(req)) {
+    return init_resp(req->create_response(restinio::status_unauthorized()))
+        .set_body(R"({"error":"Unauthorized"})")
+        .done();
+  }
+
   tempo_ref_t tr = service_manager_.state_manager().get_tempo_ref();
 
   json response_body;
@@ -95,6 +121,11 @@ APIHandler::req_status_t APIHandler::on_get_tempo(const req_handle_t &req,
 
 APIHandler::req_status_t APIHandler::on_post_program(const req_handle_t &req,
                                                      route_params_t params) {
+  if (!check_auth(req)) {
+    return init_resp(req->create_response(restinio::status_unauthorized()))
+        .set_body(R"({"error":"Unauthorized"})")
+        .done();
+  }
 
   json response_body;
   try {
@@ -120,6 +151,12 @@ APIHandler::req_status_t APIHandler::on_post_program(const req_handle_t &req,
 
 APIHandler::req_status_t APIHandler::on_get_program(const req_handle_t &req,
                                                     route_params_t params) {
+  if (!check_auth(req)) {
+    return init_resp(req->create_response(restinio::status_unauthorized()))
+        .set_body(R"({"error":"Unauthorized"})")
+        .done();
+  }
+
   uint16_t program_id = service_manager_.state_manager().get_program_id();
 
   json response_body;
@@ -139,6 +176,12 @@ APIHandler::req_status_t APIHandler::on_get_program(const req_handle_t &req,
 
 APIHandler::req_status_t APIHandler::on_get_log(const req_handle_t &req,
                                                 route_params_t params) {
+  if (!check_auth(req)) {
+    return init_resp(req->create_response(restinio::status_unauthorized()))
+        .set_body(R"({"error":"Unauthorized"})")
+        .done();
+  }
+
   return init_resp(req->create_response(restinio::status_ok()))
       .set_body(logger_.log_tail().dump())
       .done();

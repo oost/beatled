@@ -1,5 +1,40 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
-import { getEndpoint, postEndpoint, getAPIHost, setAPIHost } from "../api";
+import { getEndpoint, postEndpoint, getAPIHost, setAPIHost, getAPIToken, setAPIToken } from "../api";
+
+const localStorageMock = (() => {
+  let store: Record<string, string> = {};
+  return {
+    getItem: vi.fn((key: string) => store[key] ?? null),
+    setItem: vi.fn((key: string, value: string) => { store[key] = value; }),
+    removeItem: vi.fn((key: string) => { delete store[key]; }),
+    clear: vi.fn(() => { store = {}; }),
+    get length() { return Object.keys(store).length; },
+    key: vi.fn((i: number) => Object.keys(store)[i] ?? null),
+  };
+})();
+
+Object.defineProperty(globalThis, "localStorage", { value: localStorageMock, writable: true });
+
+describe("API token configuration", () => {
+  beforeEach(() => {
+    localStorageMock.clear();
+  });
+
+  it("returns empty string when no token set", () => {
+    expect(getAPIToken()).toBe("");
+  });
+
+  it("stores and retrieves a token", () => {
+    setAPIToken("my-secret-token");
+    expect(getAPIToken()).toBe("my-secret-token");
+  });
+
+  it("clears token when set to empty string", () => {
+    setAPIToken("my-secret-token");
+    setAPIToken("");
+    expect(getAPIToken()).toBe("");
+  });
+});
 
 describe("API host configuration", () => {
   it("returns default API host based on window.location", () => {
@@ -16,6 +51,7 @@ describe("API host configuration", () => {
 describe("getEndpoint", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    localStorageMock.clear();
     setAPIHost("https://localhost:8080");
   });
 
@@ -49,9 +85,39 @@ describe("getEndpoint", () => {
   });
 });
 
+describe("getEndpoint with auth token", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    localStorageMock.clear();
+    setAPIHost("https://localhost:8080");
+  });
+
+  it("includes Authorization header when token is set", async () => {
+    setAPIToken("test-token");
+    const mockResponse = { ok: true, json: () => Promise.resolve({}) };
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(mockResponse as Response);
+
+    await getEndpoint("/api/status");
+
+    const [, options] = (fetch as Mock).mock.calls[0];
+    expect(options.headers.Authorization).toBe("Bearer test-token");
+  });
+
+  it("omits Authorization header when no token", async () => {
+    const mockResponse = { ok: true, json: () => Promise.resolve({}) };
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(mockResponse as Response);
+
+    await getEndpoint("/api/status");
+
+    const [, options] = (fetch as Mock).mock.calls[0];
+    expect(options.headers.Authorization).toBeUndefined();
+  });
+});
+
 describe("postEndpoint", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    localStorageMock.clear();
     setAPIHost("https://localhost:8080");
   });
 
