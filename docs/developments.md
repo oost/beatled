@@ -1,7 +1,7 @@
 ---
-title: Futrher Developments
+title: Further Developments
 layout: default
-nav_order: 6
+nav_order: 8
 ---
 
 # Beat Tracking Frameworks
