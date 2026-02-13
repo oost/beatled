@@ -13,7 +13,6 @@ Welcome to the `Beatled` project.
 - One or more Raspberry Pico W
 - A Unix/Linux based machine with Docker (not strictly necessary but it may be easier to use your laptop to cross compile the code)
 - A USB microphone ([Amazon](https://www.amazon.com/gp/product/B0138HETXU/ref=ppx_yo_dt_b_search_asin_title?ie=UTF8&psc=1))
-- sss
 
 ## Repos
 

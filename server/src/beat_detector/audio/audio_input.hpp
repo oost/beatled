@@ -1,7 +1,7 @@
 #ifndef BEATDETECTOR_AUDIOINPUT_H
 #define BEATDETECTOR_AUDIOINPUT_H
 
-#include <AudioFile.h>
+#include <AudioFile/AudioFile.h>
 #include <exception>
 #include <filesystem>
 #include <iostream>

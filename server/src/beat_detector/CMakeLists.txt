@@ -14,7 +14,7 @@ target_link_libraries(beat_detector
       portaudio_static 
     #   portaudio
       FFTW3::fftw3 
-      AudioFile 
+      AudioFile::AudioFile
       btrack
       beatled_core
       spdlog::spdlog
