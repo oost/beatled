@@ -32,20 +32,23 @@ public:
    * @brief Constructor
    * @param buffer_size max buffer size
    */
-  AudioBufferPool(std::size_t buffer_size, double sample_rate)
-      : buffer_size_{buffer_size}, sample_rate_{sample_rate}, active_{true} {
-    // Add one buffer to pool
-    add_buffer();
+  AudioBufferPool(std::size_t buffer_size, double sample_rate,
+                  std::size_t pool_capacity = 4)
+      : buffer_size_{buffer_size}, sample_rate_{sample_rate},
+        pool_capacity_{pool_capacity}, active_{true} {
+    preallocate_pool();
   }
 
   void set_sample_rate(double sample_rate) {
     sample_rate_ = sample_rate;
     std::unique_lock<std::mutex> L{pool_buffer_queue_mutex_};
     while (!pool_buffer_queue_.empty()) {
-      total_pool_size_--;
       pool_buffer_queue_.pop();
     }
-    add_buffer();
+    total_pool_size_ = 0;
+    buffer_count_ = 0;
+    L.unlock();
+    preallocate_pool();
   }
 
   /**
@@ -88,12 +91,16 @@ public:
   AudioBuffer::Ptr get_new_buffer() {
     std::unique_lock<std::mutex> L{pool_buffer_queue_mutex_};
     if (pool_buffer_queue_.empty()) {
-      total_pool_size_++;
-      SPDLOG_INFO("Creating new AudioBuffer (id: {}). Total pool size: {}",
-                  buffer_count_, total_pool_size_);
-
-      return std::make_unique<AudioBuffer>(buffer_size_, sample_rate_,
-                                           buffer_count_++);
+      SPDLOG_WARN("Audio buffer pool exhausted, waiting for a buffer to be released");
+      bool available = pool_available_cv_.wait_for(
+          L, std::chrono::milliseconds(100),
+          [this]() { return !pool_buffer_queue_.empty(); });
+      if (!available) {
+        SPDLOG_ERROR("Timed out waiting for audio buffer, allocating emergency buffer");
+        total_pool_size_++;
+        return std::make_unique<AudioBuffer>(buffer_size_, sample_rate_,
+                                             buffer_count_++);
+      }
     }
 
     // Get first element
@@ -180,23 +187,25 @@ public:
   void release_buffer(AudioBuffer::Ptr buffer) {
     std::lock_guard<std::mutex> pool_buffer_queue_lock{
         pool_buffer_queue_mutex_};
-    // TODO: add destroy buffer if enough buffers
-    std::size_t pool_size_ = pool_buffer_queue_.size();
-    if (pool_size_ > 3) {
-      SPDLOG_INFO("Destroying AudioBuffer. Total pool size: {}", pool_size_);
-      total_pool_size_--;
-    } else {
-      pool_buffer_queue_.push(std::move(buffer));
-    }
+    pool_buffer_queue_.push(std::move(buffer));
+    pool_available_cv_.notify_one();
   }
 
 private:
-  void add_buffer() {
-    pool_buffer_queue_.push(std::move(std::make_unique<AudioBuffer>(
-        buffer_size_, sample_rate_, buffer_count_)));
-    buffer_count_++;
-    total_pool_size_++;
+  void preallocate_pool() {
+    std::lock_guard<std::mutex> L{pool_buffer_queue_mutex_};
+    for (std::size_t i = 0; i < pool_capacity_; i++) {
+      pool_buffer_queue_.push(std::make_unique<AudioBuffer>(
+          buffer_size_, sample_rate_, buffer_count_++));
+      total_pool_size_++;
+    }
+    SPDLOG_INFO("Pre-allocated {} audio buffers", pool_capacity_);
   }
+
+  /**
+   * @brief Condition variable for pool buffer availability
+   */
+  std::condition_variable pool_available_cv_;
 
   /**
    * @brief Condition variable for filled buffer queue
@@ -227,6 +236,11 @@ private:
    * @brief Size of each individual buffer
    */
   std::size_t buffer_size_;
+
+  /**
+   * @brief Pre-allocated pool capacity
+   */
+  std::size_t pool_capacity_;
 
   /**
    * @brief Size of pool

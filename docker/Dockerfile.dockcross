@@ -1,0 +1,51 @@
+# syntax=docker/dockerfile:1
+
+####################################
+# Dockcross-based cross-compilation
+# environment for Raspberry Pi 4
+# (aarch64/ARM64)
+####################################
+
+FROM dockcross/linux-arm64 AS dockcross-builder
+
+# Install ARM64 audio system dependencies
+RUN dpkg --add-architecture arm64 \
+  && apt-get update \
+  && apt-get install -y \
+    libasound2-dev:arm64 \
+    libfftw3-dev:arm64 \
+    portaudio19-dev:arm64 \
+    libasound-dev:arm64 \
+    libflac-dev:arm64 \
+    libogg-dev:arm64 \
+    libtool:arm64 \
+    libvorbis-dev:arm64 \
+    libopus-dev:arm64 \
+    libmp3lame-dev:arm64 \
+    libmpg123-dev:arm64 \
+    libpulse-dev:arm64 \
+    pkg-config \
+  && rm -rf /var/lib/apt/lists/*
+
+# Setup vcpkg
+ENV VCPKG_FORCE_SYSTEM_BINARIES=1
+RUN cd /tmp \
+  && git clone https://github.com/Microsoft/vcpkg.git -n \
+  && cd vcpkg \
+  && git checkout master \
+  && ./bootstrap-vcpkg.sh
+
+ENV VCPKG_HOME=/tmp/vcpkg
+ENV TARGET_TRIPLET=arm64-linux-custom
+
+# Copy custom triplet
+COPY server/cmake/arm64-linux-custom.cmake ${VCPKG_HOME}/triplets/
+
+# Install vcpkg dependencies using manifest
+COPY server/vcpkg.json /tmp/vcpkg-manifest/
+RUN cd /tmp/vcpkg-manifest \
+  && ${VCPKG_HOME}/vcpkg install \
+    --triplet=${TARGET_TRIPLET} \
+    --x-manifest-root=/tmp/vcpkg-manifest
+
+WORKDIR /home/build
