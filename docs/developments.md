@@ -4,9 +4,26 @@ layout: default
 nav_order: 8
 ---
 
+# Further Developments
+
+## Native iOS App
+
+The current control panel is a React web app served over HTTPS. While this works well and can be installed as a PWA on iOS, a native Swift app would unlock several improvements:
+
+- **Bluetooth provisioning** -- configure WiFi credentials on Pico W devices without needing a serial connection
+- **On-device beat detection** -- use the iPhone microphone and Core ML to run beat tracking directly, removing the need for a Raspberry Pi server in simpler setups
+- **Haptic feedback** -- tap along with the beat using the Taptic Engine
+- **Widgets and Live Activities** -- show current tempo and beat count on the Lock Screen
+- **Better offline support** -- native networking with Bonjour/mDNS for automatic server discovery on the local network
+- **AirPlay / Spotify integration** -- sync to audio playback metadata instead of (or in addition to) microphone input
+
+The server already exposes a REST API over HTTPS, so the first step would be a thin SwiftUI client that replaces the web dashboard. Beat detection on-device would be a larger effort, likely using the Accelerate framework for FFT and a Core ML port of the BTrack onset detection model.
+
+---
+
 # Beat Tracking Frameworks
 
-## "Traditional" Signals-based Beat Traking
+## "Traditional" Signals-based Beat Tracking
 
 | Library                                                                 | Language | Bindings | Beat Tracking | Online Beat Tracking | Downbeat Tracking |
 | ----------------------------------------------------------------------- | -------- | -------- | ------------- | -------------------- | ----------------- |
