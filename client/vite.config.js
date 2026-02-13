@@ -1,10 +1,23 @@
+import path from "path";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  test: {
+    environment: "jsdom",
+    globals: true,
+    setupFiles: "./src/test/setup.js",
+  },
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+  },
   plugins: [
+    tailwindcss(),
     react(),
     VitePWA({
       registerType: "autoUpdate",
@@ -18,7 +31,7 @@ export default defineConfig({
         name: "Beatled Console",
         short_name: "Beatled",
         description: "Beatled App",
-        theme_color: "#ffffff",
+        theme_color: "#f96332",
         background_color: "#ffffff",
         icons: [
           {

@@ -9,9 +9,7 @@ import { registerSW } from "virtual:pwa-register";
 
 registerSW({ immediate: true });
 
-import "bootstrap/dist/css/bootstrap.min.css";
 import "./index.css";
-import "./assets/scss/beatled.scss";
 
 initializeConsole();
 const router = createBrowserRouter(routes);
@@ -21,5 +19,5 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     <IntlProvider locale="en" defaultLocale="en">
       <RouterProvider router={router} />
     </IntlProvider>
-  </React.StrictMode>
+  </React.StrictMode>,
 );

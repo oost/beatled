@@ -1,24 +1,13 @@
-import { useFetcher, useLoaderData, useSubmit } from "react-router-dom";
-import {
-  Card,
-  CardBody,
-  CardHeader,
-  CardTitle,
-  CardFooter,
-  Col,
-  Row,
-  FormGroup,
-  Form,
-  Input,
-  Label,
-} from "reactstrap";
-import PanelHeader from "../components/PanelHeader";
+import { useLoaderData, useSubmit } from "react-router-dom";
+import PageHeader from "../components/page-header";
+import { Card, CardContent } from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { getProgram, postProgram } from "../lib/program";
 
 export async function loader({ request }) {
   console.log("Loading programs");
   const programInfo = await getProgram();
-
   return programInfo;
 }
 
@@ -30,54 +19,45 @@ export async function action({ request, params }) {
 }
 
 export default function ProgramPage() {
-  const fetcher = useFetcher();
   const submit = useSubmit();
-
   const { programId, programs } = useLoaderData();
 
-  const onRadioChange = (event) => {
-    submit(event.currentTarget.form);
+  const onValueChange = (value) => {
+    const formData = new FormData();
+    formData.set("programId", value);
+    submit(formData, { method: "post" });
   };
 
   return (
     <>
-      <PanelHeader
-        content={
-          <div className="header text-center">
-            <h2 className="title">Program</h2>
-          </div>
-        }
-      />
-      <div className="content">
-        <Row>
-          <Col xs={12} md={6}>
-            <Form method="post">
-              <Card className="card-chart">
-                <CardHeader>
-                  <CardTitle tag="h4">Program</CardTitle>
-                </CardHeader>
-                <CardBody>Current program:</CardBody>
-                <CardFooter>
-                  <FormGroup tag="fieldset">
-                    <legend>Programs</legend>
-                    {programs?.map((program) => (
-                      <FormGroup check key={program.id}>
-                        <Input
-                          name="programId"
-                          type="radio"
-                          value={program.id}
-                          checked={program.id === programId}
-                          onChange={onRadioChange}
-                        />
-                        <Label check>{program.name}</Label>
-                      </FormGroup>
-                    ))}
-                  </FormGroup>
-                </CardFooter>
-              </Card>
-            </Form>
-          </Col>
-        </Row>
+      <PageHeader title="Program" />
+      <div className="px-4 pb-8 md:px-8">
+        <Card>
+          <CardContent className="pt-6">
+            <RadioGroup
+              value={String(programId)}
+              onValueChange={onValueChange}
+            >
+              {programs?.map((program) => (
+                <div
+                  key={program.id}
+                  className="flex items-center space-x-3 py-2"
+                >
+                  <RadioGroupItem
+                    value={String(program.id)}
+                    id={`program-${program.id}`}
+                  />
+                  <Label
+                    htmlFor={`program-${program.id}`}
+                    className="text-sm font-normal"
+                  >
+                    {program.name}
+                  </Label>
+                </div>
+              ))}
+            </RadioGroup>
+          </CardContent>
+        </Card>
       </div>
     </>
   );

@@ -1,24 +1,15 @@
-import PanelHeader from "../components/PanelHeader";
 import { getLogs } from "../lib/log";
-import { useLoaderData, useFetcher } from "react-router-dom";
+import { useFetcher, useLoaderData } from "react-router-dom";
 import { useEffect } from "react";
 import { useInterval } from "../hooks/interval";
-
-import {
-  Row,
-  Col,
-  Card,
-  CardHeader,
-  CardTitle,
-  CardBody,
-  CardFooter,
-} from "reactstrap";
-import { HiOutlineRefresh } from "react-icons/hi";
+import PageHeader from "../components/page-header";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
 import { getConsoleLogs } from "../lib/console";
 
 export async function loader({ request }) {
   console.log("Loading status");
-
   return { logs: await getLogs(), consoleLogs: getConsoleLogs() };
 }
 
@@ -42,83 +33,57 @@ export default function LogPage() {
     }
   }, [fetcher]);
 
-  // const logs = fetcher.data ? fetcher.data.logs : statusData.logs;
   const logs = fetcher.data?.logs || [];
   const consoleLogs = fetcher.data?.consoleLogs || [];
 
   return (
     <>
-      <PanelHeader
-        content={
-          <div className="header text-center">
-            <h2 className="title">Logs</h2>
-          </div>
-        }
-      />
-      <div className="content">
+      <PageHeader title="Logs" />
+      <div className="space-y-4 px-4 pb-8 md:px-8">
         <fetcher.Form method="post">
-          <Row>
-            <Col xs={12} md={12}>
-              <Card className="card-chart">
-                <CardHeader>
-                  <CardTitle tag="h4">Beatled Logs</CardTitle>
-                  <div
-                    onClick={(event) => {
-                      fetcher.submit();
-                    }}
-                    className="dropdown right"
-                  >
-                    <button
-                      type="button"
-                      aria-haspopup="true"
-                      aria-expanded="true"
-                      className="btn-round btn-outline-default btn-icon btn btn-default"
-                    >
-                      <HiOutlineRefresh />
-                    </button>
-                  </div>
-                </CardHeader>
-                <CardBody>
-                  {logs?.error ? (
-                    <p>{logs.status}</p>
-                  ) : (
-                    <pre>{logs.map((logLine) => logLine)}</pre>
-                  )}
-                </CardBody>
-                <CardFooter>
-                  <div className="stats"></div>
-                </CardFooter>
-              </Card>
-            </Col>
-            <Col xs={12} md={12}>
-              <Card className="card-chart">
-                <CardHeader>
-                  <CardTitle tag="h4">Beatled Logs</CardTitle>
-                  <div
-                    onClick={(event) => {
-                      fetcher.submit();
-                    }}
-                    className="dropdown right"
-                  >
-                    <button
-                      type="button"
-                      aria-haspopup="true"
-                      aria-expanded="true"
-                      className="btn-round btn-outline-default btn-icon btn btn-default"
-                    >
-                      <HiOutlineRefresh />
-                    </button>
-                  </div>
-                </CardHeader>
-                <CardBody>
-                  <pre>{consoleLogs.map((logLine) => logLine)}</pre>
-                </CardBody>
-                <CardFooter>
-                  <div className="stats"></div>
-                </CardFooter>
-              </Card>
-            </Col>
-          </Row>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <CardTitle className="text-base">Server</CardTitle>
+              <Button
+                variant="ghost"
+                size="icon"
+                type="button"
+                className="h-8 w-8 text-muted-foreground"
+                onClick={() => fetcher.submit()}
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {logs?.error ? (
+                <p className="text-sm text-muted-foreground">{logs.status}</p>
+              ) : (
+                <pre className="max-h-80 overflow-auto rounded-lg bg-muted/50 p-3 font-mono text-xs leading-relaxed">
+                  {logs.map((logLine) => logLine)}
+                </pre>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="mt-4">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <CardTitle className="text-base">Console</CardTitle>
+              <Button
+                variant="ghost"
+                size="icon"
+                type="button"
+                className="h-8 w-8 text-muted-foreground"
+                onClick={() => fetcher.submit()}
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <pre className="max-h-80 overflow-auto rounded-lg bg-muted/50 p-3 font-mono text-xs leading-relaxed">
+                {consoleLogs.map((logLine) => logLine)}
+              </pre>
+            </CardContent>
+          </Card>
         </fetcher.Form>
       </div>
     </>

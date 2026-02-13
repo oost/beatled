@@ -2,25 +2,26 @@ import { useFetcher } from "react-router-dom";
 import { useEffect } from "react";
 import { useInterval } from "../hooks/interval";
 import { getStatus, serviceControl } from "../lib/status";
-import PanelHeader from "../components/PanelHeader";
+import PageHeader from "../components/page-header";
 import {
-  Row,
-  Col,
   Card,
+  CardContent,
+  CardFooter,
   CardHeader,
   CardTitle,
-  CardBody,
-  CardFooter,
+} from "@/components/ui/card";
+import {
   Table,
-  Input,
-  FormGroup,
-} from "reactstrap";
+  TableBody,
+  TableCell,
+  TableRow,
+} from "@/components/ui/table";
+import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
 import { FormattedNumber } from "react-intl";
-
 import BeatChart from "../components/BeatChart";
 import { format, formatDistanceToNow } from "date-fns";
-import { HiOutlineRefresh } from "react-icons/hi";
-import { AiOutlineClockCircle } from "react-icons/ai";
+import { RefreshCw, Clock } from "lucide-react";
 
 const tempoHistory = [];
 const MAX_HISTORY = 30;
@@ -28,7 +29,6 @@ const MAX_HISTORY = 30;
 export async function loader({ request }) {
   console.log("Loading status");
   const status = await getStatus();
-  // const tempo = 120 + 40 * 2 * (Math.random() - 0.5);
   const last = { x: new Date(), y: status.tempo || NaN, ...status };
   tempoHistory.push(last);
   if (tempoHistory.length > MAX_HISTORY) {
@@ -55,7 +55,6 @@ export default function StatusPage() {
 
   const toggleService = async (serviceId, status) => {
     await serviceControl(serviceId, status);
-
     return fetcher.submit();
   };
 
@@ -67,129 +66,104 @@ export default function StatusPage() {
 
   const data = fetcher.data?.last || {};
   const historyData = fetcher.data?.history || {};
+
   return (
     <>
-      <PanelHeader
-        content={
-          <div className="header text-center">
-            <h2 className="title">Status</h2>
-          </div>
-        }
-      />
-      <div className="content">
-        <Row>
-          <Col xs={12} md={6}>
-            <fetcher.Form method="post">
-              <Card className="card-chart">
-                <CardHeader>
-                  {/* <h5 className="card-category">Status</h5> */}
-                  <CardTitle tag="h4">Beatled Status</CardTitle>
-                  <div
-                    onClick={(event) => {
-                      fetcher.submit();
-                    }}
-                    className="dropdown right"
-                  >
-                    <button
-                      type="button"
-                      aria-haspopup="true"
-                      aria-expanded="true"
-                      className="btn-round btn-outline-default btn-icon btn btn-default"
-                    >
-                      <HiOutlineRefresh />
-                    </button>
-                  </div>
-                </CardHeader>
-                <CardBody>
-                  {data.error ? (
-                    <p>{data.status}</p>
-                  ) : (
-                    <Table responsive>
-                      <tbody>
-                        <tr>
-                          <th>Last update</th>
-                          <td>{data.x && format(data.x, "h:mm:ss a")}</td>
-                        </tr>
-
-                        <tr>
-                          <th>Tempo</th>
-                          <td>
-                            {data.tempo && (
-                              <FormattedNumber
-                                value={data.tempo}
-                                minimumFractionDigits={1}
-                                maximumFractionDigits={2}
+      <PageHeader title="Status" />
+      <div className="space-y-4 px-4 pb-8 md:px-8">
+        <fetcher.Form method="post">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <CardTitle className="text-base">Beatled</CardTitle>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground"
+                onClick={() => fetcher.submit()}
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {data.error ? (
+                <p className="text-sm text-muted-foreground">{data.status}</p>
+              ) : (
+                <Table>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell className="font-medium">
+                        Last update
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {data.x && format(data.x, "h:mm:ss a")}
+                      </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">Tempo</TableCell>
+                      <TableCell className="text-right">
+                        {data.tempo && (
+                          <FormattedNumber
+                            value={data.tempo}
+                            minimumFractionDigits={1}
+                            maximumFractionDigits={2}
+                          />
+                        )}
+                      </TableCell>
+                    </TableRow>
+                    {data.status &&
+                      Object.entries(data.status).map(
+                        ([controllerId, controllerStatus]) => (
+                          <TableRow key={controllerId}>
+                            <TableCell className="font-medium">
+                              {controllerId}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Switch
+                                checked={controllerStatus}
+                                onCheckedChange={(checked) =>
+                                  toggleService(controllerId, checked)
+                                }
                               />
-                            )}
-                          </td>
-                        </tr>
+                            </TableCell>
+                          </TableRow>
+                        ),
+                      )}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+            <CardFooter>
+              <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Clock className="h-3 w-3" />
+                {data.x &&
+                  "Updated " +
+                    formatDistanceToNow(data.x, { addSuffix: true })}
+              </p>
+            </CardFooter>
+          </Card>
+        </fetcher.Form>
 
-                        {data.status &&
-                          Object.entries(data.status).map(
-                            ([controllerId, controllerStatus]) => {
-                              return (
-                                <tr key={controllerId}>
-                                  <th>{controllerId}</th>
-                                  <td>
-                                    <FormGroup switch disabled>
-                                      <Input
-                                        type="switch"
-                                        checked={controllerStatus}
-                                        onChange={(e) =>
-                                          toggleService(
-                                            controllerId,
-                                            e.target.checked
-                                          )
-                                        }
-                                      />
-                                    </FormGroup>
-                                  </td>
-                                </tr>
-                              );
-                            }
-                          )}
-                      </tbody>
-                    </Table>
-                  )}
-                </CardBody>
-                <CardFooter>
-                  <div className="stats">
-                    <AiOutlineClockCircle />{" "}
-                    {data.x &&
-                      "Updated " +
-                        formatDistanceToNow(data.x, { addSuffix: true }) +
-                        " (" +
-                        format(data.x, "h:mm:ss a") +
-                        ")"}
-                  </div>
-                </CardFooter>
-              </Card>
-            </fetcher.Form>
-          </Col>
-
-          <Col xs={12} md={6}>
-            <Card className="card-chart">
-              <CardHeader>
-                <CardTitle tag="h4">Beat History</CardTitle>
-              </CardHeader>
-              <CardBody>
-                {data.error ? (
-                  <p>{data.status}</p>
-                ) : (
-                  <BeatChart historyData={historyData} />
-                )}
-              </CardBody>
-              <CardFooter>
-                <div className="stats">
-                  <AiOutlineClockCircle />{" "}
-                  {data.x &&
-                    "Updated " +
-                      formatDistanceToNow(data.x, { addSuffix: true })}
-                </div>
-              </CardFooter>
-            </Card>
-          </Col>
-        </Row>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Beat History</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {data.error ? (
+              <p className="text-sm text-muted-foreground">{data.status}</p>
+            ) : (
+              <BeatChart historyData={historyData} />
+            )}
+          </CardContent>
+          <CardFooter>
+            <p className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Clock className="h-3 w-3" />
+              {data.x &&
+                "Updated " +
+                  formatDistanceToNow(data.x, { addSuffix: true })}
+            </p>
+          </CardFooter>
+        </Card>
       </div>
     </>
   );

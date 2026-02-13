@@ -1,9 +1,24 @@
-import { BsGearWideConnected, BsMusicPlayer } from "react-icons/bs";
-import { HiOutlineClipboardDocumentList } from "react-icons/hi2";
+import { Activity, Music, ScrollText, Settings } from "lucide-react";
 
 export const NAVBAR_ROUTES = [
-  { name: "Status", path: "/status", icon: <BsGearWideConnected /> },
-  { name: "Program", path: "/program", icon: <BsMusicPlayer /> },
-  { name: "Log", path: "/log", icon: <HiOutlineClipboardDocumentList /> },
-  { name: "Config", path: "/config", icon: <HiOutlineClipboardDocumentList /> },
+  {
+    name: "Status",
+    path: "/status",
+    icon: <Activity className="h-5 w-5" />,
+  },
+  {
+    name: "Program",
+    path: "/program",
+    icon: <Music className="h-5 w-5" />,
+  },
+  {
+    name: "Log",
+    path: "/log",
+    icon: <ScrollText className="h-5 w-5" />,
+  },
+  {
+    name: "Config",
+    path: "/config",
+    icon: <Settings className="h-5 w-5" />,
+  },
 ];

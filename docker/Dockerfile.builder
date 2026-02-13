@@ -4,13 +4,13 @@
 # Build server
 ####################################
 
-FROM debian:bookworm-backports AS build-server
+FROM debian:trixie-backports AS build-server
 
 RUN echo "I am running on $TARGETPLATFORM, uname $(uname -m)" 
 
 RUN dpkg --add-architecture arm64 \
   && apt-get update \
-  &&  apt-get install -t bookworm-backports -y \
+  &&  apt-get install -t trixie-backports -y \
     cmake make autoconf automake autoconf-archive libtool \
     build-essential gawk pkg-config git ninja-build \
     curl zip unzip tar texinfo bison libncurses-dev file \

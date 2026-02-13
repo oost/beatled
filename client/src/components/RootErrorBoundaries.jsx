@@ -1,4 +1,3 @@
-import React from "react";
 import { useRouteError, isRouteErrorResponse } from "react-router-dom";
 
 export function RootErrorBoundary() {
@@ -7,11 +6,11 @@ export function RootErrorBoundary() {
   let errorMessage = <div>Something went wrong</div>;
   if (isRouteErrorResponse(error)) {
     if (error.status === 404) {
-      errorMessage = <div>This page doesn't exist!</div>;
+      errorMessage = <div>This page doesn&apos;t exist!</div>;
     }
 
     if (error.status === 401) {
-      errorMessage = <div>You aren't authorized to see this</div>;
+      errorMessage = <div>You aren&apos;t authorized to see this</div>;
     }
 
     if (error.status === 503) {
@@ -23,5 +22,9 @@ export function RootErrorBoundary() {
     }
   }
 
-  return <div id="error-page">{errorMessage}</div>;
+  return (
+    <div className="flex min-h-screen w-full items-center justify-center">
+      {errorMessage}
+    </div>
+  );
 }

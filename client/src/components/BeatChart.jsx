@@ -6,7 +6,6 @@ import {
   PointElement,
   LineElement,
   Tooltip,
-  // Legend,
   TimeScale,
 } from "chart.js";
 import "chartjs-adapter-date-fns";
@@ -18,7 +17,7 @@ ChartJS.register(
   PointElement,
   LineElement,
   Tooltip,
-  TimeScale
+  TimeScale,
 );
 
 function getChartConfig(historyData) {
@@ -34,8 +33,6 @@ function getChartConfig(historyData) {
           pointHoverRadius: 4,
           pointHoverBorderWidth: 1,
           pointRadius: 4,
-          // fill: true,
-          // backgroundColor: gradientFill,
           borderWidth: 2,
           tension: 0.4,
           data: historyData,
@@ -44,7 +41,6 @@ function getChartConfig(historyData) {
     },
     options: {
       responsive: true,
-
       scales: {
         x: {
           type: "time",
@@ -62,7 +58,7 @@ function getChartConfig(historyData) {
 export default function BeatChart({ historyData }) {
   const chartConfig = getChartConfig(historyData);
   return (
-    <div className="chart-area" style={{ position: "relative" }}>
+    <div className="relative w-full">
       {historyData ? (
         <Line data={chartConfig.data} options={chartConfig.options} />
       ) : (

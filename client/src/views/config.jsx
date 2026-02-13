@@ -1,18 +1,8 @@
-import { useLoaderData, useFetcher, useSubmit } from "react-router-dom";
-import PanelHeader from "../components/PanelHeader";
-import {
-  Row,
-  Col,
-  Card,
-  CardHeader,
-  CardTitle,
-  CardBody,
-  CardFooter,
-  Input,
-  FormGroup,
-  Label,
-  Form,
-} from "reactstrap";
+import { useLoaderData, useSubmit } from "react-router-dom";
+import PageHeader from "../components/page-header";
+import { Card, CardContent } from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { getAPIHost, setAPIHost } from "../lib/api";
 
 export async function loader({ request }) {
@@ -32,54 +22,45 @@ const API_HOSTS = [
 ];
 
 export default function ConfigPage() {
-  const fetcher = useFetcher();
   const submit = useSubmit();
-
   const { host } = useLoaderData();
 
-  const onRadioChange = (event) => {
-    submit(event.currentTarget.form);
+  const onValueChange = (value) => {
+    const formData = new FormData();
+    formData.set("host", value);
+    submit(formData, { method: "post" });
   };
 
   return (
     <>
-      <PanelHeader
-        content={
-          <div className="header text-center">
-            <h2 className="title">Config</h2>
-          </div>
-        }
-      />
-      <div className="content">
-        <Row>
-          <Col xs={12} md={6}>
-            <Form method="post">
-              <Card className="card-chart">
-                <CardHeader>
-                  <CardTitle tag="h4">Server config</CardTitle>
-                </CardHeader>
-                <CardBody></CardBody>
-                <CardFooter>
-                  <FormGroup tag="fieldset">
-                    <legend>API Host</legend>
-                    {API_HOSTS.map((api_host) => (
-                      <FormGroup check key={api_host.value}>
-                        <Input
-                          name="host"
-                          type="radio"
-                          value={api_host.value}
-                          checked={host === api_host.value}
-                          onChange={onRadioChange}
-                        />
-                        <Label check>{api_host.name}</Label>
-                      </FormGroup>
-                    ))}
-                  </FormGroup>
-                </CardFooter>
-              </Card>
-            </Form>
-          </Col>
-        </Row>
+      <PageHeader title="Config" />
+      <div className="px-4 pb-8 md:px-8">
+        <Card>
+          <CardContent className="pt-6">
+            <fieldset>
+              <legend className="mb-3 text-sm font-medium">API Host</legend>
+              <RadioGroup value={host} onValueChange={onValueChange}>
+                {API_HOSTS.map((api_host) => (
+                  <div
+                    key={api_host.value}
+                    className="flex items-center space-x-3 py-2"
+                  >
+                    <RadioGroupItem
+                      value={api_host.value}
+                      id={`host-${api_host.value}`}
+                    />
+                    <Label
+                      htmlFor={`host-${api_host.value}`}
+                      className="text-sm font-normal"
+                    >
+                      {api_host.name}
+                    </Label>
+                  </div>
+                ))}
+              </RadioGroup>
+            </fieldset>
+          </CardContent>
+        </Card>
       </div>
     </>
   );
