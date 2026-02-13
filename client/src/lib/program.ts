@@ -11,7 +11,7 @@ export async function getProgram(): Promise<ProgramInfo> {
   try {
     const res = await getEndpoint("/api/program");
     return res.json();
-  } catch (_err) {
+  } catch {
     return { error: true, status: "Network error" };
   }
 }
@@ -22,7 +22,7 @@ export async function postProgram(programId: number): Promise<ProgramInfo> {
       programId,
     });
     return res.json();
-  } catch (_err) {
+  } catch {
     return { error: true, status: "Network error" };
   }
 }

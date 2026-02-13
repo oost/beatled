@@ -10,7 +10,7 @@ export async function getStatus(): Promise<StatusResponse> {
   try {
     const res = await getEndpoint("/api/status");
     return res.json();
-  } catch (_err) {
+  } catch {
     return { error: true, status: "Network error" };
   }
 }
@@ -22,7 +22,7 @@ export async function serviceControl(serviceId: string, status: boolean): Promis
       status,
     });
     return res.json();
-  } catch (_err) {
+  } catch {
     return { error: true, status: "Network error" };
   }
 }

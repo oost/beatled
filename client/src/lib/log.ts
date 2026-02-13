@@ -9,7 +9,7 @@ export async function getLogs(): Promise<string[] | LogResponse> {
   try {
     const res = await getEndpoint("/api/log");
     return res.json();
-  } catch (_err) {
+  } catch {
     return { error: true, status: "Network error" };
   }
 }
