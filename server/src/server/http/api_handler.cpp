@@ -6,7 +6,7 @@ using json = nlohmann::json;
 using beatled::core::tempo_ref_t;
 
 namespace beatled::server {
-// a simple struct to model a person
+
 struct Program {
   std::string name;
   int id;
@@ -20,10 +20,7 @@ APIHandler::APIHandler(ServiceManagerInterface &service_manager, Logger &logger,
 
 APIHandler::req_status_t APIHandler::on_get_status(const req_handle_t &req,
                                                    route_params_t params) {
-  // create an empty structure (null)
   json response_body;
-
-  // to an object)
   response_body["message"] = "It's all good!";
 
   json service_status;
@@ -72,7 +69,7 @@ APIHandler::on_post_service_control(const req_handle_t &req,
           .done();
     }
   } catch (const std::exception &e) {
-    response_body["error"] = "Error";
+    response_body["error"] = e.what();
 
     SPDLOG_ERROR("Error with request: {}", e.what());
     return init_resp(req->create_response(restinio::status_bad_request()))
@@ -101,11 +98,7 @@ APIHandler::req_status_t APIHandler::on_post_program(const req_handle_t &req,
 
   json response_body;
   try {
-    // create an empty structure (null)
     json request_body = json::parse(req->body());
-
-    // to an object)
-
     uint16_t program_id = request_body["programId"].get<std::uint16_t>();
     service_manager_.state_manager().update_program_id(program_id);
 
@@ -115,7 +108,7 @@ APIHandler::req_status_t APIHandler::on_post_program(const req_handle_t &req,
         .set_body(response_body.dump())
         .done();
   } catch (const std::exception &e) {
-    response_body["error"] = "Error";
+    response_body["error"] = e.what();
 
     SPDLOG_ERROR("Error with request: {}", e.what());
     return init_resp(req->create_response(restinio::status_bad_request()))
@@ -129,9 +122,7 @@ APIHandler::req_status_t APIHandler::on_get_program(const req_handle_t &req,
                                                     route_params_t params) {
   uint16_t program_id = service_manager_.state_manager().get_program_id();
 
-  // create an empty structure (null)
   json response_body;
-  // to an object)
   response_body["message"] = fmt::format("Current program is {}", program_id);
 
   response_body["programs"] = json::array(

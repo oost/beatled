@@ -4,7 +4,6 @@
 #include <asio/ts/internet.hpp>
 #include <cstdlib>
 #include <fmt/ostream.h>
-#include <iostream>
 #include <spdlog/spdlog.h>
 #include <string>
 
@@ -65,7 +64,7 @@ void UDPServer::do_receive() {
         }
 
         if (ec) {
-          std::cerr << ec.message() << std::endl;
+          SPDLOG_ERROR("UDP receive error: {}", ec.message());
         }
 
         do_receive();

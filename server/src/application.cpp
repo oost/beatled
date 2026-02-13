@@ -26,7 +26,6 @@ Application::Application(const Config &beatled_config)
   std::unique_ptr<server::TempoBroadcaster> tempo_broadcaster =
       std::make_unique<server::TempoBroadcaster>(
           TEMPO_BROADCASTER_ID, io_context_,
-          // std::chrono::milliseconds((60 * 1000) / 120),
           std::chrono::seconds(2), std::chrono::seconds(2),
           server_parameters_.broadcasting, state_manager_);
 
@@ -35,17 +34,11 @@ Application::Application(const Config &beatled_config)
       [&, tp = tempo_broadcaster.get()](uint64_t beat_time_ref, double tempo,
                                         double estimated_tempo,
                                         uint32_t beat_count) {
-        // SPDLOG_INFO("Beat cb {} {}", beat_time_ref, tempo);
-        // state_manager_.update_tempo(tempo, beat_time_ref);
         uint64_t next_beat_time_ref = state_manager_.get_next_beat_time_ref();
 
-        SPDLOG_INFO("Beat {}, {} vs. predication {}", beat_time_ref, tempo,
+        SPDLOG_INFO("Beat {}, {} vs. prediction {}", beat_time_ref, tempo,
                     static_cast<int64_t>(beat_time_ref) -
                         static_cast<int64_t>(next_beat_time_ref));
-        // state_manager_.update_tempo(tempo, beat_time_ref);
-        // state_manager_.update(next_beat_time_ref);
-
-        // tp->broadcast_beat(beat_time_ref, beat_count);
       },
       [&, tp = tempo_broadcaster.get()](uint64_t next_beat_time_ref,
                                         double tempo, double estimated_tempo,
@@ -69,7 +62,6 @@ Application::Application(const Config &beatled_config)
 }
 
 void Application::run() {
-  // start_beat_detector();
   if (server_parameters_.start_udp_server) {
     service(UDP_SERVER_ID)->start();
   }

@@ -89,7 +89,9 @@ HTTPServer::HTTPServer(const std::string &id,
     : ServiceControllerInterface{id}, service_manager_{service_manager},
       io_context_{io_context}, logger_{logger},
       certs_dir_{http_server_parameters.certs_dir},
-      cors_origin_{http_server_parameters.cors_origin} {
+      cors_origin_{http_server_parameters.cors_origin},
+      address_{http_server_parameters.address},
+      port_{http_server_parameters.port} {
   SPDLOG_INFO("Creating {}", name());
 
   using std::literals::chrono_literals::operator""s;
@@ -105,23 +107,20 @@ HTTPServer::HTTPServer(const std::string &id,
   // and so only asio::* or only boost::asio::* would be applied.
   namespace asio_ns = restinio::asio_ns;
 
-  const std::filesystem::path certs_dir =
-      std::filesystem::path(http_server_parameters.certs_dir);
+  std::vector<std::filesystem::path> certificate_paths{
+      certificate_file_path(), key_file_path(), dh_params_file_path()};
+
+  for (const auto &cert_path : certificate_paths) {
+    if (!std::filesystem::exists(cert_path)) {
+      throw std::runtime_error(
+          fmt::format("Missing certificate file: {}", cert_path.string()));
+    }
+  }
 
   asio_ns::ssl::context tls_context{asio_ns::ssl::context::sslv23};
   tls_context.set_options(asio_ns::ssl::context::default_workarounds |
                           asio_ns::ssl::context::no_sslv2 |
                           asio_ns::ssl::context::single_dh_use);
-  std::vector<std::filesystem::path> certificate_paths{
-      certificate_file_path(), key_file_path(), dh_params_file_path()};
-
-  for (std::filesystem::path &cert_path : certificate_paths) {
-    if (!std::filesystem::exists(cert_path)) {
-      SPDLOG_ERROR("Missing certificate file {}. Couldn't start HTTP server",
-                   cert_path);
-      return;
-    }
-  }
 
   tls_context.use_certificate_chain_file(certificate_file_path());
   tls_context.use_private_key_file(key_file_path(), asio_ns::ssl::context::pem);
@@ -143,6 +142,7 @@ HTTPServer::HTTPServer(const std::string &id,
 }
 
 void HTTPServer::start_sync() {
+  SPDLOG_INFO("{}: listening on {}:{}", name(), address_, port_);
   asio::post(io_context_, [&] { restinio_server_->open_sync(); });
 }
 

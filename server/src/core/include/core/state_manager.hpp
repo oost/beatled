@@ -1,5 +1,5 @@
-#ifndef STATE_MACHINE_H
-#define STATE_MACHINE_H
+#ifndef CORE_STATE_MANAGER_HPP
+#define CORE_STATE_MANAGER_HPP
 
 #include <asio.hpp>
 #include <atomic>
@@ -39,6 +39,7 @@ public:
   ClientStatus::Ptr client_status(const asio::ip::address &ip_address) const;
   void register_client(ClientStatus::Ptr client_status);
 
+  // Must be called during construction only (before threads start).
   void register_next_beat_cb(const on_next_beat_cb_t &cb) {
     on_next_beat_cbs_.push_back(cb);
   }
@@ -50,7 +51,7 @@ private:
   uint16_t client_id_max_ = 0;
   float tempo_;
   uint64_t time_ref_;
-  uint64_t next_beat_time_ref_;
+  std::atomic<uint64_t> next_beat_time_ref_;
   std::atomic<uint16_t> program_id_;
   mutable std::mutex tempo_mtx_;
   mutable std::mutex client_mtx_;
@@ -60,4 +61,4 @@ private:
 
 } // namespace beatled::core
 
-#endif // STATE_MACHINE_H
+#endif // CORE_STATE_MANAGER_HPP

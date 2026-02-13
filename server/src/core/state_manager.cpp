@@ -1,5 +1,4 @@
 #include <cstring>
-#include <iostream>
 #include <spdlog/spdlog.h>
 
 #include "core/state_manager.hpp"
@@ -81,14 +80,6 @@ void StateManager::register_client(ClientStatus::Ptr client_status) {
     it++;
   }
 
-  // ClientStatus::Ptr ptr = std::make_unique<ClientStatus>();
-
-  // ptr->client_id = ++client_id_max_;
-  // std::copy(std::begin(new_board_id), std::end(new_board_id),
-  //           std::begin(ptr->board_id));
-
-  // ClientStatus *ret = ptr.get();
-  // clients_[new_client_address] = std::move(ptr);
   clients_.push_back(client_status);
 }
 
