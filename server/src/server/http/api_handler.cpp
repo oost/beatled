@@ -13,8 +13,10 @@ struct Program {
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Program, name, id)
 
-APIHandler::APIHandler(ServiceManagerInterface &service_manager, Logger &logger)
-    : service_manager_{service_manager}, logger_{logger} {}
+APIHandler::APIHandler(ServiceManagerInterface &service_manager, Logger &logger,
+                       const std::string &cors_origin)
+    : service_manager_{service_manager}, logger_{logger},
+      cors_origin_{cors_origin} {}
 
 APIHandler::req_status_t APIHandler::on_get_status(const req_handle_t &req,
                                                    route_params_t params) {

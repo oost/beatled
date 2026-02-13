@@ -1,0 +1,44 @@
+name: Server CI
+
+on:
+  push:
+    branches: [master, "feature/*"]
+    paths:
+      - "server/**"
+      - ".github/workflows/server-ci.yml"
+  pull_request:
+    paths:
+      - "server/**"
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          submodules: recursive
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build pkg-config libasound2-dev
+
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@7d259227a1fb6471a0253dd5ab7419835228f7d7 # v11
+        with:
+          vcpkgGitCommitId: "576379156e82da642f8d1834220876759f13534d"
+
+      - name: Configure CMake
+        run: |
+          cmake -S server -B server/build \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake \
+            -DBEATSERVER_ENABLE_TESTS=ON
+
+      - name: Build
+        run: cmake --build server/build
+
+      - name: Run tests
+        run: ctest --test-dir server/build --output-on-failure

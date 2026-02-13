@@ -32,7 +32,9 @@ Config::Config(int argc, const char *argv[]) {
       lyra::opt(m_root_dir, "root-dir")["-r"]["--root-dir"](
           fmt::format("server root dir (default: '{}')", m_root_dir)) |
       lyra::opt(m_certs_dir, "certs dir")["--certs-dir"](
-          fmt::format("server certs dir (default: '{}')", m_certs_dir));
+          fmt::format("server certs dir (default: '{}')", m_certs_dir)) |
+      lyra::opt(m_cors_origin, "cors origin")["--cors-origin"](
+          fmt::format("CORS allowed origin (default: '{}')", m_cors_origin));
 
   auto parser_result = cli.parse(lyra::args(argc, argv));
   if (!parser_result) {
@@ -52,10 +54,11 @@ beatled::server::Server::parameters_t Config::server_parameters() const {
       .start_broadcaster = m_start_broadcaster,
       .http =
           {
-              m_address,   // address
-              m_http_port, // port
-              m_root_dir,  // root_dir
-              m_certs_dir, // cert_dir
+              m_address,     // address
+              m_http_port,   // port
+              m_root_dir,    // root_dir
+              m_certs_dir,   // cert_dir
+              m_cors_origin, // cors_origin
           },
       .udp = {m_udp_port},
       .broadcasting = {m_broadcasting_address, m_broadcasting_port},

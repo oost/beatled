@@ -34,6 +34,7 @@ private:
   std::size_t m_pool_size{2};
   std::string m_root_dir{"."};
   std::string m_certs_dir{"./certs"};
+  std::string m_cors_origin{"*"};
 };
 
 } // namespace beatled::core

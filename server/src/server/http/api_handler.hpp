@@ -19,7 +19,8 @@ public:
   using req_handle_t = restinio::request_handle_t;
   using route_params_t = restinio::router::route_params_t;
 
-  APIHandler(ServiceManagerInterface &service_manager, Logger &logger);
+  APIHandler(ServiceManagerInterface &service_manager, Logger &logger,
+             const std::string &cors_origin = "*");
 
   req_status_t on_get_status(const req_handle_t &req, route_params_t params);
 
@@ -39,13 +40,15 @@ private:
     return ResponseHandler::init_resp<RESP>(std::forward<RESP>(resp))
         .append_header(restinio::http_field::content_type,
                        "text/json; charset=utf-8")
-        .append_header(restinio::http_field::access_control_allow_origin, "*")
+        .append_header(restinio::http_field::access_control_allow_origin,
+                       cors_origin_)
         .append_header(restinio::http_field::access_control_allow_headers,
                        "Origin, X-Requested-With, Content-Type, Accept");
   }
 
   ServiceManagerInterface &service_manager_;
   Logger &logger_;
+  std::string cors_origin_;
 };
 } // namespace server
 } // namespace beatled
