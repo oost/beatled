@@ -21,6 +21,38 @@ The server already exposes a REST API over HTTPS, so the first step would be a t
 
 ---
 
+## RTOS on the Pico W (FreeRTOS)
+
+The Pico firmware currently manages concurrency manually: Core 0 runs an event loop (UDP listener, command handlers, state machine), Core 1 runs a tight LED update loop, and the two cores communicate through a lock-free intercore queue. This works, but has rough edges -- timer callbacks fire from ad-hoc pthreads (posix) or hardware alarm ISRs (pico), priority between networking and state transitions is implicit, and there is no preemption if a handler blocks.
+
+[FreeRTOS has first-class support for the RP2040](https://www.freertos.org/symmetric-multiprocessing-introduction.html) via the Pico SDK's `pico_async_context_freertos` library, including SMP across both cores. Adopting it would give us:
+
+- **Task priorities** -- the LED render task could run at a higher priority than networking, guaranteeing frame deadlines are met even during bursts of UDP traffic. The current architecture relies on Core 1 being fully dedicated to LEDs, which means we can never run anything else there.
+- **Software timers** -- replace the current alarm thread/ISR approach (repeating pthreads on posix, hardware alarms on pico) with FreeRTOS timer service. This gives predictable scheduling with less platform-specific code.
+- **Queues with blocking and timeout** -- the intercore queue and event queue could become FreeRTOS queues with built-in mutex protection, `xQueueSendToBack`/`xQueueReceive` with timeout, and ISR-safe variants. This replaces the hand-written circular buffer and its posix pthread shims.
+- **Stack overflow detection** -- FreeRTOS can detect stack overflows at runtime, which would help catch issues in the current unchecked `while(1)` loops.
+
+### What it would take to refactor
+
+1. **Build system** -- add `pico_async_context_freertos` and `FreeRTOS-Kernel` to the CMake build. The Pico SDK already bundles FreeRTOS as a submodule (`lib/FreeRTOS-Kernel`); it just needs to be enabled via `PICO_CXX_ENABLE_EXCEPTIONS=0` and the right `FreeRTOSConfig.h`.
+
+2. **Replace `core0_entry`/`core1_entry` with FreeRTOS tasks** -- instead of manually launching cores, create tasks with `xTaskCreate` and let the FreeRTOS SMP scheduler pin them or let them float across cores:
+   - `task_event_loop` (priority: normal) -- processes the event queue
+   - `task_led_render` (priority: high) -- runs `led_update()` at a fixed rate
+   - `task_hello_timer`, `task_tempo_timer`, etc. -- replaced by FreeRTOS software timers
+
+3. **Replace queues** -- swap `hal_queue_*` (circular buffer + pthread mutex) and `event_queue_*` with `xQueueCreate`/`xQueueSend`/`xQueueReceive`. The HAL abstraction layer already isolates queue usage behind `hal/queue.h`, so the API surface is small.
+
+4. **Replace alarms** -- the posix port uses `pthread_create` per timer; the pico port uses hardware repeating timers. Both would become `xTimerCreate` with a callback, unifying the two ports.
+
+5. **Posix port** -- FreeRTOS has a [POSIX/Linux simulator port](https://www.freertos.org/FreeRTOS-simulator-for-Linux.html) that runs tasks as pthreads with simulated scheduling. The posix HAL layer could target this, keeping the desktop simulator functional.
+
+6. **Mutex for registry** -- replace the current `registry_lock_mutex`/`registry_unlock_mutex` (pico spinlock or pthread mutex) with a FreeRTOS mutex, gaining priority inheritance for free.
+
+The HAL layer (`hal/queue.h`, `hal/time.h`, `hal/process.h`) was designed to isolate platform differences, so most of the refactoring would be contained within the `ports/` directories. Application code in `command/`, `state_manager/`, and `ws2812/` should remain largely untouched.
+
+---
+
 # Beat Tracking Frameworks
 
 ## "Traditional" Signals-based Beat Tracking
