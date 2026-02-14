@@ -22,8 +22,16 @@ add_executable(${BEAT_SERVER}
 )
 
 
-string(TIMESTAMP RPIZ_BS_BUILDTIME "%Y-%m-%d %H:%M")
-configure_file(build_constants.h.in build_constants.h)
+add_custom_target(build_constants ALL
+  COMMAND ${CMAKE_COMMAND}
+    -DRPIZ_BS_VERSION_MAJOR=${RPIZBeatServer_VERSION_MAJOR}
+    -DRPIZ_BS_VERSION_MINOR=${RPIZBeatServer_VERSION_MINOR}
+    -DINPUT_FILE="${CMAKE_CURRENT_SOURCE_DIR}/build_constants.h.in"
+    -DOUTPUT_FILE="${PROJECT_BINARY_DIR}/src/build_constants.h"
+    -P "${CMAKE_CURRENT_SOURCE_DIR}/generate_build_constants.cmake"
+  COMMENT "Generating build_constants.h with current timestamp"
+)
+add_dependencies(${BEAT_SERVER} build_constants)
 target_include_directories(${BEAT_SERVER} PUBLIC "${PROJECT_BINARY_DIR}/src")
 target_link_libraries(${BEAT_SERVER} PRIVATE 
   beatled_server 

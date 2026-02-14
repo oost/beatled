@@ -22,6 +22,7 @@ int main(int argc, char const *argv[]) {
     print_version(argv[0]);
 
     const auto beatled_config = Config(argc, argv);
+    beatled_config.log_config();
 
     if (!beatled_config.help()) {
       beatled::Application app(beatled_config);
