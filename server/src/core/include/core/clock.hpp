@@ -19,6 +19,11 @@ public:
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return ts.tv_sec * (uint64_t)1000000 + ts.tv_nsec / 1000;
   }
+  static uint64_t wall_time_us_64() {
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    return ts.tv_sec * (uint64_t)1000000 + ts.tv_nsec / 1000;
+  }
 };
 
 } // namespace beatled::core

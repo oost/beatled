@@ -58,7 +58,7 @@ DataBuffer::Ptr UDPRequestHandler::process_hello_request() {
 
   ClientStatus::Ptr cs = std::make_shared<ClientStatus>(
       hello_req->board_id, request_buffer_ptr_->remote_endpoint().address());
-  cs->last_status_time = Clock::time_us_64();
+  cs->last_status_time = Clock::wall_time_us_64();
 
   state_manager_.register_client(cs);
   return std::make_unique<HelloResponseBuffer>(cs->client_id);
@@ -78,7 +78,7 @@ DataBuffer::Ptr UDPRequestHandler::process_time_request() {
   auto cs = state_manager_.client_status(
       request_buffer_ptr_->remote_endpoint().address());
   if (cs) {
-    cs->last_status_time = ms_start;
+    cs->last_status_time = Clock::wall_time_us_64();
   }
 
   const auto *time_req_msg =
@@ -99,7 +99,7 @@ DataBuffer::Ptr UDPRequestHandler::process_tempo_request() {
   auto cs = state_manager_.client_status(
       request_buffer_ptr_->remote_endpoint().address());
   if (cs) {
-    cs->last_status_time = Clock::time_us_64();
+    cs->last_status_time = Clock::wall_time_us_64();
   }
 
   tempo_ref_t tr = state_manager_.get_tempo_ref();
