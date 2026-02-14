@@ -16,9 +16,8 @@ namespace beatled::detector {
 
 class AudioOutput : public AudioInterface {
 public:
-  AudioOutput(std::vector<audio_buffer_t> &audio_data,
-              AudioBufferPool *audio_buffer_pool, uint32_t sample_rate,
-              std::size_t audio_buffer_size,
+  AudioOutput(std::vector<audio_buffer_t> &audio_data, AudioBufferPool *audio_buffer_pool,
+              uint32_t sample_rate, std::size_t audio_buffer_size,
               unsigned long frames_per_buffer = 0);
   // virtual ~AudioOutput();
 
@@ -27,10 +26,8 @@ private:
 
   /* The instance callback, where we have access to every method/variable in
    * object of class Sine */
-  int paCallbackMethod(const void *inputBuffer, void *outputBuffer,
-                       unsigned long frameCount,
-                       const PaStreamCallbackTimeInfo *timeInfo,
-                       PaStreamCallbackFlags statusFlags);
+  int paCallbackMethod(const void *inputBuffer, void *outputBuffer, unsigned long frameCount,
+                       const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags);
 
   std::vector<audio_buffer_t> audio_data_;
   int read_index_ = 0;

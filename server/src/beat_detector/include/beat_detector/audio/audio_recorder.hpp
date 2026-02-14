@@ -8,9 +8,8 @@ namespace beatled::detector {
 
 class AudioRecorder {
 public:
-  AudioRecorder(const std::string &filename, double duration,
-                double sample_rate, double frames_per_buffer,
-                std::size_t audio_buffer_size_);
+  AudioRecorder(const std::string &filename, double duration, double sample_rate,
+                double frames_per_buffer, std::size_t audio_buffer_size_);
   std::string record();
 
 private:

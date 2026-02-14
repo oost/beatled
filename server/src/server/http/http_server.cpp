@@ -20,8 +20,7 @@ namespace beatled::server {
 namespace rr = restinio::router;
 using router_t = rr::express_router_t<>;
 
-std::unique_ptr<router_t>
-HTTPServer::server_handler(const std::string &root_dir) {
+std::unique_ptr<router_t> HTTPServer::server_handler(const std::string &root_dir) {
   auto router = std::make_unique<router_t>();
 
   auto file_handler = std::make_shared<FileHandler>(root_dir);
@@ -31,8 +30,8 @@ HTTPServer::server_handler(const std::string &root_dir) {
     return std::bind(method, file_handler, _1, _2);
   };
 
-  auto api_handler = std::make_shared<APIHandler>(service_manager_, logger_,
-                                                    cors_origin_, api_token_);
+  auto api_handler =
+      std::make_shared<APIHandler>(service_manager_, logger_, cors_origin_, api_token_);
   auto by_api_handler = [api_handler](auto method) {
     using namespace std::placeholders;
     return std::bind(method, api_handler, _1, _2);
@@ -40,31 +39,26 @@ HTTPServer::server_handler(const std::string &root_dir) {
 
   router->http_get("/api/status", by_api_handler(&APIHandler::on_get_status));
 
-  router->http_post("/api/service/control",
-                    by_api_handler(&APIHandler::on_post_service_control));
+  router->http_post("/api/service/control", by_api_handler(&APIHandler::on_post_service_control));
 
   router->http_get("/api/tempo", by_api_handler(&APIHandler::on_get_tempo));
 
-  router->http_post("/api/program",
-                    by_api_handler(&APIHandler::on_post_program));
+  router->http_post("/api/program", by_api_handler(&APIHandler::on_post_program));
 
   router->http_get("/api/program", by_api_handler(&APIHandler::on_get_program));
 
   router->http_get("/api/log", by_api_handler(&APIHandler::on_get_log));
 
-  router->http_get("/api/devices",
-                   by_api_handler(&APIHandler::on_get_devices));
+  router->http_get("/api/devices", by_api_handler(&APIHandler::on_get_devices));
 
   // GET request to homepage.
-  router->http_get(R"(/:path(.*)\.:ext(.*))",
-                   restinio::path2regex::options_t{}.strict(true),
+  router->http_get(R"(/:path(.*)\.:ext(.*))", restinio::path2regex::options_t{}.strict(true),
                    by_file_handler(&FileHandler::on_file_request));
 
   // GET request to homepage.
   router->http_get("/", by_file_handler(&FileHandler::on_root_request));
 
-  router->http_head(R"(/api/:path(.*))",
-                    by_api_handler(&APIHandler::on_preflight));
+  router->http_head(R"(/api/:path(.*))", by_api_handler(&APIHandler::on_preflight));
 
   router->add_handler(restinio::http_method_options(), R"(/api/:path(.*))",
                       by_api_handler(&APIHandler::on_preflight));
@@ -85,16 +79,13 @@ HTTPServer::server_handler(const std::string &root_dir) {
   return router;
 }
 
-HTTPServer::HTTPServer(const std::string &id,
-                       const parameters_t &http_server_parameters,
-                       ServiceManagerInterface &service_manager,
-                       asio::io_context &io_context, Logger &logger)
-    : ServiceControllerInterface{id}, service_manager_{service_manager},
-      io_context_{io_context}, logger_{logger},
-      certs_dir_{http_server_parameters.certs_dir},
+HTTPServer::HTTPServer(const std::string &id, const parameters_t &http_server_parameters,
+                       ServiceManagerInterface &service_manager, asio::io_context &io_context,
+                       Logger &logger)
+    : ServiceControllerInterface{id}, service_manager_{service_manager}, io_context_{io_context},
+      logger_{logger}, certs_dir_{http_server_parameters.certs_dir},
       cors_origin_{http_server_parameters.cors_origin},
-      api_token_{http_server_parameters.api_token},
-      address_{http_server_parameters.address},
+      api_token_{http_server_parameters.api_token}, address_{http_server_parameters.address},
       port_{http_server_parameters.port} {
   SPDLOG_INFO("Creating {}", name());
 
@@ -111,22 +102,19 @@ HTTPServer::HTTPServer(const std::string &id,
   // and so only asio::* or only boost::asio::* would be applied.
   namespace asio_ns = restinio::asio_ns;
 
-  std::vector<std::filesystem::path> certificate_paths{
-      certificate_file_path(), key_file_path(), dh_params_file_path()};
+  std::vector<std::filesystem::path> certificate_paths{certificate_file_path(), key_file_path(),
+                                                       dh_params_file_path()};
 
   for (const auto &cert_path : certificate_paths) {
     if (!std::filesystem::exists(cert_path)) {
-      throw std::runtime_error(
-          fmt::format("Missing certificate file: {}", cert_path.string()));
+      throw std::runtime_error(fmt::format("Missing certificate file: {}", cert_path.string()));
     }
   }
 
   asio_ns::ssl::context tls_context{asio_ns::ssl::context::tls};
   tls_context.set_options(asio_ns::ssl::context::default_workarounds |
-                          asio_ns::ssl::context::no_sslv2 |
-                          asio_ns::ssl::context::no_sslv3 |
-                          asio_ns::ssl::context::no_tlsv1 |
-                          asio_ns::ssl::context::no_tlsv1_1 |
+                          asio_ns::ssl::context::no_sslv2 | asio_ns::ssl::context::no_sslv3 |
+                          asio_ns::ssl::context::no_tlsv1 | asio_ns::ssl::context::no_tlsv1_1 |
                           asio_ns::ssl::context::single_dh_use);
 
   tls_context.use_certificate_chain_file(certificate_file_path());

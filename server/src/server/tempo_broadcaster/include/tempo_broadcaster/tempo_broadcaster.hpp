@@ -25,8 +25,7 @@ public:
   TempoBroadcaster(const std::string &id, asio::io_context &io_context,
                    std::chrono::nanoseconds alarm_period,
                    std::chrono::nanoseconds program_alarm_period,
-                   const parameters_t &broadcasting_server_parameters,
-                   StateManager &state_manager);
+                   const parameters_t &broadcasting_server_parameters, StateManager &state_manager);
 
   ~TempoBroadcaster();
 
@@ -42,8 +41,7 @@ private:
 
   void do_broadcast_beat();
   void do_broadcast_program();
-  void do_broadcast(const char *sendBuf, uint16_t sendBuf_l,
-                    asio::high_resolution_timer &timer,
+  void do_broadcast(const char *sendBuf, uint16_t sendBuf_l, asio::high_resolution_timer &timer,
                     const std::chrono::nanoseconds &alarm_period,
                     std::function<void(void)> callback);
 

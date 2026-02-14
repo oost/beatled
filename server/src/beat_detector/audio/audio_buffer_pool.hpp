@@ -32,10 +32,9 @@ public:
    * @brief Constructor
    * @param buffer_size max buffer size
    */
-  AudioBufferPool(std::size_t buffer_size, double sample_rate,
-                  std::size_t pool_capacity = 4)
-      : buffer_size_{buffer_size}, pool_capacity_{pool_capacity},
-        sample_rate_{sample_rate}, active_{true} {
+  AudioBufferPool(std::size_t buffer_size, double sample_rate, std::size_t pool_capacity = 4)
+      : buffer_size_{buffer_size}, pool_capacity_{pool_capacity}, sample_rate_{sample_rate},
+        active_{true} {
     preallocate_pool();
   }
 
@@ -93,13 +92,11 @@ public:
     if (pool_buffer_queue_.empty()) {
       SPDLOG_WARN("Audio buffer pool exhausted, waiting for a buffer to be released");
       bool available = pool_available_cv_.wait_for(
-          L, std::chrono::milliseconds(100),
-          [this]() { return !pool_buffer_queue_.empty(); });
+          L, std::chrono::milliseconds(100), [this]() { return !pool_buffer_queue_.empty(); });
       if (!available) {
         SPDLOG_ERROR("Timed out waiting for audio buffer, allocating emergency buffer");
         total_pool_size_++;
-        return std::make_unique<AudioBuffer>(buffer_size_, sample_rate_,
-                                             buffer_count_++);
+        return std::make_unique<AudioBuffer>(buffer_size_, sample_rate_, buffer_count_++);
       }
     }
 
@@ -141,8 +138,7 @@ public:
    * @return
    */
   AudioBuffer::Ptr dequeue_blocking() {
-    std::unique_lock<std::mutex> filled_buffer_queue_lock{
-        filled_buffer_queue_mutex_};
+    std::unique_lock<std::mutex> filled_buffer_queue_lock{filled_buffer_queue_mutex_};
     filled_buffer_queue_cv_.wait(filled_buffer_queue_lock, [&]() {
       // Acquire the lock only if
       // the queue isn't empty
@@ -165,8 +161,7 @@ public:
    * @return
    */
   bool queue_empty() {
-    std::unique_lock<std::mutex> filled_buffer_queue_lock{
-        filled_buffer_queue_mutex_};
+    std::unique_lock<std::mutex> filled_buffer_queue_lock{filled_buffer_queue_mutex_};
     return filled_buffer_queue_.empty();
   }
 
@@ -175,8 +170,7 @@ public:
    * @return
    */
   bool pool_empty() {
-    std::unique_lock<std::mutex> pool_buffer_queue_lock{
-        pool_buffer_queue_mutex_};
+    std::unique_lock<std::mutex> pool_buffer_queue_lock{pool_buffer_queue_mutex_};
     return pool_buffer_queue_.empty();
   }
 
@@ -185,8 +179,7 @@ public:
    * @param buffer
    */
   void release_buffer(AudioBuffer::Ptr buffer) {
-    std::lock_guard<std::mutex> pool_buffer_queue_lock{
-        pool_buffer_queue_mutex_};
+    std::lock_guard<std::mutex> pool_buffer_queue_lock{pool_buffer_queue_mutex_};
     pool_buffer_queue_.push(std::move(buffer));
     pool_available_cv_.notify_one();
   }
@@ -195,8 +188,8 @@ private:
   void preallocate_pool() {
     std::lock_guard<std::mutex> L{pool_buffer_queue_mutex_};
     for (std::size_t i = 0; i < pool_capacity_; i++) {
-      pool_buffer_queue_.push(std::make_unique<AudioBuffer>(
-          buffer_size_, sample_rate_, buffer_count_++));
+      pool_buffer_queue_.push(
+          std::make_unique<AudioBuffer>(buffer_size_, sample_rate_, buffer_count_++));
       total_pool_size_++;
     }
     SPDLOG_INFO("Pre-allocated {} audio buffers", pool_capacity_);

@@ -76,24 +76,21 @@ protected:
   /* The instance callback, where we have access to every method/variable in
    * object of class Sine */
   virtual int paCallbackMethod(const void *inputBuffer, void *outputBuffer,
-                               unsigned long frameCount,
-                               const PaStreamCallbackTimeInfo *timeInfo,
+                               unsigned long frameCount, const PaStreamCallbackTimeInfo *timeInfo,
                                PaStreamCallbackFlags statusFlags) = 0;
 
   /* This routine will be called by the PortAudio engine when audio is needed.
   ** It may called at interrupt level on some machines so don't do anything
   ** that could mess up the system like calling malloc() or free().
   */
-  static int paCallback(const void *inputBuffer, void *outputBuffer,
-                        unsigned long frameCount,
-                        const PaStreamCallbackTimeInfo *timeInfo,
-                        PaStreamCallbackFlags statusFlags, void *userData) {
+  static int paCallback(const void *inputBuffer, void *outputBuffer, unsigned long frameCount,
+                        const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags,
+                        void *userData) {
     /* Here we cast userData to Sine* type so we can call the instance method
        paCallbackMethod, we can do that since we called Pa_OpenStream with
        'this' for userData */
     return ((AudioInterface *)userData)
-        ->paCallbackMethod(inputBuffer, outputBuffer, frameCount, timeInfo,
-                           statusFlags);
+        ->paCallbackMethod(inputBuffer, outputBuffer, frameCount, timeInfo, statusFlags);
   }
 
   void paStreamFinishedMethod();
@@ -105,8 +102,8 @@ protected:
     return ((AudioInterface *)userData)->paStreamFinishedMethod();
   }
 
-  void copy_to_buffer(float *input_buffer, unsigned long frame_count,
-                      double input_output_time, double current_time);
+  void copy_to_buffer(float *input_buffer, unsigned long frame_count, double input_output_time,
+                      double current_time);
 
   PortaudioHandle port_audio_handler_;
 

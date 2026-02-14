@@ -9,9 +9,8 @@
 
 namespace beatled::detector {
 
-AudioRecorder::AudioRecorder(const std::string &filename, double duration,
-                             double sample_rate, double frames_per_buffer,
-                             std::size_t audio_buffer_size)
+AudioRecorder::AudioRecorder(const std::string &filename, double duration, double sample_rate,
+                             double frames_per_buffer, std::size_t audio_buffer_size)
     : filename_{filename}, duration_{duration}, sample_rate_{sample_rate},
       audio_buffer_size_{audio_buffer_size} {}
 
@@ -42,8 +41,7 @@ std::string AudioRecorder::record() {
   audio_data.reserve(TOTAL_BUFFER_SIZE);
   size_t audio_data_remaining_capacity = audio_data.capacity();
   int idx = 0;
-  const int cycle_per_second =
-      static_cast<int>(sample_rate_) / audio_buffer_size_;
+  const int cycle_per_second = static_cast<int>(sample_rate_) / audio_buffer_size_;
 
   AudioBuffer::Ptr buffer;
   while (1) {

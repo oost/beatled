@@ -53,8 +53,7 @@ DataBuffer::Ptr UDPRequestHandler::process_hello_request() {
   }
 
   const auto *hello_req =
-      reinterpret_cast<const beatled_message_hello_request_t *>(
-          &(request_buffer_ptr_->data()));
+      reinterpret_cast<const beatled_message_hello_request_t *>(&(request_buffer_ptr_->data()));
 
   ClientStatus::Ptr cs = std::make_shared<ClientStatus>(
       hello_req->board_id, request_buffer_ptr_->remote_endpoint().address());
@@ -75,29 +74,24 @@ DataBuffer::Ptr UDPRequestHandler::process_time_request() {
   using namespace std::chrono;
   uint64_t ms_start = Clock::time_us_64();
 
-  auto cs = state_manager_.client_status(
-      request_buffer_ptr_->remote_endpoint().address());
+  auto cs = state_manager_.client_status(request_buffer_ptr_->remote_endpoint().address());
   if (cs) {
     cs->last_status_time = Clock::wall_time_us_64();
   }
 
   const auto *time_req_msg =
-      reinterpret_cast<const beatled_message_time_request_t *>(
-          &(request_buffer_ptr_->data()));
+      reinterpret_cast<const beatled_message_time_request_t *>(&(request_buffer_ptr_->data()));
 
   uint64_t orig_time = ntohll(time_req_msg->orig_time);
 
-  SPDLOG_INFO("Sending time request. (n) \n - orig_time: {0} / {0:x}",
-              orig_time);
-  return std::make_unique<TimeResponseBuffer>(orig_time, ms_start,
-                                              Clock::time_us_64());
+  SPDLOG_INFO("Sending time request. (n) \n - orig_time: {0} / {0:x}", orig_time);
+  return std::make_unique<TimeResponseBuffer>(orig_time, ms_start, Clock::time_us_64());
 }
 
 DataBuffer::Ptr UDPRequestHandler::process_tempo_request() {
   SPDLOG_INFO("Tempo request");
 
-  auto cs = state_manager_.client_status(
-      request_buffer_ptr_->remote_endpoint().address());
+  auto cs = state_manager_.client_status(request_buffer_ptr_->remote_endpoint().address());
   if (cs) {
     cs->last_status_time = Clock::wall_time_us_64();
   }
@@ -105,6 +99,5 @@ DataBuffer::Ptr UDPRequestHandler::process_tempo_request() {
   tempo_ref_t tr = state_manager_.get_tempo_ref();
   uint16_t pid = state_manager_.get_program_id();
 
-  return std::make_unique<TempoResponseBuffer>(tr.beat_time_ref,
-                                               tr.tempo_period_us, pid);
+  return std::make_unique<TempoResponseBuffer>(tr.beat_time_ref, tr.tempo_period_us, pid);
 }

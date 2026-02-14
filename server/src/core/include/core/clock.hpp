@@ -10,9 +10,7 @@ namespace beatled::core {
 class Clock : public std::chrono::steady_clock {
 public:
   static uint64_t time_since_epoch_us() {
-    return std::chrono::duration_cast<std::chrono::microseconds>(
-               now().time_since_epoch())
-        .count();
+    return std::chrono::duration_cast<std::chrono::microseconds>(now().time_since_epoch()).count();
   }
   static uint64_t time_us_64() {
     struct timespec ts;

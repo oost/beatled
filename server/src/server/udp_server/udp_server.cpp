@@ -15,8 +15,7 @@ using namespace beatled::server;
 using asio::ip::udp;
 
 UDPServer::UDPServer(const std::string &id, asio::io_context &io_context,
-                     const parameters_t &server_parameters,
-                     StateManager &state_manager)
+                     const parameters_t &server_parameters, StateManager &state_manager)
     : ServiceControllerInterface{id},
       socket_{io_context, udp::endpoint(udp::v4(), server_parameters.port)},
       state_manager_{state_manager} {
@@ -24,21 +23,21 @@ UDPServer::UDPServer(const std::string &id, asio::io_context &io_context,
 }
 
 void UDPServer::start_sync() {
-  SPDLOG_INFO("{}: listening on {}", name(),
-              fmt::streamed(socket_.local_endpoint()));
+  SPDLOG_INFO("{}: listening on {}", name(), fmt::streamed(socket_.local_endpoint()));
   do_receive();
 }
-void UDPServer::stop_sync() { socket_.cancel(); }
+void UDPServer::stop_sync() {
+  socket_.cancel();
+}
 
 void UDPServer::do_receive() {
-  std::unique_ptr<UDPRequestBuffer> request_buffer_ptr =
-      std::make_unique<UDPRequestBuffer>();
+  std::unique_ptr<UDPRequestBuffer> request_buffer_ptr = std::make_unique<UDPRequestBuffer>();
 
   socket_.async_receive_from(
       asio::buffer(request_buffer_ptr->data(), request_buffer_ptr->BUFFER_SIZE),
       request_buffer_ptr->remote_endpoint(),
-      [this, request_buffer_ptr = std::move(request_buffer_ptr)](
-          std::error_code ec, std::size_t bytes_recvd) mutable {
+      [this, request_buffer_ptr = std::move(request_buffer_ptr)](std::error_code ec,
+                                                                 std::size_t bytes_recvd) mutable {
         if (!ec && bytes_recvd > 0) {
 
           SPDLOG_INFO("Received request from {}",
@@ -46,8 +45,7 @@ void UDPServer::do_receive() {
 
           request_buffer_ptr->setSize(bytes_recvd);
 
-          UDPRequestHandler requestHandler{request_buffer_ptr.get(),
-                                           state_manager_};
+          UDPRequestHandler requestHandler{request_buffer_ptr.get(), state_manager_};
 
           DataBuffer::Ptr response_buffer_ptr = requestHandler.response();
 
@@ -56,11 +54,10 @@ void UDPServer::do_receive() {
 
           // Capture response_buffer_ptr to keep it alive until send completes.
           socket_.async_send_to(
-              asio::buffer(response_buffer_ptr->data(),
-                           response_buffer_ptr->size()),
+              asio::buffer(response_buffer_ptr->data(), response_buffer_ptr->size()),
               request_buffer_ptr->remote_endpoint(),
-              [resp = std::move(response_buffer_ptr)](
-                  std::error_code /*ec*/, std::size_t /*bytes_sent*/) {});
+              [resp = std::move(response_buffer_ptr)](std::error_code /*ec*/,
+                                                      std::size_t /*bytes_sent*/) {});
         }
 
         if (ec) {

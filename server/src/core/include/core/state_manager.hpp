@@ -37,16 +37,13 @@ public:
   void update_next_beat(uint64_t next_beat_time_ref);
   uint64_t get_next_beat_time_ref() const;
 
-  ClientStatus::Ptr
-  client_status(const ClientStatus::board_id_t &board_id) const;
+  ClientStatus::Ptr client_status(const ClientStatus::board_id_t &board_id) const;
   ClientStatus::Ptr client_status(const asio::ip::address &ip_address) const;
   void register_client(ClientStatus::Ptr client_status);
   ClientStatus::client_map_t get_clients();
 
   // Must be called during construction only (before threads start).
-  void register_next_beat_cb(const on_next_beat_cb_t &cb) {
-    on_next_beat_cbs_.push_back(cb);
-  }
+  void register_next_beat_cb(const on_next_beat_cb_t &cb) { on_next_beat_cbs_.push_back(cb); }
 
 private:
   StateManager(const StateManager &) = delete;

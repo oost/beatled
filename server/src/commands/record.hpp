@@ -19,39 +19,33 @@ struct record_audio_command {
   record_audio_command(lyra::cli &cli) {
     cli.add_argument(
 
-        lyra::command("record",
-                      [this](const lyra::group &g) { this->do_command(g); })
+        lyra::command("record", [this](const lyra::group &g) { this->do_command(g); })
             .help("Record audio.")
             .add_argument(lyra::help(show_help))
             .add_argument(
                 lyra::opt(sample_rate, "sample_rate")
                     .name("-s")
                     .name("--sample-rate")
-                    .help(fmt::format("Sample at which rate? (default: {})",
-                                      sample_rate)))
+                    .help(fmt::format("Sample at which rate? (default: {})", sample_rate)))
             .add_argument(lyra::opt(frames_per_buffer, "frames_per_buffer")
                               .name("-f")
                               .name("--frames-per-buffer")
-                              .help(fmt::format(
-                                  "How many frames per buffer? (default: {})",
-                                  frames_per_buffer)))
+                              .help(fmt::format("How many frames per buffer? (default: {})",
+                                                frames_per_buffer)))
             .add_argument(lyra::opt(duration, "duration")
                               .name("-d")
                               .name("--duration")
-                              .help(fmt::format("Which duration? (default: {})",
-                                                duration)))
+                              .help(fmt::format("Which duration? (default: {})", duration)))
             .add_argument(
                 lyra::opt(audioFileName, "audio file name")
                     .name("-o")
                     .name("--output")
-                    .help(fmt::format("Where do we save the audio(default: {})",
-                                      audioFileName)))
-            .add_argument(
-                lyra::opt(verbose)
-                    .name("-v")
-                    .name("--verbose")
-                    .optional()
-                    .help("Show additional output as to what we are doing.")));
+                    .help(fmt::format("Where do we save the audio(default: {})", audioFileName)))
+            .add_argument(lyra::opt(verbose)
+                              .name("-v")
+                              .name("--verbose")
+                              .optional()
+                              .help("Show additional output as to what we are doing.")));
   }
   void do_command(const lyra::group &g) {
     if (show_help)

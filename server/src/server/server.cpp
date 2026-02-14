@@ -54,21 +54,20 @@ void Server::run() {
 
   // Create a pool of threads to run all of the io_contexts.
   std::vector<std::shared_ptr<asio::thread>> threads;
-  SPDLOG_INFO("Starting {} network worker threads",
-              server_parameters_.thread_pool_size);
+  SPDLOG_INFO("Starting {} network worker threads", server_parameters_.thread_pool_size);
 
   for (std::size_t i = 0; i < server_parameters_.thread_pool_size; ++i) {
     auto thread = std::make_shared<asio::thread>([this, &exception_mtx, &exception_caught]() {
-          try {
-            io_context_.run();
-          } catch (...) {
-            std::lock_guard<std::mutex> lock(exception_mtx);
-            if (!exception_caught) {
-              exception_caught = std::current_exception();
-            }
-            io_context_.stop();
-          }
-        });
+      try {
+        io_context_.run();
+      } catch (...) {
+        std::lock_guard<std::mutex> lock(exception_mtx);
+        if (!exception_caught) {
+          exception_caught = std::current_exception();
+        }
+        io_context_.stop();
+      }
+    });
     threads.push_back(thread);
   }
 

@@ -32,9 +32,7 @@ public:
   friend std::ostream &operator<<(std::ostream &os, const DataBuffer &buffer);
 
   [[nodiscard]] auto begin() const noexcept { return data_.begin(); }
-  [[nodiscard]] auto end() const noexcept {
-    return std::next(data_.begin(), size_);
-  }
+  [[nodiscard]] auto end() const noexcept { return std::next(data_.begin(), size_); }
 
 protected:
   buffer_t data_;
@@ -59,36 +57,31 @@ public:
   ErrorResponseBuffer(uint8_t error_code);
 };
 
-class HelloResponseBuffer
-    : public ResponseBuffer<beatled_message_hello_response_t> {
+class HelloResponseBuffer : public ResponseBuffer<beatled_message_hello_response_t> {
 public:
   HelloResponseBuffer(uint16_t client_id);
 };
 
-class TimeResponseBuffer
-    : public ResponseBuffer<beatled_message_time_response_t> {
+class TimeResponseBuffer : public ResponseBuffer<beatled_message_time_response_t> {
 public:
-  TimeResponseBuffer(uint64_t orig_time, uint64_t recv_time,
-                     uint64_t xmit_time);
+  TimeResponseBuffer(uint64_t orig_time, uint64_t recv_time, uint64_t xmit_time);
 };
 
-class TempoResponseBuffer
-    : public ResponseBuffer<beatled_message_tempo_response_t> {
+class TempoResponseBuffer : public ResponseBuffer<beatled_message_tempo_response_t> {
 public:
-  TempoResponseBuffer(uint64_t beat_time_ref, uint32_t tempo_period_us,
-                      uint16_t program_id);
+  TempoResponseBuffer(uint64_t beat_time_ref, uint32_t tempo_period_us, uint16_t program_id);
 };
 
 class NextBeatBuffer : public ResponseBuffer<beatled_message_next_beat_t> {
 public:
-  NextBeatBuffer(uint64_t next_beat_time_ref, uint32_t tempo_period_us,
-                 uint32_t beat_count, uint16_t program_id);
+  NextBeatBuffer(uint64_t next_beat_time_ref, uint32_t tempo_period_us, uint32_t beat_count,
+                 uint16_t program_id);
 };
 
 class BeatBuffer : public ResponseBuffer<beatled_message_beat_t> {
 public:
-  BeatBuffer(uint64_t beat_time_ref, uint32_t tempo_period_us,
-             uint32_t beat_count, uint16_t program_id);
+  BeatBuffer(uint64_t beat_time_ref, uint32_t tempo_period_us, uint32_t beat_count,
+             uint16_t program_id);
 };
 
 class UDPRequestBuffer : public DataBuffer {

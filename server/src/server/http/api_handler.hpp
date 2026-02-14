@@ -22,13 +22,11 @@ public:
   using route_params_t = restinio::router::route_params_t;
 
   APIHandler(ServiceManagerInterface &service_manager, Logger &logger,
-             const std::string &cors_origin = "",
-             const std::string &api_token = "");
+             const std::string &cors_origin = "", const std::string &api_token = "");
 
   req_status_t on_get_status(const req_handle_t &req, route_params_t params);
 
-  req_status_t on_post_service_control(const req_handle_t &req,
-                                       route_params_t params);
+  req_status_t on_post_service_control(const req_handle_t &req, route_params_t params);
 
   req_status_t on_get_tempo(const req_handle_t &req, route_params_t params);
 
@@ -45,13 +43,11 @@ public:
 private:
   template <typename RESP> RESP init_resp(RESP resp) {
     auto r = ResponseHandler::init_resp<RESP>(std::forward<RESP>(resp))
-        .append_header(restinio::http_field::content_type,
-                       "text/json; charset=utf-8");
+                 .append_header(restinio::http_field::content_type, "text/json; charset=utf-8");
     if (!cors_origin_.empty()) {
-      r.append_header(restinio::http_field::access_control_allow_origin,
-                      cors_origin_)
-       .append_header(restinio::http_field::access_control_allow_headers,
-                      "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+      r.append_header(restinio::http_field::access_control_allow_origin, cors_origin_)
+          .append_header(restinio::http_field::access_control_allow_headers,
+                         "Origin, X-Requested-With, Content-Type, Accept, Authorization");
     }
     return r;
   }

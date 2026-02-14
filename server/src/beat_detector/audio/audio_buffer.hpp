@@ -56,9 +56,7 @@ public:
    * @brief Set the start time at which the audio buffer was captured
    * @param buffer_start_time
    */
-  void set_start_time(uint64_t buffer_start_time) {
-    buffer_start_time_ = buffer_start_time;
-  }
+  void set_start_time(uint64_t buffer_start_time) { buffer_start_time_ = buffer_start_time; }
 
   /**
    * @brief Reset buffer to 0
@@ -88,9 +86,8 @@ public:
    */
   std::size_t copy_raw_data(float *input_buffer, std::size_t input_buffer_size) {
     std::size_t remaining_capacity = data_.capacity() - data_.size();
-    std::size_t items_to_copy = (remaining_capacity > input_buffer_size)
-                                    ? input_buffer_size
-                                    : remaining_capacity;
+    std::size_t items_to_copy =
+        (remaining_capacity > input_buffer_size) ? input_buffer_size : remaining_capacity;
 
     for (std::size_t i = 0; i < items_to_copy; i++) {
       data_.push_back(input_buffer[i]);

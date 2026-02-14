@@ -2,8 +2,7 @@
 
 using beatled::server::ResponseHandler;
 
-const char *
-ResponseHandler::content_type_by_file_extention(const std::string_view ext) {
+const char *ResponseHandler::content_type_by_file_extention(const std::string_view ext) {
 
   // Incomplete list of mime types from here:
   // https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Complete_list_of_MIME_types

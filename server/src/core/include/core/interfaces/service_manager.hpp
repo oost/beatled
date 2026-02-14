@@ -28,8 +28,8 @@ public:
 protected:
   void registerController(ServiceControllerInterface::Ptr controller) {
     if (service(controller->id()) != nullptr) {
-      throw std::invalid_argument(fmt::format(
-          "A controller with this id {} already exists", controller->id()));
+      throw std::invalid_argument(
+          fmt::format("A controller with this id {} already exists", controller->id()));
     }
     SPDLOG_INFO("Registering controller: {}", controller->name());
     interface_map_[controller->id()] = std::move(controller);

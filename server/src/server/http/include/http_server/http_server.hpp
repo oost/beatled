@@ -39,8 +39,8 @@ public:
   };
 
   HTTPServer(const std::string &id, const parameters_t &http_server_parameters,
-             ServiceManagerInterface &service_manager,
-             asio::io_context &io_context, Logger &logger);
+             ServiceManagerInterface &service_manager, asio::io_context &io_context,
+             Logger &logger);
 
   void start_sync() override;
   void stop_sync() override;
@@ -49,13 +49,9 @@ private:
   const char *SERVICE_NAME = "HTTP Server";
   const char *service_name() const override { return SERVICE_NAME; }
 
-  std::filesystem::path certificate_file_path() {
-    return certs_dir_ / "cert.pem";
-  }
+  std::filesystem::path certificate_file_path() { return certs_dir_ / "cert.pem"; }
   std::filesystem::path key_file_path() { return certs_dir_ / "key.pem"; }
-  std::filesystem::path dh_params_file_path() {
-    return certs_dir_ / "dh_param.pem";
-  }
+  std::filesystem::path dh_params_file_path() { return certs_dir_ / "dh_param.pem"; }
 
   asio::io_context &io_context_;
   Logger &logger_;

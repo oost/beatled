@@ -39,10 +39,8 @@ private:
 
   /* The instance callback, where we have access to every method/variable in
    * object of class Sine */
-  int paCallbackMethod(const void *inputBuffer, void *outputBuffer,
-                       unsigned long frameCount,
-                       const PaStreamCallbackTimeInfo *timeInfo,
-                       PaStreamCallbackFlags statusFlags);
+  int paCallbackMethod(const void *inputBuffer, void *outputBuffer, unsigned long frameCount,
+                       const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags);
 
   PaStreamParameters input_parameters_;
 };

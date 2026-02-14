@@ -22,12 +22,10 @@ public:
   using board_id_t = std::array<char, 2 * PICO_UNIQUE_BOARD_ID_SIZE_BYTES + 1>;
   using client_map_t = std::vector<ClientStatus::Ptr>;
 
-  ClientStatus(const board_id_t &new_board_id,
-               const asio::ip::address &new_ip_address)
+  ClientStatus(const board_id_t &new_board_id, const asio::ip::address &new_ip_address)
       : board_id{new_board_id}, ip_address{new_ip_address} {}
 
-  ClientStatus(const unsigned char new_board_id[],
-               const asio::ip::address &new_ip_address)
+  ClientStatus(const unsigned char new_board_id[], const asio::ip::address &new_ip_address)
       : ip_address{new_ip_address} {
     for (int i = 0; i < 2 * PICO_UNIQUE_BOARD_ID_SIZE_BYTES + 1; i++) {
       board_id[i] = new_board_id[i];
@@ -42,8 +40,7 @@ public:
 
 void to_json(json &j, const ClientStatus::board_id_t &board_id);
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ClientStatus, client_id, last_status_time,
-                                   board_id);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ClientStatus, client_id, last_status_time, board_id);
 
 } // namespace beatled::core
 

@@ -14,10 +14,9 @@ struct Program {
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Program, name, id)
 
 APIHandler::APIHandler(ServiceManagerInterface &service_manager, Logger &logger,
-                       const std::string &cors_origin,
-                       const std::string &api_token)
-    : service_manager_{service_manager}, logger_{logger},
-      cors_origin_{cors_origin}, api_token_{api_token} {}
+                       const std::string &cors_origin, const std::string &api_token)
+    : service_manager_{service_manager}, logger_{logger}, cors_origin_{cors_origin},
+      api_token_{api_token} {}
 
 bool APIHandler::check_auth(const req_handle_t &req) const {
   if (api_token_.empty())
@@ -29,8 +28,7 @@ bool APIHandler::check_auth(const req_handle_t &req) const {
 bool APIHandler::check_rate_limit() {
   std::lock_guard lk(rate_mtx_);
   auto now = std::chrono::steady_clock::now();
-  while (!request_times_.empty() &&
-         (now - request_times_.front()) > kWindowDuration) {
+  while (!request_times_.empty() && (now - request_times_.front()) > kWindowDuration) {
     request_times_.pop_front();
   }
   if (request_times_.size() >= kMaxRequestsPerWindow) {
@@ -40,8 +38,7 @@ bool APIHandler::check_rate_limit() {
   return true;
 }
 
-APIHandler::req_status_t APIHandler::on_get_status(const req_handle_t &req,
-                                                   route_params_t params) {
+APIHandler::req_status_t APIHandler::on_get_status(const req_handle_t &req, route_params_t params) {
   if (!check_auth(req)) {
     return init_resp(req->create_response(restinio::status_unauthorized()))
         .set_body(R"({"error":"Unauthorized"})")
@@ -56,19 +53,16 @@ APIHandler::req_status_t APIHandler::on_get_status(const req_handle_t &req,
     service_status[second->id()] = second->is_running();
   }
   response_body["status"] = service_status;
-  response_body["tempo"] =
-      service_manager_.state_manager().get_tempo_ref().tempo;
-  response_body["deviceCount"] =
-      service_manager_.state_manager().get_clients().size();
+  response_body["tempo"] = service_manager_.state_manager().get_tempo_ref().tempo;
+  response_body["deviceCount"] = service_manager_.state_manager().get_clients().size();
 
   return init_resp(req->create_response(restinio::status_ok()))
       .set_body(response_body.dump())
       .done();
 }
 
-APIHandler::req_status_t
-APIHandler::on_post_service_control(const req_handle_t &req,
-                                    route_params_t params) {
+APIHandler::req_status_t APIHandler::on_post_service_control(const req_handle_t &req,
+                                                             route_params_t params) {
   if (!check_auth(req)) {
     return init_resp(req->create_response(restinio::status_unauthorized()))
         .set_body(R"({"error":"Unauthorized"})")
@@ -100,8 +94,7 @@ APIHandler::on_post_service_control(const req_handle_t &req,
     }
     std::string service_name = request_body["id"].get<std::string>();
     bool requested_status = request_body["status"].get<bool>();
-    ServiceControllerInterface *service =
-        service_manager_.service(service_name);
+    ServiceControllerInterface *service = service_manager_.service(service_name);
 
     if (service) {
       if (requested_status) {
@@ -134,8 +127,7 @@ APIHandler::on_post_service_control(const req_handle_t &req,
   }
 }
 
-APIHandler::req_status_t APIHandler::on_get_tempo(const req_handle_t &req,
-                                                  route_params_t params) {
+APIHandler::req_status_t APIHandler::on_get_tempo(const req_handle_t &req, route_params_t params) {
   if (!check_auth(req)) {
     return init_resp(req->create_response(restinio::status_unauthorized()))
         .set_body(R"({"error":"Unauthorized"})")
@@ -216,10 +208,10 @@ APIHandler::req_status_t APIHandler::on_get_program(const req_handle_t &req,
   json response_body;
   response_body["message"] = fmt::format("Current program is {}", program_id);
 
-  response_body["programs"] = json::array(
-      {Program{"Snakes!", 0}, Program{"Random data", 1}, Program{"Sparkles", 2},
-       Program{"Greys", 3}, Program{"Drops", 4}, Program{"Solid!", 5},
-       Program{"Fade", 6}, Program{"Fade Color", 7}});
+  response_body["programs"] =
+      json::array({Program{"Snakes!", 0}, Program{"Random data", 1}, Program{"Sparkles", 2},
+                   Program{"Greys", 3}, Program{"Drops", 4}, Program{"Solid!", 5},
+                   Program{"Fade", 6}, Program{"Fade Color", 7}});
 
   response_body["programId"] = program_id;
 
@@ -228,8 +220,7 @@ APIHandler::req_status_t APIHandler::on_get_program(const req_handle_t &req,
       .done();
 }
 
-APIHandler::req_status_t APIHandler::on_get_log(const req_handle_t &req,
-                                                route_params_t params) {
+APIHandler::req_status_t APIHandler::on_get_log(const req_handle_t &req, route_params_t params) {
   if (!check_auth(req)) {
     return init_resp(req->create_response(restinio::status_unauthorized()))
         .set_body(R"({"error":"Unauthorized"})")
@@ -267,8 +258,7 @@ APIHandler::req_status_t APIHandler::on_get_devices(const req_handle_t &req,
       .done();
 }
 
-APIHandler::req_status_t APIHandler::on_preflight(const req_handle_t &req,
-                                                  route_params_t params) {
+APIHandler::req_status_t APIHandler::on_preflight(const req_handle_t &req, route_params_t params) {
   return init_resp(req->create_response(restinio::status_ok())).done();
 }
 

@@ -31,8 +31,7 @@ int main(int argc, const char **argv) {
     return result ? 0 : 1;
 
   } catch (const std::exception &exception) {
-    std::cerr << "An exception occured (" << exception.what() << ")"
-              << std::endl;
+    std::cerr << "An exception occured (" << exception.what() << ")" << std::endl;
   }
   return 1;
 }

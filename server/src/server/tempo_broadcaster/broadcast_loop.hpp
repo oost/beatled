@@ -11,11 +11,9 @@ namespace beatled::server {
 
 class BroadcastLoop {
 public:
-  BroadcastLoop(
-      std::shared_ptr<asio::ip::udp::socket>,
-      std::chrono::nanoseconds alarm_period,
-      std::function<DataBuffer::Ptr(void)> prepare_buffer,
-      const TempoBroadcaster::parameters_t &broadcasting_server_parameters);
+  BroadcastLoop(std::shared_ptr<asio::ip::udp::socket>, std::chrono::nanoseconds alarm_period,
+                std::function<DataBuffer::Ptr(void)> prepare_buffer,
+                const TempoBroadcaster::parameters_t &broadcasting_server_parameters);
   ~BroadcastLoop();
 
 private:

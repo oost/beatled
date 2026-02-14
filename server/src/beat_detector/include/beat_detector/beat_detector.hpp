@@ -16,11 +16,9 @@ namespace beatled::detector {
  */
 class BeatDetector : public ServiceControllerInterface {
 public:
-  using beat_detector_cb_t =
-      std::function<void(uint64_t, double, double, uint32_t)>;
+  using beat_detector_cb_t = std::function<void(uint64_t, double, double, uint32_t)>;
 
-  BeatDetector(const std::string &id, uint32_t sample_rate,
-               std::size_t audio_buffer_size,
+  BeatDetector(const std::string &id, uint32_t sample_rate, std::size_t audio_buffer_size,
                beat_detector_cb_t beat_callback = nullptr,
                beat_detector_cb_t next_beat_callback = nullptr);
   ~BeatDetector();

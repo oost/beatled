@@ -13,8 +13,7 @@ namespace beatled::server {
 
 class UDPRequestHandler {
 public:
-  UDPRequestHandler(UDPRequestBuffer *request_buffer_ptr,
-                    StateManager &state_manager);
+  UDPRequestHandler(UDPRequestBuffer *request_buffer_ptr, StateManager &state_manager);
   DataBuffer::Ptr response();
 
 private:

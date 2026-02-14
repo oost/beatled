@@ -4,7 +4,9 @@ using namespace beatled::server;
 
 TCPSession::TCPSession(tcp::socket socket) : socket_(std::move(socket)) {}
 
-void TCPSession::start() { do_read(); }
+void TCPSession::start() {
+  do_read();
+}
 
 void TCPSession::do_read() {
   auto self(shared_from_this());

@@ -4,8 +4,7 @@
 using namespace beatled::server;
 
 TCPServer::TCPServer(asio::io_context &io_context, short port)
-    : acceptor_(io_context, tcp::endpoint(tcp::v4(), port)),
-      socket_(io_context) {
+    : acceptor_(io_context, tcp::endpoint(tcp::v4(), port)), socket_(io_context) {
   do_accept();
 }
 

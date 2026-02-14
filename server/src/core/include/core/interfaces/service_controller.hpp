@@ -16,14 +16,11 @@ public:
 
   ServiceControllerInterface(const std::string &id) : id_{id} {}
 
-  virtual ~ServiceControllerInterface() =
-      default; // generate a virtual default destructor
+  virtual ~ServiceControllerInterface() = default; // generate a virtual default destructor
 
   const std::string &id() const { return id_; }
 
-  const std::string name() const {
-    return fmt::format("{} ({})", service_name(), id_);
-  }
+  const std::string name() const { return fmt::format("{} ({})", service_name(), id_); }
 
   bool is_running() const { return running_; };
 

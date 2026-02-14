@@ -10,8 +10,7 @@
 
 using namespace beatled::detector;
 
-AudioPlayer::AudioPlayer(const std::string &filename,
-                         std::size_t audio_buffer_size)
+AudioPlayer::AudioPlayer(const std::string &filename, std::size_t audio_buffer_size)
     : filename_{filename}, audio_buffer_size_{audio_buffer_size} {}
 
 void AudioPlayer::play() {
@@ -19,8 +18,7 @@ void AudioPlayer::play() {
 
   AudioBufferPool audio_buffer_pool{audio_buffer_size_, sample_rate_};
 
-  AudioOutput audio_output(audio_data_, &audio_buffer_pool, sample_rate_,
-                           audio_buffer_size_);
+  AudioOutput audio_output(audio_data_, &audio_buffer_pool, sample_rate_, audio_buffer_size_);
 
   if (!audio_output.open()) {
     throw AudioException("Couldn't open device.");

@@ -19,24 +19,21 @@ namespace fs = std::filesystem;
 using namespace beatled::detector;
 
 AudioOutput::AudioOutput(std::vector<audio_buffer_t> &audio_data,
-                         AudioBufferPool *audio_buffer_pool,
-                         uint32_t sample_rate, std::size_t audio_buffer_size,
-                         unsigned long frames_per_buffer)
+                         AudioBufferPool *audio_buffer_pool, uint32_t sample_rate,
+                         std::size_t audio_buffer_size, unsigned long frames_per_buffer)
     : AudioInterface(audio_buffer_pool, sample_rate, frames_per_buffer),
       audio_data_{std::move(audio_data)}, read_index_{0} {}
 
 const PaStreamParameters *AudioOutput::get_output_parameters() {
 
-  output_parameters_.device =
-      Pa_GetDefaultOutputDevice(); /* default output device */
+  output_parameters_.device = Pa_GetDefaultOutputDevice(); /* default output device */
   if (output_parameters_.device == paNoDevice) {
     SPDLOG_ERROR("Error: No default output device.");
     throw AudioException("No default output device.");
   }
 
-  output_parameters_.channelCount = 1; /* stereo output */
-  output_parameters_.sampleFormat =
-      paFloat32; /* 32 bit floating point output */
+  output_parameters_.channelCount = 1;         /* stereo output */
+  output_parameters_.sampleFormat = paFloat32; /* 32 bit floating point output */
   output_parameters_.suggestedLatency =
       Pa_GetDeviceInfo(output_parameters_.device)->defaultLowInputLatency;
 
@@ -59,13 +56,12 @@ int AudioOutput::paCallbackMethod(const void *inputBuffer, void *outputBuffer,
   }
 
   double *hop_data = audio_data_.data();
-  auto audio_frame = std::span<double>(
-      hop_data + read_index_, hop_data + read_index_ + elements_to_read);
+  auto audio_frame =
+      std::span<double>(hop_data + read_index_, hop_data + read_index_ + elements_to_read);
 
   read_index_ = read_index_ + elements_to_read;
 
-  copy_to_buffer(out, frameCount, timeInfo->outputBufferDacTime,
-                 timeInfo->currentTime);
+  copy_to_buffer(out, frameCount, timeInfo->outputBufferDacTime, timeInfo->currentTime);
 
   (void)statusFlags; /* Prevent unused variable warnings. */
   (void)inputBuffer;
