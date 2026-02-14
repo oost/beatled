@@ -15,19 +15,19 @@ void StateManager::update_tempo(float tempo, uint64_t timeref) {
 
 tempo_ref_t StateManager::get_tempo_ref() const {
   std::unique_lock lk(tempo_mtx_);
-  tempo_ref_t tr = {
-      .beat_time_ref = time_ref_,
-      .tempo_period_us = tempo_ > 0.0f
-                             ? static_cast<uint32_t>(60 * 1000000UL / tempo_)
-                             : 0,
-      .tempo = tempo_};
+  tempo_ref_t tr = {.beat_time_ref = time_ref_,
+                    .tempo_period_us =
+                        tempo_ > 0.0f ? static_cast<uint32_t>(60 * 1000000UL / tempo_) : 0,
+                    .tempo = tempo_};
   return tr;
 }
 
 void StateManager::update_program_id(uint16_t program_id) {
   program_id_ = program_id;
 }
-uint16_t StateManager::get_program_id() const { return program_id_; }
+uint16_t StateManager::get_program_id() const {
+  return program_id_;
+}
 
 void StateManager::update_next_beat(uint64_t next_beat_time_ref) {
   next_beat_time_ref_ = next_beat_time_ref;
@@ -42,8 +42,7 @@ uint64_t StateManager::get_next_beat_time_ref() const {
   return next_beat_time_ref_;
 }
 
-ClientStatus::Ptr
-StateManager::client_status(const ClientStatus::board_id_t &board_id) const {
+ClientStatus::Ptr StateManager::client_status(const ClientStatus::board_id_t &board_id) const {
   std::unique_lock lk(client_mtx_);
 
   for (auto &el : clients_) {
@@ -54,8 +53,7 @@ StateManager::client_status(const ClientStatus::board_id_t &board_id) const {
   return nullptr;
 }
 
-ClientStatus::Ptr
-StateManager::client_status(const asio::ip::address &ip_address) const {
+ClientStatus::Ptr StateManager::client_status(const asio::ip::address &ip_address) const {
   std::unique_lock lk(client_mtx_);
 
   for (auto &el : clients_) {

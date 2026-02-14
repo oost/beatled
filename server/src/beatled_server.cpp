@@ -7,13 +7,12 @@
 using beatled::core::Config;
 
 void print_version(const char *command) {
-  SPDLOG_INFO("{} Version {}.{}. Compiled on {}", command,
-              RPIZ_BS_VERSION_MAJOR, RPIZ_BS_VERSION_MINOR, RPIZ_BS_BUILDTIME);
+  SPDLOG_INFO("{} Version {}.{}. Compiled on {}", command, RPIZ_BS_VERSION_MAJOR,
+              RPIZ_BS_VERSION_MINOR, RPIZ_BS_BUILDTIME);
 }
 
 int main(int argc, char const *argv[]) {
-  struct beatled::server::Logger::parameters_t logger_parameters = {
-      .queue_size = 20};
+  struct beatled::server::Logger::parameters_t logger_parameters = {.queue_size = 20};
   auto logger = beatled::server::Logger(logger_parameters);
   auto console = spdlog::stdout_color_mt("console");
   auto err_logger = spdlog::stderr_color_mt("stderr");

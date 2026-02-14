@@ -21,29 +21,25 @@ using namespace beatled;
 using beatled::core::Config;
 
 Application::Application(const Config &beatled_config)
-    : server_parameters_{beatled_config.server_parameters()},
-      signals_{io_context_}, logger_{server_parameters_.logger} {
+    : server_parameters_{beatled_config.server_parameters()}, signals_{io_context_},
+      logger_{server_parameters_.logger} {
 
   std::unique_ptr<server::TempoBroadcaster> tempo_broadcaster =
-      std::make_unique<server::TempoBroadcaster>(
-          TEMPO_BROADCASTER_ID, io_context_,
-          std::chrono::seconds(2), std::chrono::seconds(2),
-          server_parameters_.broadcasting, state_manager_);
+      std::make_unique<server::TempoBroadcaster>(TEMPO_BROADCASTER_ID, io_context_,
+                                                 std::chrono::seconds(2), std::chrono::seconds(2),
+                                                 server_parameters_.broadcasting, state_manager_);
 
   registerController(std::make_unique<beatled::detector::BeatDetector>(
       BEAT_DETECTOR_ID, 44100, beatled::constants::audio_buffer_size,
       [&, tp = tempo_broadcaster.get()](uint64_t beat_time_ref, double tempo,
-                                        double estimated_tempo,
-                                        uint32_t beat_count) {
+                                        double estimated_tempo, uint32_t beat_count) {
         uint64_t next_beat_time_ref = state_manager_.get_next_beat_time_ref();
 
         SPDLOG_INFO("Beat {}, {} vs. prediction {}", beat_time_ref, tempo,
-                    static_cast<int64_t>(beat_time_ref) -
-                        static_cast<int64_t>(next_beat_time_ref));
+                    static_cast<int64_t>(beat_time_ref) - static_cast<int64_t>(next_beat_time_ref));
       },
-      [&, tp = tempo_broadcaster.get()](uint64_t next_beat_time_ref,
-                                        double tempo, double estimated_tempo,
-                                        uint32_t beat_count) {
+      [&, tp = tempo_broadcaster.get()](uint64_t next_beat_time_ref, double tempo,
+                                        double estimated_tempo, uint32_t beat_count) {
         SPDLOG_INFO("Next beat {}, {}", next_beat_time_ref, tempo);
         state_manager_.update_tempo(tempo, next_beat_time_ref);
         state_manager_.update_next_beat(next_beat_time_ref);
@@ -51,11 +47,11 @@ Application::Application(const Config &beatled_config)
         tp->broadcast_next_beat(next_beat_time_ref, beat_count);
       }));
 
-  registerController(std::make_unique<server::UDPServer>(
-      UDP_SERVER_ID, io_context_, server_parameters_.udp, state_manager_));
+  registerController(std::make_unique<server::UDPServer>(UDP_SERVER_ID, io_context_,
+                                                         server_parameters_.udp, state_manager_));
 
-  registerController(std::make_unique<server::HTTPServer>(
-      HTTP_SERVER_ID, server_parameters_.http, *this, io_context_, logger_));
+  registerController(std::make_unique<server::HTTPServer>(HTTP_SERVER_ID, server_parameters_.http,
+                                                          *this, io_context_, logger_));
 
   registerController(std::move(tempo_broadcaster));
 
@@ -110,21 +106,20 @@ void Application::start_threads() {
 
   // Create a pool of threads to run all of the io_contexts.
   std::vector<std::shared_ptr<asio::thread>> threads;
-  SPDLOG_INFO("Starting {} network worker threads",
-              server_parameters_.thread_pool_size);
+  SPDLOG_INFO("Starting {} network worker threads", server_parameters_.thread_pool_size);
 
   for (std::size_t i = 0; i < server_parameters_.thread_pool_size; ++i) {
     auto thread = std::make_shared<asio::thread>([this, &exception_mtx, &exception_caught]() {
-          try {
-            io_context_.run();
-          } catch (...) {
-            std::lock_guard<std::mutex> lock(exception_mtx);
-            if (!exception_caught) {
-              exception_caught = std::current_exception();
-            }
-            io_context_.stop();
-          }
-        });
+      try {
+        io_context_.run();
+      } catch (...) {
+        std::lock_guard<std::mutex> lock(exception_mtx);
+        if (!exception_caught) {
+          exception_caught = std::current_exception();
+        }
+        io_context_.stop();
+      }
+    });
     threads.push_back(thread);
   }
 
