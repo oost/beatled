@@ -77,22 +77,18 @@ Cross-compile for Raspberry Pi (ARM64) using Docker:
    git submodule update --init --recursive
    ```
 
-2. Build the Docker build environment:
+2. Build the Docker builder image and the ARM64 server executable:
 
    ```bash
-   utils/build-docker-builder.sh
+   utils/build-docker.sh
    ```
 
-3. Build the ARM64 executable:
+   The output binary is written to `./out/`.
+
+3. Deploy to your Raspberry Pi:
 
    ```bash
-   utils/build-beatled-server.sh
-   ```
-
-4. Deploy to your Raspberry Pi:
-
-   ```bash
-   utils/copy-tar-files.sh ${RPI_USERNAME} ${RPI_HOST}
+   utils/deploy-server-to-raspberry-pi.sh ${RPI_USERNAME} ${RPI_HOST}
    ```
 
 The deployment script copies the server binary, built client, and scripts, then restarts the systemd service on the Pi.

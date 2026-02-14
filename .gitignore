@@ -17,6 +17,9 @@ Gemfile.lock
 .jekyll-cache/
 
 certs
+*.pem
+*.key
+*.p12
 
 # General
 .DS_Store

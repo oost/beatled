@@ -59,22 +59,16 @@ In this step, we cross-compile the server for the Raspberry Pi and build the Rea
    git submodule update --init --recursive
    ```
 
-2. Build builder image:
+2. Build the Docker builder image and the ARM64 server executable:
 
    ```
-   utils/build-docker-builder.sh
+   utils/build-docker.sh
    ```
 
-3. Build Raspberry Pi executable:
+3. Deploy to the Raspberry Pi:
 
    ```
-   utils/build-beatled-server.sh
-   ```
-
-4. Copy your files to the raspberry pi:
-
-   ```
-   utils/copy-tar-files.sh ${RPI_USERNAME} ${RPI_HOST}
+   utils/deploy-server-to-raspberry-pi.sh ${RPI_USERNAME} ${RPI_HOST}
    ```
 
 ## Requirements
