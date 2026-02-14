@@ -1,10 +1,10 @@
 import { useFetcher } from "react-router-dom";
 import { useEffect } from "react";
 import { useInterval } from "../hooks/interval";
-import { getStatus, serviceControl } from "../lib/status";
+import { getStatus, getDevices, serviceControl, type Device } from "../lib/status";
 import PageHeader from "../components/page-header";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { FormattedNumber } from "react-intl";
@@ -26,7 +26,7 @@ const MAX_HISTORY = 30;
 
 export async function loader() {
   console.log("Loading status");
-  const status = await getStatus();
+  const [status, devicesResponse] = await Promise.all([getStatus(), getDevices()]);
   const last: TempoHistoryEntry = { x: new Date(), y: status.tempo || NaN, ...status };
   tempoHistory.push(last);
   if (tempoHistory.length > MAX_HISTORY) {
@@ -35,11 +35,18 @@ export async function loader() {
   return {
     last,
     history: tempoHistory,
+    devices: devicesResponse.devices,
   };
 }
 
 export async function action() {
   return true;
+}
+
+function formatLastSeen(lastStatusTimeUs: number): string {
+  if (!lastStatusTimeUs) return "Never";
+  const date = new Date(lastStatusTimeUs / 1000);
+  return formatDistanceToNow(date, { addSuffix: true });
 }
 
 export default function StatusPage() {
@@ -62,17 +69,19 @@ export default function StatusPage() {
     }
   }, [fetcher]);
 
-  const data =
-    (fetcher.data as { last: TempoHistoryEntry; history: TempoHistoryEntry[] } | undefined)?.last ||
-    ({} as Partial<TempoHistoryEntry>);
-  const historyData = (fetcher.data as { history: TempoHistoryEntry[] } | undefined)?.history || [];
+  const fetcherData = fetcher.data as
+    | { last: TempoHistoryEntry; history: TempoHistoryEntry[]; devices: Device[] }
+    | undefined;
+  const data = fetcherData?.last || ({} as Partial<TempoHistoryEntry>);
+  const historyData = fetcherData?.history || [];
+  const devices = fetcherData?.devices || [];
 
   return (
     <>
       <PageHeader title="Status" />
-      <div className="space-y-4 px-4 pb-8 md:px-8">
+      <div className="grid gap-4 px-4 pb-8 md:grid-cols-2 md:px-8">
         <fetcher.Form method="post">
-          <Card>
+          <Card className="h-full">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
               <CardTitle className="text-base">Beatled</CardTitle>
               <Button
@@ -143,7 +152,7 @@ export default function StatusPage() {
           </Card>
         </fetcher.Form>
 
-        <Card>
+        <Card className="h-full">
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Beat History</CardTitle>
           </CardHeader>
@@ -160,6 +169,38 @@ export default function StatusPage() {
               {data.x && "Updated " + formatDistanceToNow(data.x, { addSuffix: true })}
             </p>
           </CardFooter>
+        </Card>
+
+        <Card className="md:col-span-2">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Devices</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {devices.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No devices connected</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Board ID</TableHead>
+                    <TableHead>IP Address</TableHead>
+                    <TableHead className="text-right">Last Seen</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {devices.map((device) => (
+                    <TableRow key={device.client_id}>
+                      <TableCell className="font-mono text-xs">{device.board_id}</TableCell>
+                      <TableCell>{device.ip_address}</TableCell>
+                      <TableCell className="text-right">
+                        {formatLastSeen(device.last_status_time)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
         </Card>
       </div>
     </>

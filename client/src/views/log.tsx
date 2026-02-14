@@ -46,8 +46,8 @@ export default function LogPage() {
   return (
     <>
       <PageHeader title="Logs" />
-      <div className="space-y-4 px-4 pb-8 md:px-8">
-        <fetcher.Form method="post">
+      <div className="grid gap-4 px-4 pb-8 md:grid-cols-2 md:px-8">
+        <fetcher.Form method="post" className="contents">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
               <CardTitle className="text-base">Server</CardTitle>
@@ -75,7 +75,7 @@ export default function LogPage() {
             </CardContent>
           </Card>
 
-          <Card className="mt-4">
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
               <CardTitle className="text-base">Console</CardTitle>
               <Button
