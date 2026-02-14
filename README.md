@@ -24,6 +24,7 @@ utils/beatled.sh <command> [options]
 |---------|-------------|
 | `beatled.sh server --start-http` | Build and start the HTTPS server with the built client |
 | `beatled.sh server --start-http --start-udp` | Also start the UDP server for Pico devices |
+| `beatled.sh server --start-http --start-udp --start-broadcast -c 127.0.0.1` | Also broadcast tempo to local Pico processes (see note below) |
 | `beatled.sh server --start-http --cors-origin "https://localhost:5173"` | Run with CORS for the Vite dev server |
 | `beatled.sh server --start-http --api-token "secret"` | Run with Bearer token authentication |
 | `beatled.sh client` | Start the Vite dev server (proxies `/api` to the beat server) |
@@ -33,6 +34,8 @@ utils/beatled.sh <command> [options]
 | `beatled.sh test server` | Run server tests only |
 | `beatled.sh build all` | Build everything without running |
 | `beatled.sh certs localhost` | Generate self-signed TLS certificates |
+
+**Broadcasting locally:** The default broadcast address (`192.168.86.255`) targets the LAN and won't reach processes on localhost. When running the Pico firmware locally with `beatled.sh pico`, use `-c 127.0.0.1` to send unicast tempo messages to the local Pico process instead.
 
 The server is configured with CMake on first run. Subsequent builds are incremental.
 

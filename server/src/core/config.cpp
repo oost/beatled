@@ -34,7 +34,8 @@ Config::Config(int argc, const char *argv[]) {
       lyra::opt(m_cors_origin,
                 "cors origin")["--cors-origin"]("CORS allowed origin (default: disabled)") |
       lyra::opt(m_api_token, "api token")["--api-token"](
-          "Bearer token for API authentication (default: disabled)");
+          "Bearer token for API authentication (default: disabled)") |
+      lyra::opt(m_verbose)["--verbose"]("Enable debug logging");
 
   auto parser_result = cli.parse(lyra::args(argc, argv));
   if (!parser_result) {
@@ -55,6 +56,21 @@ Config::Config(int argc, const char *argv[]) {
   }
 }
 
+void Config::log_config() const {
+  SPDLOG_INFO("Configuration:");
+  SPDLOG_INFO("  Address:            {}", m_address);
+  SPDLOG_INFO("  HTTP server:        {} (port {}{})", m_start_http_server ? "on" : "off", m_http_port,
+              m_no_tls ? ", no TLS" : "");
+  SPDLOG_INFO("  UDP server:         {} (port {})", m_start_udp_server ? "on" : "off", m_udp_port);
+  SPDLOG_INFO("  Broadcaster:        {} ({}:{})", m_start_broadcaster ? "on" : "off",
+              m_broadcasting_address, m_broadcasting_port);
+  SPDLOG_INFO("  Thread pool size:   {}", m_pool_size);
+  SPDLOG_INFO("  Root dir:           {}", m_root_dir);
+  SPDLOG_INFO("  Certs dir:          {}", m_certs_dir);
+  SPDLOG_INFO("  CORS origin:        {}", m_cors_origin.empty() ? "disabled" : m_cors_origin);
+  SPDLOG_INFO("  API token:          {}", m_api_token.empty() ? "disabled" : "set");
+}
+
 beatled::server::Server::parameters_t Config::server_parameters() const {
   server::Server::parameters_t server_parameters{
       .start_http_server = m_start_http_server,
@@ -72,7 +88,7 @@ beatled::server::Server::parameters_t Config::server_parameters() const {
           },
       .udp = {m_udp_port},
       .broadcasting = {m_broadcasting_address, m_broadcasting_port},
-      .logger = {20},
+      .logger = {20, m_verbose},
       .thread_pool_size = m_pool_size,
   };
 

@@ -14,6 +14,7 @@ class Logger {
 public:
   struct parameters_t {
     std::size_t queue_size = 20;
+    bool verbose = false;
   };
 
   Logger(const parameters_t &logger_parameters);

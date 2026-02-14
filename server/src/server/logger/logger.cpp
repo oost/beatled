@@ -25,7 +25,8 @@ Logger::Logger(const Logger::parameters_t &logger_parameters) {
       spdlog::async_overflow_policy::overrun_oldest);
   spdlog::set_default_logger(logger);
   spdlog::flush_every(std::chrono::seconds(1));
-  logger->set_level(spdlog::level::debug);
+  logger->set_level(logger_parameters.verbose ? spdlog::level::debug
+                                               : spdlog::level::info);
 }
 
 json Logger::log_tail() {

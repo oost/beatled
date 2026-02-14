@@ -19,6 +19,7 @@ public:
   Config(int argc, const char *argv[]);
 
   server::Server::parameters_t server_parameters() const;
+  void log_config() const;
   bool help() const { return m_help; }
 
 private:
@@ -37,6 +38,7 @@ private:
   std::string m_certs_dir{"./certs"};
   std::string m_cors_origin;
   std::string m_api_token;
+  bool m_verbose{false};
 };
 
 } // namespace beatled::core
