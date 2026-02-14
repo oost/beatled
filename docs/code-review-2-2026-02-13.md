@@ -4,15 +4,15 @@
 
 | Severity | Server | Pico | Client | Infra | Total |
 |----------|--------|------|--------|-------|-------|
-| CRITICAL | 0 | 0 | 0 | 2 | **2** |
+| CRITICAL | 0 | 0 | 0 | 1 | **1** |
 | HIGH | 1 | 1 | 2 | 3 | **7** |
 | MEDIUM | 7 | 8 | 10 | 14 | **39** |
 | LOW | 3 | 1 | 4 | 3 | **11** |
-| **Total** | **11** | **10** | **16** | **22** | **59** |
+| **Total** | **11** | **10** | **16** | **21** | **58** |
 
 ---
 
-## CRITICAL (2)
+## CRITICAL (1)
 
 ### C6. Docker base images not pinned to digest (Infra)
 **Files**: `docker/Dockerfile.beatled:26,36`, `docker/Dockerfile.beatled-dockcross:27,34`
@@ -20,16 +20,6 @@
 `FROM node` and `FROM debian:bookworm-slim` use mutable tags. A compromised or changed upstream image breaks builds or introduces supply chain risk.
 
 **Fix**: Pin to digest, e.g. `FROM node@sha256:<digest>`.
-
-### C7. Client .env has typo and is version-controlled (Infra)
-**File**: `client/.env`
-
-```
-PUBLIC_URL=http://locahost:5173
-```
-Typo (`locahost`), and `.env` is committed to git.
-
-**Fix**: Fix typo, add `.env` to `.gitignore`, use `.env.example` instead.
 
 ---
 
@@ -222,3 +212,4 @@ The following issues were resolved:
 - ~~H13 Server.markdown heading says "Client"~~ — corrected to "Beatled Server"
 - ~~M8 Missing compiler warning flags~~ — -Wall -Wextra -Wpedantic added
 - ~~L5 printf() overhead in LED loop~~ — gated behind BEATLED_VERBOSE_LOG
+- ~~C7 Client .env has typo and is version-controlled~~ — typo fixed, .env added to .gitignore, .env.example created
