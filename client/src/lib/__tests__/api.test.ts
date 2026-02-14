@@ -8,7 +8,7 @@ import {
   setAPIToken,
 } from "../api";
 
-const sessionStorageMock = (() => {
+function createStorageMock() {
   let store: Record<string, string> = {};
   return {
     getItem: vi.fn((key: string) => store[key] ?? null),
@@ -26,9 +26,13 @@ const sessionStorageMock = (() => {
     },
     key: vi.fn((i: number) => Object.keys(store)[i] ?? null),
   };
-})();
+}
+
+const sessionStorageMock = createStorageMock();
+const localStorageMock = createStorageMock();
 
 Object.defineProperty(globalThis, "sessionStorage", { value: sessionStorageMock, writable: true });
+Object.defineProperty(globalThis, "localStorage", { value: localStorageMock, writable: true });
 
 describe("API token configuration", () => {
   beforeEach(() => {
@@ -60,6 +64,11 @@ describe("API host configuration", () => {
   it("allows setting and getting a custom API host", () => {
     setAPIHost("https://custom-host:9090");
     expect(getAPIHost()).toBe("https://custom-host:9090");
+  });
+
+  it("persists host to localStorage", () => {
+    setAPIHost("https://custom-host:9090");
+    expect(localStorageMock.setItem).toHaveBeenCalledWith("beatled_api_host", "https://custom-host:9090");
   });
 });
 

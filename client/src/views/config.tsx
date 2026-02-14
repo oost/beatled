@@ -51,12 +51,13 @@ export default function ConfigPage() {
           <CardContent className="pt-6">
             <fieldset>
               <legend className="mb-3 text-sm font-medium">API Host</legend>
-              <RadioGroup value={host} onValueChange={onHostChange}>
+              <RadioGroup defaultValue={host} onValueChange={onHostChange}>
                 {API_HOSTS.map((api_host) => (
                   <div key={api_host.value} className="flex items-center space-x-3 py-2">
                     <RadioGroupItem value={api_host.value} id={`host-${api_host.value}`} />
                     <Label htmlFor={`host-${api_host.value}`} className="text-sm font-normal">
-                      {api_host.name}
+                      {api_host.name}{" "}
+                      <span className="text-muted-foreground">{new URL(api_host.value).hostname}</span>
                     </Label>
                   </div>
                 ))}

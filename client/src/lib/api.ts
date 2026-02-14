@@ -1,12 +1,22 @@
-let API_HOST = window.location.origin;
+const API_HOST_KEY = "beatled_api_host";
+
+let API_HOST: string | null = null;
+
+function resolveHost(): string {
+  if (API_HOST === null) {
+    API_HOST = localStorage.getItem(API_HOST_KEY) ?? window.location.origin;
+  }
+  return API_HOST;
+}
 
 export function setAPIHost(new_host: string) {
   console.log(`Changed API_HOST to ${new_host}`);
   API_HOST = new_host;
+  localStorage.setItem(API_HOST_KEY, new_host);
 }
 
 export function getAPIHost(): string {
-  return API_HOST;
+  return resolveHost();
 }
 
 const API_TOKEN_KEY = "beatled_api_token";
@@ -31,7 +41,7 @@ async function executeFetch(
   body?: unknown,
 ): Promise<Response> {
   try {
-    const response = await fetch(new URL(endpoint, API_HOST), {
+    const response = await fetch(new URL(endpoint, resolveHost()), {
       method,
       mode: "cors",
       cache: "no-cache",
