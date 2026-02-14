@@ -82,8 +82,8 @@ std::unique_ptr<router_t> HTTPServer::server_handler(const std::string &root_dir
 HTTPServer::HTTPServer(const std::string &id, const parameters_t &http_server_parameters,
                        ServiceManagerInterface &service_manager, asio::io_context &io_context,
                        Logger &logger)
-    : ServiceControllerInterface{id}, service_manager_{service_manager}, io_context_{io_context},
-      logger_{logger}, certs_dir_{http_server_parameters.certs_dir},
+    : ServiceControllerInterface{id}, io_context_{io_context}, logger_{logger},
+      service_manager_{service_manager}, certs_dir_{http_server_parameters.certs_dir},
       cors_origin_{http_server_parameters.cors_origin},
       api_token_{http_server_parameters.api_token}, address_{http_server_parameters.address},
       port_{http_server_parameters.port} {
@@ -91,58 +91,69 @@ HTTPServer::HTTPServer(const std::string &id, const parameters_t &http_server_pa
 
   using std::literals::chrono_literals::operator""s;
 
-  using traits_t = restinio::tls_traits_t<restinio::asio_timer_manager_t,
-                                          //  restinio::shared_ostream_logger_t,
-                                          restinio::null_logger_t, router_t>;
+  auto handler = server_handler(http_server_parameters.root_dir);
 
-  // Since RESTinio supports both stand-alone ASIO and boost::ASIO
-  // we specify an alias for a concrete asio namesace.
-  // That's makes it possible to compile the code in both cases.
-  // Typicaly only one of ASIO variants would be used,
-  // and so only asio::* or only boost::asio::* would be applied.
-  namespace asio_ns = restinio::asio_ns;
+  if (http_server_parameters.no_tls) {
+    SPDLOG_INFO("{}: listening on {}:{} (plain HTTP)", name(), http_server_parameters.address,
+                http_server_parameters.port);
+    server_ = std::make_unique<plain_server_t>(restinio::external_io_context(io_context),
+                                               plain_settings_t{}
+                                                   .address(http_server_parameters.address)
+                                                   .port(http_server_parameters.port)
+                                                   .request_handler(std::move(handler))
+                                                   .read_next_http_message_timelimit(10s)
+                                                   .write_http_response_timelimit(1s)
+                                                   .handle_request_timeout(1s));
+  } else {
 
-  std::vector<std::filesystem::path> certificate_paths{certificate_file_path(), key_file_path(),
-                                                       dh_params_file_path()};
+    // Since RESTinio supports both stand-alone ASIO and boost::ASIO
+    // we specify an alias for a concrete asio namesace.
+    // That's makes it possible to compile the code in both cases.
+    // Typicaly only one of ASIO variants would be used,
+    // and so only asio::* or only boost::asio::* would be applied.
 
-  for (const auto &cert_path : certificate_paths) {
-    if (!std::filesystem::exists(cert_path)) {
-      throw std::runtime_error(fmt::format("Missing certificate file: {}", cert_path.string()));
+    namespace asio_ns = restinio::asio_ns;
+
+    std::vector<std::filesystem::path> certificate_paths{certificate_file_path(), key_file_path(),
+                                                         dh_params_file_path()};
+
+    for (const auto &cert_path : certificate_paths) {
+      if (!std::filesystem::exists(cert_path)) {
+        throw std::runtime_error(fmt::format("Missing certificate file: {}", cert_path.string()));
+      }
     }
+
+    asio_ns::ssl::context tls_context{asio_ns::ssl::context::tls};
+    tls_context.set_options(asio_ns::ssl::context::default_workarounds |
+                            asio_ns::ssl::context::no_sslv2 | asio_ns::ssl::context::no_sslv3 |
+                            asio_ns::ssl::context::no_tlsv1 | asio_ns::ssl::context::no_tlsv1_1 |
+                            asio_ns::ssl::context::single_dh_use);
+
+    tls_context.use_certificate_chain_file(certificate_file_path());
+    tls_context.use_private_key_file(key_file_path(), asio_ns::ssl::context::pem);
+    tls_context.use_tmp_dh_file(dh_params_file_path());
+
+    SPDLOG_INFO("{}: listening on {}:{} (HTTPS)", name(), http_server_parameters.address,
+                http_server_parameters.port);
+    server_ = std::make_unique<tls_server_t>(restinio::external_io_context(io_context),
+                                             tls_settings_t{}
+                                                 .address(http_server_parameters.address)
+                                                 .port(http_server_parameters.port)
+                                                 .request_handler(std::move(handler))
+                                                 .read_next_http_message_timelimit(10s)
+                                                 .write_http_response_timelimit(1s)
+                                                 .handle_request_timeout(1s)
+                                                 .tls_context(std::move(tls_context)));
   }
-
-  asio_ns::ssl::context tls_context{asio_ns::ssl::context::tls};
-  tls_context.set_options(asio_ns::ssl::context::default_workarounds |
-                          asio_ns::ssl::context::no_sslv2 | asio_ns::ssl::context::no_sslv3 |
-                          asio_ns::ssl::context::no_tlsv1 | asio_ns::ssl::context::no_tlsv1_1 |
-                          asio_ns::ssl::context::single_dh_use);
-
-  tls_context.use_certificate_chain_file(certificate_file_path());
-  tls_context.use_private_key_file(key_file_path(), asio_ns::ssl::context::pem);
-
-  tls_context.use_tmp_dh_file(dh_params_file_path());
-
-  SPDLOG_INFO("{}: listening on {}:{}", name(), http_server_parameters.address,
-              http_server_parameters.port);
-  restinio_server_ = std::make_unique<http_server_t>(
-      restinio::external_io_context(io_context),
-      settings_t{}
-          .address(http_server_parameters.address)
-          .port(http_server_parameters.port)
-          .request_handler(server_handler(http_server_parameters.root_dir))
-          .read_next_http_message_timelimit(10s)
-          .write_http_response_timelimit(1s)
-          .handle_request_timeout(1s)
-          .tls_context(std::move(tls_context)));
 }
 
 void HTTPServer::start_sync() {
   SPDLOG_INFO("{}: listening on {}:{}", name(), address_, port_);
-  asio::post(io_context_, [&] { restinio_server_->open_sync(); });
+  asio::post(io_context_, [&] { std::visit([](auto &srv) { srv->open_sync(); }, server_); });
 }
 
 void HTTPServer::stop_sync() {
-  asio::post(io_context_, [&] { restinio_server_->close_sync(); });
+  asio::post(io_context_, [&] { std::visit([](auto &srv) { srv->close_sync(); }, server_); });
 }
 
 } // namespace beatled::server

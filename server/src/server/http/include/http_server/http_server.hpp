@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <memory>
 #include <string>
+#include <variant>
 
 #include <asio.hpp>
 #include <restinio/core.hpp>
@@ -23,11 +24,16 @@ class HTTPServer : public ServiceControllerInterface {
 public:
   using router_t = restinio::router::express_router_t<>;
 
-  using traits_t = restinio::tls_traits_t<restinio::asio_timer_manager_t,
-                                          //  restinio::shared_ostream_logger_t,
-                                          restinio::null_logger_t, router_t>;
-  using http_server_t = restinio::http_server_t<traits_t>;
-  using settings_t = restinio::server_settings_t<traits_t>;
+  using tls_traits_t =
+      restinio::tls_traits_t<restinio::asio_timer_manager_t, restinio::null_logger_t, router_t>;
+  using plain_traits_t =
+      restinio::traits_t<restinio::asio_timer_manager_t, restinio::null_logger_t, router_t>;
+
+  using tls_server_t = restinio::http_server_t<tls_traits_t>;
+  using plain_server_t = restinio::http_server_t<plain_traits_t>;
+
+  using tls_settings_t = restinio::server_settings_t<tls_traits_t>;
+  using plain_settings_t = restinio::server_settings_t<plain_traits_t>;
 
   struct parameters_t {
     const std::string address;
@@ -36,6 +42,7 @@ public:
     const std::string certs_dir;
     std::string cors_origin;
     std::string api_token;
+    bool no_tls{false};
   };
 
   HTTPServer(const std::string &id, const parameters_t &http_server_parameters,
@@ -62,7 +69,7 @@ private:
   std::string address_;
   std::uint16_t port_;
 
-  std::unique_ptr<http_server_t> restinio_server_;
+  std::variant<std::unique_ptr<tls_server_t>, std::unique_ptr<plain_server_t>> server_;
   std::unique_ptr<router_t> server_handler(const std::string &root_dir);
 };
 

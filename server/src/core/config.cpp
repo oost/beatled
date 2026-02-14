@@ -15,6 +15,7 @@ Config::Config(int argc, const char *argv[]) {
       lyra::opt(m_start_http_server)["--start-http"]("Start HTTP server") |
       lyra::opt(m_start_udp_server)["--start-udp"]("Start UDP server") |
       lyra::opt(m_start_broadcaster)["--start-broadcast"]("Start broadcaster ") |
+      lyra::opt(m_no_tls)["--no-tls"]("Disable TLS (plain HTTP)") |
 
       lyra::opt(m_http_port, "http port")["-p"]["--http-port"](
           fmt::format("port to listen (default: {})", m_http_port)) |
@@ -67,6 +68,7 @@ beatled::server::Server::parameters_t Config::server_parameters() const {
               m_certs_dir,   // cert_dir
               m_cors_origin, // cors_origin
               m_api_token,   // api_token
+              m_no_tls,      // no_tls
           },
       .udp = {m_udp_port},
       .broadcasting = {m_broadcasting_address, m_broadcasting_port},

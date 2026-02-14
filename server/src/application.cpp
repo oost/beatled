@@ -21,8 +21,8 @@ using namespace beatled;
 using beatled::core::Config;
 
 Application::Application(const Config &beatled_config)
-    : server_parameters_{beatled_config.server_parameters()}, signals_{io_context_},
-      logger_{server_parameters_.logger} {
+    : server_parameters_{beatled_config.server_parameters()},
+      logger_{server_parameters_.logger}, signals_{io_context_} {
 
   std::unique_ptr<server::TempoBroadcaster> tempo_broadcaster =
       std::make_unique<server::TempoBroadcaster>(TEMPO_BROADCASTER_ID, io_context_,

@@ -25,7 +25,7 @@ namespace beatled::server {
 using beatled::core::StateManager;
 
 Server::Server(const parameters_t &server_parameters)
-    : signals_{io_context_}, server_parameters_{server_parameters} {
+    : server_parameters_{server_parameters}, signals_{io_context_} {
 
   SPDLOG_INFO("Initializing server");
   // Register to handle the signals that indicate when the server should

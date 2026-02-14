@@ -27,6 +27,7 @@ private:
   bool m_start_http_server = false;
   bool m_start_udp_server = false;
   bool m_start_broadcaster = false;
+  bool m_no_tls{false};
   std::uint16_t m_http_port{8443};
   std::uint16_t m_udp_port{9090};
   std::string m_broadcasting_address{"192.168.86.255"};

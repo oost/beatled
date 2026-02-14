@@ -23,7 +23,10 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 const API_HOSTS = [
+  { name: "Vite Proxy", value: "http://localhost:5173" },
   { name: "Localhost", value: "https://localhost:8443" },
+  // { name: "Localhost (HTTP)", value: "http://localhost:8080" },
+  // { name: "Localhost (HTTP/8443)", value: "http://localhost:8443" },
   { name: "Raspberry Pi", value: "https://raspberrypi1.local:8443" },
 ];
 
