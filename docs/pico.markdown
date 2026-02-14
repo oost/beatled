@@ -8,6 +8,14 @@ nav_order: 5
 
 Source code: [github.com/oost/beatled-pico](https://github.com/oost/beatled-pico)
 
+Beatled Pico is embedded C firmware designed to run on a **Raspberry Pi Pico W** microcontroller. The Pico is mounted on wearables -- sewn into jackets, wrapped around hats, or embedded in costumes -- alongside a WS2812 LED strip and a small battery pack.
+
+The firmware connects to the Beatled server over WiFi and receives tempo data and control commands via a binary UDP protocol. Using this timing information, it drives the LED strip with beat-synchronized lighting patterns, keeping all devices on the network visually in sync.
+
+The project links against the [Pico SDK](https://github.com/raspberrypi/pico-sdk) and compiles to a **bare-metal UF2 executable** that is flashed directly onto the Pico W -- there is no operating system. The dual-core RP2040 chip is split by design: Core 0 handles WiFi networking and the synchronization state machine, while Core 1 drives the WS2812 LEDs using the chip's PIO (Programmable I/O) hardware for cycle-accurate signal timing.
+
+For development without physical hardware, the project includes a **macOS posix port** that builds a native ARM64 executable. It replaces the Pico SDK's hardware APIs with POSIX equivalents (pthreads, UDP sockets) and renders a 3D simulation of an LED ring using Metal shaders, so you can iterate on patterns and debug networking on your Mac.
+
 ## Requirements
 
 - Raspberry Pico W
