@@ -1,7 +1,8 @@
 ---
 title: Beatled Server
 layout: default
-nav_order: 4
+parent: Components
+nav_order: 1
 ---
 
 # Beatled Server

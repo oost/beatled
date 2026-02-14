@@ -1,7 +1,8 @@
 ---
 title: Beatled Controller
 layout: default
-nav_order: 6
+parent: Components
+nav_order: 3
 ---
 
 # Beatled Web Client

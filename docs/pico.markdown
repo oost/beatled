@@ -1,7 +1,8 @@
 ---
 title: Beatled Pico
 layout: default
-nav_order: 5
+parent: Components
+nav_order: 2
 ---
 
 # Beatled Pico
