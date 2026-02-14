@@ -68,7 +68,10 @@ describe("API host configuration", () => {
 
   it("persists host to localStorage", () => {
     setAPIHost("https://custom-host:9090");
-    expect(localStorageMock.setItem).toHaveBeenCalledWith("beatled_api_host", "https://custom-host:9090");
+    expect(localStorageMock.setItem).toHaveBeenCalledWith(
+      "beatled_api_host",
+      "https://custom-host:9090",
+    );
   });
 });
 

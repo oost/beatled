@@ -48,7 +48,12 @@ describe("getDevices", () => {
   it("returns parsed devices on success", async () => {
     const devicesData = {
       devices: [
-        { client_id: 1, board_id: "BEAD5058", ip_address: "192.168.1.10", last_status_time: 1700000000000000 },
+        {
+          client_id: 1,
+          board_id: "BEAD5058",
+          ip_address: "192.168.1.10",
+          last_status_time: 1700000000000000,
+        },
       ],
       count: 1,
     };

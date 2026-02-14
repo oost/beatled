@@ -10,18 +10,15 @@ describe("useTheme", () => {
     document.documentElement.classList.remove("dark");
     matchMediaResult = false;
 
-    vi.stubGlobal(
-      "localStorage",
-      {
-        getItem: vi.fn((key: string) => store[key] ?? null),
-        setItem: vi.fn((key: string, value: string) => {
-          store[key] = value;
-        }),
-        removeItem: vi.fn((key: string) => {
-          delete store[key];
-        }),
-      },
-    );
+    vi.stubGlobal("localStorage", {
+      getItem: vi.fn((key: string) => store[key] ?? null),
+      setItem: vi.fn((key: string, value: string) => {
+        store[key] = value;
+      }),
+      removeItem: vi.fn((key: string) => {
+        delete store[key];
+      }),
+    });
 
     vi.stubGlobal(
       "matchMedia",

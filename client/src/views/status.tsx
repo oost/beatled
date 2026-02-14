@@ -4,7 +4,14 @@ import { useInterval } from "../hooks/interval";
 import { getStatus, getDevices, serviceControl, type Device } from "../lib/status";
 import PageHeader from "../components/page-header";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { FormattedNumber } from "react-intl";
@@ -121,9 +128,7 @@ export default function StatusPage() {
                     </TableRow>
                     <TableRow>
                       <TableCell className="font-medium">Devices</TableCell>
-                      <TableCell className="text-right">
-                        {data.deviceCount ?? 0}
-                      </TableCell>
+                      <TableCell className="text-right">{data.deviceCount ?? 0}</TableCell>
                     </TableRow>
                     {data.status &&
                       typeof data.status === "object" &&

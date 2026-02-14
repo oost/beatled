@@ -57,7 +57,9 @@ export default function ConfigPage() {
                     <RadioGroupItem value={api_host.value} id={`host-${api_host.value}`} />
                     <Label htmlFor={`host-${api_host.value}`} className="text-sm font-normal">
                       {api_host.name}{" "}
-                      <span className="text-muted-foreground">{new URL(api_host.value).hostname}</span>
+                      <span className="text-muted-foreground">
+                        {new URL(api_host.value).hostname}
+                      </span>
                     </Label>
                   </div>
                 ))}
