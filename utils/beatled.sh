@@ -34,7 +34,8 @@ Commands:
   client-build        Build the client for production
   pico                Build (if needed) and run the Pico firmware (posix port)
   test [component]    Run tests (server, client, pico, or all)
-  build [component]   Build without running (server, client, pico, or all)
+  build [component]   Build without running (server, client, pico, rpi, or all)
+  deploy <user> <host> Deploy the RPi build to a Raspberry Pi via SSH
   docs                Start the Jekyll docs site locally
   certs <domain>      Generate self-signed TLS certificates
 
@@ -53,6 +54,8 @@ Examples:
   $(basename "$0") client
   $(basename "$0") test all
   $(basename "$0") build server
+  $(basename "$0") build rpi
+  $(basename "$0") deploy pi beatled.local
 EOF
   exit 1
 }
@@ -78,6 +81,17 @@ build_client() {
   info "Building client..."
   (cd "$CLIENT_DIR" && npm install --silent && npm run build)
   ok "Client build complete (output: $CLIENT_DIR/dist)"
+}
+
+build_rpi() {
+  info "Building Docker builder image..."
+  docker build -f "$PROJECT_DIR/docker/Dockerfile.builder" "$PROJECT_DIR" --progress=plain -t docker-builder
+
+  info "Building beatled server (ARM64)..."
+  rm -rf "$PROJECT_DIR/out"
+  docker build -f "$PROJECT_DIR/docker/Dockerfile.beatled" "$PROJECT_DIR" --progress=plain -o "$PROJECT_DIR/out"
+
+  ok "RPi build complete (output: $PROJECT_DIR/out/)"
 }
 
 build_pico() {
@@ -199,16 +213,68 @@ cmd_build() {
     server)  build_server ;;
     client)  build_client ;;
     pico)    build_pico ;;
+    rpi)     build_rpi ;;
     all)
       build_server
       build_client
       build_pico
       ;;
     *)
-      error "Unknown build component: $component (use server, client, pico, or all)"
+      error "Unknown build component: $component (use server, client, pico, rpi, or all)"
       exit 1
       ;;
   esac
+}
+
+cmd_deploy() {
+  local username="$1"
+  local host="$2"
+
+  if [ -z "$username" ] || [ -z "$host" ]; then
+    error "Usage: $(basename "$0") deploy <username> <host>"
+    exit 1
+  fi
+
+  local out_dir="$PROJECT_DIR/out"
+  local tgz="beat-server.tar.gz"
+  local install_script="$SCRIPT_DIR/install-server-on-raspberry-pi.sh"
+  local remote_home="/home/${username}"
+
+  if [ ! -d "$out_dir" ] || [ -z "$(ls -A "$out_dir" 2>/dev/null)" ]; then
+    error "Build output not found in $out_dir"
+    error "Run '$(basename "$0") build rpi' first"
+    exit 1
+  fi
+
+  if [ ! -f "$install_script" ]; then
+    error "Install script not found: $install_script"
+    exit 1
+  fi
+
+  info "Deploying beatled server to ${username}@${host}"
+
+  info "Packaging build output..."
+  (cd "$out_dir" && rm -f "$tgz" && tar -czf "$tgz" ./*)
+
+  info "Copying files to ${host}..."
+  scp "$out_dir/$tgz" "$install_script" "${username}@${host}:${remote_home}" > /dev/null
+
+  rm "$out_dir/$tgz"
+
+  info "Installing and restarting service on ${host}..."
+  local remote_out
+  if remote_out=$(ssh "${username}@${host}" "bash ${remote_home}/install-server-on-raspberry-pi.sh ${host} ${tgz}" 2>&1); then
+    ok "Deploy complete — server running at https://${host}:8443/"
+  else
+    error "Failed to start service on ${host}:"
+    echo -e "$remote_out"
+    exit 1
+  fi
+
+  if [ "$(uname -s)" = "Darwin" ]; then
+    warn "Safari does not accept self-signed certificates — use Chrome instead"
+    python3 -m webbrowser "https://${host}:8443/"
+  fi
 }
 
 cmd_docs() {
@@ -242,6 +308,7 @@ case "$COMMAND" in
   pico)         cmd_pico "$@" ;;
   test)         cmd_test "$@" ;;
   build)        cmd_build "$@" ;;
+  deploy)       cmd_deploy "$@" ;;
   docs)         cmd_docs "$@" ;;
   certs)        cmd_certs "$@" ;;
   help|-h|--help) usage ;;

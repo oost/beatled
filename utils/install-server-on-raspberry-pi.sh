@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Runs ON the Raspberry Pi to install and restart the beatled server.
-# Copied and executed remotely by deploy-server-to-raspberry-pi.sh.
+# Copied and executed remotely by: beatled.sh deploy
 #
 
 set -e

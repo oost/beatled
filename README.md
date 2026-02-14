@@ -62,13 +62,13 @@ In this step, we cross-compile the server for the Raspberry Pi and build the Rea
 2. Build the Docker builder image and the ARM64 server executable:
 
    ```
-   utils/build-docker.sh
+   utils/beatled.sh build rpi
    ```
 
 3. Deploy to the Raspberry Pi:
 
    ```
-   utils/deploy-server-to-raspberry-pi.sh ${RPI_USERNAME} ${RPI_HOST}
+   utils/beatled.sh deploy ${RPI_USERNAME} ${RPI_HOST}
    ```
 
 ## Requirements
