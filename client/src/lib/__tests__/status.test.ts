@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
-import { getStatus, serviceControl } from "../status";
+import { getStatus, getDevices, serviceControl } from "../status";
 
 vi.mock("../api", () => ({
   getEndpoint: vi.fn(),
@@ -37,6 +37,37 @@ describe("getStatus", () => {
     const result = await getStatus();
 
     expect(result).toEqual({ error: true, status: "Network error" });
+  });
+});
+
+describe("getDevices", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("returns parsed devices on success", async () => {
+    const devicesData = {
+      devices: [
+        { client_id: 1, board_id: "BEAD5058", ip_address: "192.168.1.10", last_status_time: 1700000000000000 },
+      ],
+      count: 1,
+    };
+    (getEndpoint as Mock).mockResolvedValue({
+      json: () => Promise.resolve(devicesData),
+    });
+
+    const result = await getDevices();
+
+    expect(getEndpoint).toHaveBeenCalledWith("/api/devices");
+    expect(result).toEqual(devicesData);
+  });
+
+  it("returns empty devices on network failure", async () => {
+    (getEndpoint as Mock).mockRejectedValue(new Error("Connection refused"));
+
+    const result = await getDevices();
+
+    expect(result).toEqual({ devices: [], count: 0 });
   });
 });
 

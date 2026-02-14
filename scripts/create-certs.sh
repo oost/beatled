@@ -5,20 +5,20 @@
 set -e 
 # set -x
 
+if [[ $# -lt 1 ]]
+then
+  echo "Error: No domain name argument provided"
+  echo "Usage: $0 <domain> [certs_folder]"
+  exit 1
+fi
+
 DOMAIN=$1
 CERTS_FOLDER=${2:-"~/certs"}
 
 echo "- Creating certs folder $CERTS_FOLDER 📂"
-mkdir -p $CERTS_FOLDER
+mkdir -p "$CERTS_FOLDER"
 
-cd $CERTS_FOLDER 
-
-if [[ $# -lt 1 ]]
-then
-  echo "Error: No domain name argument provided"
-  echo "Usage: Provide a domain name as an argument"
-  exit 1
-fi
+cd "$CERTS_FOLDER"
 
 # Create root CA & Private key
 echo "- Creating root certificate 🦷"
@@ -26,21 +26,21 @@ echo "- Creating root certificate 🦷"
 openssl req -x509 \
             -sha256 -days 356 \
             -nodes \
-            -newkey rsa:2048 \
+            -newkey rsa:4096 \
             -subj "/CN=${DOMAIN}/C=US/L=New York" \
-            -keyout rootCA.key -out rootCA.crt 
+            -keyout rootCA.key -out rootCA.crt
 
-# Generate Private key 
+# Generate Private key
 
 echo "- Generating private key 🔑"
 
-openssl genrsa -out ${DOMAIN}.key 2048
+openssl genrsa -out "${DOMAIN}.key" 4096
 
 # Create csf conf
 
 cat > csr.conf <<EOF
 [ req ]
-default_bits = 2048
+default_bits = 4096
 prompt = no
 default_md = sha256
 req_extensions = req_ext

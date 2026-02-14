@@ -1,12 +1,14 @@
 #ifndef HTTP_SERVER__API_HANDLER_HPP
 #define HTTP_SERVER__API_HANDLER_HPP
 
+#include <chrono>
+#include <deque>
+#include <mutex>
 #include <restinio/core.hpp>
 
 #include "./response_handler.hpp"
 #include "beat_detector/beat_detector.hpp"
 #include "core/interfaces/service_manager.hpp"
-// #include "core/state_manager.hpp"
 #include "logger/logger.hpp"
 
 using beatled::core::ServiceManagerInterface;
@@ -38,6 +40,7 @@ public:
   req_status_t on_preflight(const req_handle_t &req, route_params_t params);
 
   bool check_auth(const req_handle_t &req) const;
+  bool check_rate_limit();
 
 private:
   template <typename RESP> RESP init_resp(RESP resp) {
@@ -57,6 +60,12 @@ private:
   Logger &logger_;
   std::string cors_origin_;
   std::string api_token_;
+
+  // Rate limiting: sliding window
+  static constexpr size_t kMaxRequestsPerWindow = 60;
+  static constexpr auto kWindowDuration = std::chrono::seconds(10);
+  std::mutex rate_mtx_;
+  std::deque<std::chrono::steady_clock::time_point> request_times_;
 };
 } // namespace server
 } // namespace beatled

@@ -31,7 +31,9 @@ uint16_t StateManager::get_program_id() const { return program_id_; }
 
 void StateManager::update_next_beat(uint64_t next_beat_time_ref) {
   next_beat_time_ref_ = next_beat_time_ref;
-  for (auto &cb : on_next_beat_cbs_) {
+  // on_next_beat_cbs_ is populated during construction only (before threads
+  // start), so it is safe to iterate without a lock here.
+  for (const auto &cb : on_next_beat_cbs_) {
     cb(next_beat_time_ref_);
   }
 }
@@ -85,8 +87,12 @@ void StateManager::register_client(ClientStatus::Ptr client_status) {
   clients_.push_back(client_status);
 }
 
-ClientStatus::client_map_t StateManager::get_clients() const {
+ClientStatus::client_map_t StateManager::get_clients() {
   std::unique_lock lk(client_mtx_);
+  uint64_t now = Clock::wall_time_us_64();
+  std::erase_if(clients_, [now](const ClientStatus::Ptr &cs) {
+    return (now - cs->last_status_time) > DEVICE_EXPIRY_US;
+  });
   return clients_;
 }
 

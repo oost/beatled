@@ -26,6 +26,20 @@ bool APIHandler::check_auth(const req_handle_t &req) const {
   return auth && *auth == "Bearer " + api_token_;
 }
 
+bool APIHandler::check_rate_limit() {
+  std::lock_guard lk(rate_mtx_);
+  auto now = std::chrono::steady_clock::now();
+  while (!request_times_.empty() &&
+         (now - request_times_.front()) > kWindowDuration) {
+    request_times_.pop_front();
+  }
+  if (request_times_.size() >= kMaxRequestsPerWindow) {
+    return false;
+  }
+  request_times_.push_back(now);
+  return true;
+}
+
 APIHandler::req_status_t APIHandler::on_get_status(const req_handle_t &req,
                                                    route_params_t params) {
   if (!check_auth(req)) {
@@ -60,11 +74,30 @@ APIHandler::on_post_service_control(const req_handle_t &req,
         .set_body(R"({"error":"Unauthorized"})")
         .done();
   }
+  if (!check_rate_limit()) {
+    return init_resp(req->create_response(restinio::status_too_many_requests()))
+        .set_body(R"({"error":"Too many requests"})")
+        .done();
+  }
 
   json response_body;
 
   try {
+    if (req->body().size() > 4096) {
+      response_body["error"] = "Request body too large";
+      return init_resp(req->create_response(restinio::status_bad_request()))
+          .set_body(response_body.dump())
+          .connection_close()
+          .done();
+    }
     json request_body = json::parse(req->body());
+    if (!request_body.contains("id") || !request_body.contains("status")) {
+      response_body["error"] = "Missing required fields: id, status";
+      return init_resp(req->create_response(restinio::status_bad_request()))
+          .set_body(response_body.dump())
+          .connection_close()
+          .done();
+    }
     std::string service_name = request_body["id"].get<std::string>();
     bool requested_status = request_body["status"].get<bool>();
     ServiceControllerInterface *service =
@@ -128,10 +161,29 @@ APIHandler::req_status_t APIHandler::on_post_program(const req_handle_t &req,
         .set_body(R"({"error":"Unauthorized"})")
         .done();
   }
+  if (!check_rate_limit()) {
+    return init_resp(req->create_response(restinio::status_too_many_requests()))
+        .set_body(R"({"error":"Too many requests"})")
+        .done();
+  }
 
   json response_body;
   try {
+    if (req->body().size() > 4096) {
+      response_body["error"] = "Request body too large";
+      return init_resp(req->create_response(restinio::status_bad_request()))
+          .set_body(response_body.dump())
+          .connection_close()
+          .done();
+    }
     json request_body = json::parse(req->body());
+    if (!request_body.contains("programId")) {
+      response_body["error"] = "Missing required field: programId";
+      return init_resp(req->create_response(restinio::status_bad_request()))
+          .set_body(response_body.dump())
+          .connection_close()
+          .done();
+    }
     uint16_t program_id = request_body["programId"].get<std::uint16_t>();
     service_manager_.state_manager().update_program_id(program_id);
 

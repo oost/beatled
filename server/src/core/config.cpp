@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include <fmt/ostream.h>
 #include <spdlog/spdlog.h>
 
@@ -46,6 +47,14 @@ Config::Config(int argc, const char *argv[]) {
 
   if (m_help) {
     SPDLOG_INFO(fmt::streamed(cli));
+  }
+
+  // Fall back to environment variable if no CLI token was provided
+  if (m_api_token.empty()) {
+    const char *env_token = std::getenv("BEATLED_API_TOKEN");
+    if (env_token) {
+      m_api_token = env_token;
+    }
   }
 }
 

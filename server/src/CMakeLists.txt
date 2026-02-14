@@ -1,12 +1,16 @@
 
 add_compile_definitions(SPDLOG_ACTIVE_LEVEL)
+add_compile_options(-Wall -Wextra -Wpedantic -Wno-unused-parameter)
 
 add_subdirectory(server)
 add_subdirectory(core)
 add_subdirectory(beat_detector)
 
-# Add here for circular dependencies
-target_link_libraries(beatled_core PUBLIC 
+# TODO: Break circular dependency between core and server.
+# beatled_core depends on beatled_server for ServiceControllerInterface,
+# and beatled_server depends on beatled_core for StateManager.
+# Consider extracting shared interfaces into a separate target.
+target_link_libraries(beatled_core PUBLIC
   beatled_server
   beatled_protocol
 )

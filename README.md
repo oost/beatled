@@ -48,12 +48,12 @@ utils/beatled.sh client
 
 ## Cross Compilation
 
-In this step, we cross-compile the various server for the Raspberry Pi. We also build the React front and package it in a tarball.
+In this step, we cross-compile the server for the Raspberry Pi and build the React frontend, packaged in a tarball.
 
-1. Download submodule dependencies.
+1. Initialize and download submodule dependencies:
 
    ```
-   git submodule update
+   git submodule update --init --recursive
    ```
 
 2. Build builder image:

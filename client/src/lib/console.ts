@@ -1,3 +1,4 @@
+const MAX_CONSOLE_LOGS = 500;
 const consoleLogs: string[] = [];
 
 declare global {
@@ -14,6 +15,9 @@ export function initializeConsole() {
   console.log = function (message: unknown) {
     console.olog(message);
     consoleLogs.push(message + "\n");
+    if (consoleLogs.length > MAX_CONSOLE_LOGS) {
+      consoleLogs.splice(0, consoleLogs.length - MAX_CONSOLE_LOGS);
+    }
   };
   console.error = console.debug = console.info = console.log;
 }

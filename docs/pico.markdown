@@ -33,7 +33,7 @@ nav_order: 5
    brew install minicom
    ```
 
-   Make sure vcpkg is also intalled on your machine.
+   Make sure vcpkg is also installed on your machine.
 
    ([Full instructions](https://datasheets.raspberrypi.com/pico/getting-started-with-pico.pdf))
 
@@ -50,6 +50,31 @@ nav_order: 5
    1. Delete the `build` folder
    2. Select the `arm-none-eabi` kit in Cmake (using the `Cmake: Select Kit` command)
    3. Rebuild the executables
+
+### Local Simulation
+
+You can also build and run the Pico firmware on your Mac using the posix port with a Metal-based LED visualizer:
+
+```bash
+utils/beatled.sh pico
+```
+
+## LED Patterns
+
+The firmware ships with 8 built-in patterns:
+
+| ID | Name | Description |
+|----|------|-------------|
+| 0 | Snakes | Animated snake trails along the strip |
+| 1 | Random | Random pixel colors |
+| 2 | Sparkles | Twinkling sparkle effect |
+| 3 | Greys | Greyscale gradient |
+| 4 | Drops | Raindrop-style pulses |
+| 5 | Solid | Solid brightness driven by beat fraction |
+| 6 | Fade | Grey fade synced to beat |
+| 7 | Fade Color | Color fade synced to beat |
+
+Patterns are simple C functions that receive the beat position (0-255) and beat count. New patterns can be added in `src/ws2812/programs/`.
 
 ## Wiring Diagram
 

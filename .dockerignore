@@ -1,8 +1,12 @@
 Dockerfile
 .git
+.github
 .vscode
+.claude
+.env*
 docs
 out
+test-docker
 *.md
 client/node_modules
 server/build

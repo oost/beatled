@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -18,9 +19,23 @@ interface HistoryPoint {
   y: number;
 }
 
-function getChartConfig(historyData: HistoryPoint[]) {
-  return {
-    data: {
+const chartOptions = {
+  responsive: true,
+  scales: {
+    x: {
+      type: "time" as const,
+      adapters: {
+        date: {
+          locale: enUS,
+        },
+      },
+    },
+  },
+} as const;
+
+export default function BeatChart({ historyData }: { historyData: HistoryPoint[] }) {
+  const chartData = useMemo(
+    () => ({
       datasets: [
         {
           label: "Tempo",
@@ -36,29 +51,14 @@ function getChartConfig(historyData: HistoryPoint[]) {
           data: historyData,
         },
       ],
-    },
-    options: {
-      responsive: true,
-      scales: {
-        x: {
-          type: "time" as const,
-          adapters: {
-            date: {
-              locale: enUS,
-            },
-          },
-        },
-      },
-    },
-  };
-}
+    }),
+    [historyData],
+  );
 
-export default function BeatChart({ historyData }: { historyData: HistoryPoint[] }) {
-  const chartConfig = getChartConfig(historyData);
   return (
     <div className="relative w-full">
       {historyData?.length ? (
-        <Line data={chartConfig.data} options={chartConfig.options} />
+        <Line data={chartData} options={chartOptions} />
       ) : (
         <p>Beat Detector Paused</p>
       )}

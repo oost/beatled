@@ -9,8 +9,11 @@
 #include <time.h>
 
 #include "client_status.hpp"
+#include "clock.hpp"
 
 namespace beatled::core {
+
+static constexpr uint64_t DEVICE_EXPIRY_US = 30 * 1000000ULL; // 30 seconds
 
 typedef struct tempo_ref {
   uint64_t beat_time_ref;
@@ -38,7 +41,7 @@ public:
   client_status(const ClientStatus::board_id_t &board_id) const;
   ClientStatus::Ptr client_status(const asio::ip::address &ip_address) const;
   void register_client(ClientStatus::Ptr client_status);
-  ClientStatus::client_map_t get_clients() const;
+  ClientStatus::client_map_t get_clients();
 
   // Must be called during construction only (before threads start).
   void register_next_beat_cb(const on_next_beat_cb_t &cb) {

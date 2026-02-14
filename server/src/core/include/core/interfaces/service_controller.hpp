@@ -25,7 +25,7 @@ public:
     return fmt::format("{} ({})", service_name(), id_);
   }
 
-  bool is_running() { return running_; };
+  bool is_running() const { return running_; };
 
   void start() {
     const std::lock_guard<std::mutex> lock(status_mtx_);

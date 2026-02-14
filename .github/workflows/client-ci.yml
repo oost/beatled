@@ -40,6 +40,19 @@ jobs:
         run: npm test
         working-directory: client
 
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
+        working-directory: client
+        continue-on-error: true
+
       - name: Build
         run: npm run build
         working-directory: client
+
+      - name: Upload build artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: client-build-logs
+          path: client/dist
+          retention-days: 7

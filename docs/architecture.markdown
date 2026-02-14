@@ -169,6 +169,9 @@ graph LR
 | `/api/tempo` | GET | Current tempo and time reference |
 | `/api/program` | GET/POST | Get/set LED program |
 | `/api/log` | GET | Server log tail |
+| `/api/devices` | GET | Connected device list with IPs and last seen time |
+
+All POST endpoints validate request body size (max 4KB) and required JSON fields. When `--api-token` is set, all endpoints require `Authorization: Bearer <token>`.
 
 ## Build & Deployment
 
