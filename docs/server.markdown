@@ -6,6 +6,8 @@ nav_order: 4
 
 # Beatled Server
 
+Source code: [github.com/oost/beatled](https://github.com/oost/beatled) (`server/`)
+
 The beat server is a C++ application that captures audio, detects beats in real time, and distributes timing data to Pico W devices over UDP. It also serves an HTTPS REST API and the React web dashboard.
 
 ## Architecture

@@ -6,6 +6,8 @@ nav_order: 6
 
 # Beatled Web Client
 
+Source code: [github.com/oost/beatled](https://github.com/oost/beatled) (`client/`)
+
 A React single-page application for monitoring and controlling the Beatled system from your phone or browser.
 
 ![Image](/beatled/assets/images/client.png){: width="350" }

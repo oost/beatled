@@ -6,6 +6,8 @@ nav_order: 5
 
 # Beatled Pico
 
+Source code: [github.com/oost/beatled-pico](https://github.com/oost/beatled-pico)
+
 ## Requirements
 
 - Raspberry Pico W
@@ -16,7 +18,7 @@ nav_order: 5
 
 ## Compilation
 
-1. Checkout the `beatled-pico` repo
+1. Clone the [`beatled-pico`](https://github.com/oost/beatled-pico) repo
 2. Checkout submodules:
 
    ```
