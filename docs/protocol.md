@@ -1,10 +1,10 @@
 ---
-title: Protocol
+title: Beatled Protocol
 layout: default
-nav_order: 5
+nav_order: 6
 ---
 
-# Protocol
+# Beatled Protocol
 
 Binary UDP protocol for communication between the server (Raspberry Pi 4) and Pico W devices.
 

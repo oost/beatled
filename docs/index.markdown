@@ -44,33 +44,9 @@ See the [Architecture](architecture.html) page for detailed diagrams and the ful
 
 ## Getting Started
 
-### Prerequisites
+Get the server, web client, and Pico simulator running locally in minutes -- no hardware required.
 
-- A **Raspberry Pi 4 or 5** (runs the beat server)
-- One or more **Raspberry Pi Pico W** (each drives an LED strip)
-- A **USB microphone** ([example](https://www.amazon.com/gp/product/B0138HETXU/ref=ppx_yo_dt_b_search_asin_title?ie=UTF8&psc=1))
-- WS2812 / NeoPixel LED strips
-- A development machine with Docker (for cross-compilation) or macOS/Linux (for local builds)
-
-### Quick Start
-
-Clone the repo and use the unified dev script:
-
-```bash
-# Build and run the server locally
-utils/beatled.sh server --start-http
-
-# In another terminal, start the React dev server
-utils/beatled.sh client
-
-# Build and run the Pico firmware locally (posix simulator)
-utils/beatled.sh pico
-
-# Run all tests
-utils/beatled.sh test all
-```
-
-For full build and deployment instructions, see the [Server](server.html) and [Pico](pico.html) guides.
+**[Getting Started Guide](getting-started.html)**
 
 ## Repositories
 

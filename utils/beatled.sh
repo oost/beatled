@@ -35,6 +35,7 @@ Commands:
   pico                Build (if needed) and run the Pico firmware (posix port)
   test [component]    Run tests (server, client, pico, or all)
   build [component]   Build without running (server, client, pico, or all)
+  docs                Start the Jekyll docs site locally
   certs <domain>      Generate self-signed TLS certificates
 
 Server options (passed through to beat_server):
@@ -210,6 +211,13 @@ cmd_build() {
   esac
 }
 
+cmd_docs() {
+  local DOCS_DIR="$PROJECT_DIR/docs"
+  info "Starting Jekyll docs site..."
+  info "Serving at http://127.0.0.1:4000/beatled/"
+  (cd "$DOCS_DIR" && bundle exec jekyll serve "$@")
+}
+
 cmd_certs() {
   local domain="${1:-localhost}"
   local certs_dir="$SERVER_DIR/certs"
@@ -234,6 +242,7 @@ case "$COMMAND" in
   pico)         cmd_pico "$@" ;;
   test)         cmd_test "$@" ;;
   build)        cmd_build "$@" ;;
+  docs)         cmd_docs "$@" ;;
   certs)        cmd_certs "$@" ;;
   help|-h|--help) usage ;;
   *)

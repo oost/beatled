@@ -1,10 +1,10 @@
 ---
-title: API Reference
+title: HTTP API Reference
 layout: default
-nav_order: 4
+nav_order: 5
 ---
 
-# API Reference
+# HTTP API Reference
 
 REST API served over HTTPS on port **8443**. All responses are JSON with `Content-Type: text/json; charset=utf-8`.
 
