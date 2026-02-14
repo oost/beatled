@@ -24,65 +24,154 @@ For development without physical hardware, the project includes a **macOS posix 
 - WS2812 LED Strip ([link to Sparkfun](https://www.sparkfun.com/products/retired/15206))
 - A hat or clothes to mount it on ([example](https://www.amazon.com/dp/B09YCHTGWZ?psc=1&ref=ppx_yo2ov_dt_b_product_details))
 
-## Compilation
+## Getting Started
 
-1. Clone the [`beatled-pico`](https://github.com/oost/beatled-pico) repo
-2. Checkout submodules:
+Clone the repo and initialise submodules (includes the Pico SDK):
 
-   ```
-   git submodule update --init
-   ```
+```bash
+git clone https://github.com/oost/beatled-pico.git
+cd beatled-pico
+git submodule update --init
+```
 
-3. Install the dependencies. For MacOS:
+## Building for Pico W (UF2)
 
-   ```
-   brew install cmake
-   brew tap ArmMbed/homebrew-formulae
-   brew install gcc-arm-embedded
-   brew install openocd
-   brew install minicom
-   ```
+This cross-compiles the firmware into a `.uf2` binary that you flash directly onto the Pico W.
 
-   Make sure vcpkg is also installed on your machine.
+### Dependencies
 
-   ([Full instructions](https://datasheets.raspberrypi.com/pico/getting-started-with-pico.pdf))
+```bash
+brew install cmake
+brew install --cask gcc-arm-embedded   # ARM cross-compiler
+brew install openocd                    # on-chip debugger (optional)
+brew install minicom                    # serial monitor (optional)
+```
 
-4. You can now build the project from VS Code. To start with, you can build the project for MacOS. It will generate an ARM64 executable with a Metal Shaders visualization. In `.vscode/settings.json`, make sure the following line are uncommented:
+([Full Pico SDK setup instructions](https://datasheets.raspberrypi.com/pico/getting-started-with-pico.pdf))
 
-   ```
-    "PORT": "posix",
-    "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
-   ```
+### Build
 
-   ![Image](/beatled/assets/images/simulator.gif)
+Set the environment variables for your network and server, then configure and build:
 
-5. If you want to compile the Pico version, you need to:
-   1. Delete the `build` folder
-   2. Select the `arm-none-eabi` kit in Cmake (using the `Cmake: Select Kit` command)
-   3. Rebuild the executables
+```bash
+export PICO_TOOLCHAIN_PATH="/Applications/ArmGNUToolchain/12.2.rel1/arm-none-eabi"
+export BEATLED_SERVER_NAME="raspberrypi1.local"
+export WIFI_SSID="your-wifi"
+export WIFI_PASSWORD="your-password"
 
-### Local Simulation
+cmake -B build-pico \
+  -DPORT=pico \
+  -DPICO_BOARD=pico_w \
+  -DPICO_SDK_PATH=lib/pico-sdk
 
-You can also build and run the Pico firmware on your Mac using the posix port with a Metal-based LED visualizer:
+cmake --build build-pico
+```
+
+The output binary is at `build-pico/src/pico_w_beatled.uf2`.
+
+### Flashing
+
+Hold the BOOTSEL button on the Pico W while plugging it in via USB. It mounts as a USB drive. Copy the UF2 file onto it:
+
+```bash
+cp build-pico/src/pico_w_beatled.uf2 /Volumes/RPI-RP2/
+```
+
+The Pico reboots automatically and starts running the firmware.
+
+### Serial Monitor
+
+To view logs over USB serial:
+
+```bash
+minicom -b 115200 -D /dev/tty.usbmodem*
+```
+
+---
+
+## Building the POSIX Port (macOS)
+
+The POSIX port builds a native macOS executable that replaces Pico hardware APIs with POSIX equivalents (pthreads, UDP sockets) and renders a 3D LED ring simulation using Metal shaders.
+
+![Image](/beatled/assets/images/simulator-new.gif)
+
+### Dependencies
+
+```bash
+brew install cmake
+```
+
+[vcpkg](https://vcpkg.io/) must be installed and `VCPKG_ROOT` set in your environment.
+
+### Build
+
+```bash
+cmake -B build \
+  -DPORT=posix \
+  -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" \
+  -DCMAKE_BUILD_TYPE=Debug
+
+cmake --build build
+```
+
+### Run
+
+```bash
+./build/src/pico_w_beatled.app/Contents/MacOS/pico_w_beatled
+```
+
+Or using the project utility script from the `beatled` repo:
 
 ```bash
 utils/beatled.sh pico
 ```
 
+By default, the POSIX port connects to `localhost`. Set `BEATLED_SERVER_NAME` before configuring to override.
+
+### Running Tests
+
+```bash
+cmake --build build
+./build/tests/posix/integration/test_integration
+./build/tests/posix/command/test_command
+./build/tests/posix/clock/test_clock
+./build/tests/posix/queue/test_queue
+```
+
+### Debugging in VS Code
+
+The project ships with a ready-to-use VS Code debug configuration for the POSIX port.
+
+1. Open the `beatled-pico` folder in VS Code
+2. Make sure `.vscode/settings.json` has the POSIX port selected (this is the default):
+
+   ```json
+   "cmake.configureSettings": {
+     "PORT": "posix",
+     "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+   }
+   ```
+
+3. Configure and build via the CMake extension (or the terminal commands above)
+4. Set `pico_w_beatled` as the CMake launch target (`CMake: Set Launch Target`)
+5. Press **F5** or select the **(lldb) Launch** configuration
+
+   This launches the POSIX executable under LLDB with full source-level debugging -- breakpoints, variable inspection, and stepping all work as expected.
+
 ## LED Patterns
 
 The firmware ships with 8 built-in patterns:
 
-| ID | Name | Description |
-|----|------|-------------|
-| 0 | Snakes | Animated snake trails along the strip |
-| 1 | Random | Random pixel colors |
-| 2 | Sparkles | Twinkling sparkle effect |
-| 3 | Greys | Greyscale gradient |
-| 4 | Drops | Raindrop-style pulses |
-| 5 | Solid | Solid brightness driven by beat fraction |
-| 6 | Fade | Grey fade synced to beat |
-| 7 | Fade Color | Color fade synced to beat |
+| ID  | Name       | Description                              |
+| --- | ---------- | ---------------------------------------- |
+| 0   | Snakes     | Animated snake trails along the strip    |
+| 1   | Random     | Random pixel colors                      |
+| 2   | Sparkles   | Twinkling sparkle effect                 |
+| 3   | Greys      | Greyscale gradient                       |
+| 4   | Drops      | Raindrop-style pulses                    |
+| 5   | Solid      | Solid brightness driven by beat fraction |
+| 6   | Fade       | Grey fade synced to beat                 |
+| 7   | Fade Color | Color fade synced to beat                |
 
 Patterns are simple C functions that receive the beat position (0-255) and beat count. New patterns can be added in `src/ws2812/programs/`.
 
