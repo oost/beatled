@@ -86,13 +86,13 @@ public:
    * @param input_buffer_size Size of pointer
    * @return Count of values copied
    */
-  int copy_raw_data(float *input_buffer, std::size_t input_buffer_size) {
-    int remaining_capacity = data_.capacity() - data_.size();
-    int items_to_copy = (remaining_capacity > input_buffer_size)
-                            ? input_buffer_size
-                            : remaining_capacity;
+  std::size_t copy_raw_data(float *input_buffer, std::size_t input_buffer_size) {
+    std::size_t remaining_capacity = data_.capacity() - data_.size();
+    std::size_t items_to_copy = (remaining_capacity > input_buffer_size)
+                                    ? input_buffer_size
+                                    : remaining_capacity;
 
-    for (int i = 0; i < items_to_copy; i++) {
+    for (std::size_t i = 0; i < items_to_copy; i++) {
       data_.push_back(input_buffer[i]);
     }
     return items_to_copy;
@@ -104,7 +104,7 @@ public:
    */
   inline const audio_buffer_data_t &data() const { return data_; }
 
-  inline const size_t buffer_id() const { return buffer_id_; }
+  inline size_t buffer_id() const { return buffer_id_; }
 
 private:
   AudioBuffer &operator=(const AudioBuffer &) = delete;

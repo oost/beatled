@@ -13,8 +13,7 @@ AudioRecorder::AudioRecorder(const std::string &filename, double duration,
                              double sample_rate, double frames_per_buffer,
                              std::size_t audio_buffer_size)
     : filename_{filename}, duration_{duration}, sample_rate_{sample_rate},
-      frames_per_buffer_{frames_per_buffer}, audio_buffer_size_{
-                                                 audio_buffer_size} {}
+      audio_buffer_size_{audio_buffer_size} {}
 
 std::string AudioRecorder::record() {
   const unsigned long TOTAL_BUFFER_SIZE = sample_rate_ * duration_;
@@ -41,13 +40,10 @@ std::string AudioRecorder::record() {
   audio_file.samples.resize(1);
   auto &audio_data = audio_file.samples[0];
   audio_data.reserve(TOTAL_BUFFER_SIZE);
-  float sampleRate = 44100.f;
-  float frequency = 440.f;
-
-  int audio_data_remaining_capacity = audio_data.capacity();
+  size_t audio_data_remaining_capacity = audio_data.capacity();
   int idx = 0;
   const int cycle_per_second =
-      static_cast<int>(sampleRate) / audio_buffer_size_;
+      static_cast<int>(sample_rate_) / audio_buffer_size_;
 
   AudioBuffer::Ptr buffer;
   while (1) {
@@ -58,12 +54,12 @@ std::string AudioRecorder::record() {
       break;
     }
 
-    int elements_to_copy = (buffer->size() > audio_data_remaining_capacity)
-                               ? audio_data_remaining_capacity
-                               : buffer->size();
+    size_t elements_to_copy = (buffer->size() > audio_data_remaining_capacity)
+                                  ? audio_data_remaining_capacity
+                                  : buffer->size();
 
     const AudioBuffer::audio_buffer_data_t &buffer_data = buffer->data();
-    for (int i = 0; i < elements_to_copy; i++) {
+    for (size_t i = 0; i < elements_to_copy; i++) {
       audio_data.push_back(buffer_data[i]);
     }
     audio_buffer_pool.release_buffer(std::move(buffer));
@@ -75,7 +71,7 @@ std::string AudioRecorder::record() {
 
     idx++;
     if (idx % cycle_per_second == 0) {
-      SPDLOG_INFO("Recorded {} seconds", idx * audio_buffer_size_ / sampleRate);
+      SPDLOG_INFO("Recorded {} seconds", idx * audio_buffer_size_ / sample_rate_);
     }
   }
 

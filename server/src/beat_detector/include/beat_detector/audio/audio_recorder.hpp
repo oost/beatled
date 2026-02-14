@@ -19,7 +19,6 @@ private:
   std::string filename_;
   double duration_;
   double sample_rate_;
-  double frames_per_buffer_;
   std::size_t audio_buffer_size_;
 };
 } // namespace beatled::detector

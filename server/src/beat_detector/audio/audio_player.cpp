@@ -54,11 +54,9 @@ void AudioPlayer::load_from_disk() {
   // 2. Create an AudioFile object and load the audio file
 
   AudioFile<audio_buffer_t> audio_file;
-  bool loadedOK = audio_file.load(filePath);
-
   /** If you hit this assert then the file path above
    probably doesn't refer to a valid audio file */
-  assert(loadedOK);
+  assert(audio_file.load(filePath));
 
   sample_rate_ = audio_file.getSampleRate();
 

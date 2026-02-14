@@ -34,8 +34,8 @@ public:
    */
   AudioBufferPool(std::size_t buffer_size, double sample_rate,
                   std::size_t pool_capacity = 4)
-      : buffer_size_{buffer_size}, sample_rate_{sample_rate},
-        pool_capacity_{pool_capacity}, active_{true} {
+      : buffer_size_{buffer_size}, pool_capacity_{pool_capacity},
+        sample_rate_{sample_rate}, active_{true} {
     preallocate_pool();
   }
 

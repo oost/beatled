@@ -17,12 +17,11 @@ using namespace std::chrono_literals;
 using beatled::core::Clock;
 
 BeatDetector::BeatDetector(const std::string &id, uint32_t sample_rate,
-                           std::size_t audio_buffer_size,
-                           beat_detector_cb_t beat_callback,
+                           std::size_t audio_buffer_size, beat_detector_cb_t beat_callback,
                            beat_detector_cb_t next_beat_callback)
-    : pImpl{std::make_unique<Impl>(sample_rate, audio_buffer_size,
-                                   beat_callback, next_beat_callback)},
-      ServiceControllerInterface{id} {}
+    : ServiceControllerInterface{id},
+      pImpl{std::make_unique<Impl>(sample_rate, audio_buffer_size, beat_callback,
+                                   next_beat_callback)} {}
 
 BeatDetector::~BeatDetector() {}
 
@@ -49,9 +48,8 @@ void BeatDetector::start_sync() {
       pImpl->bd_thread_future_.wait_for(0s) == std::future_status::ready) {
     SPDLOG_INFO("Starting thread");
     pImpl->stop_requested_.store(false);
-    pImpl->bd_thread_future_ = std::async(std::launch::async, [this]() -> void {
-      return pImpl->do_detect_tempo();
-    });
+    pImpl->bd_thread_future_ =
+        std::async(std::launch::async, [this]() -> void { return pImpl->do_detect_tempo(); });
   } else {
     SPDLOG_INFO("Beat detector is already running");
   }
@@ -86,9 +84,8 @@ void BeatDetector::Impl::do_detect_tempo() {
     }
     auto diff = audio_buffer_->start_time() - previous_buffer_time;
 
-    SPDLOG_INFO(
-        "New buffer. Processing it. Start stream time {}, id {}, time diff {}",
-        audio_buffer_->start_time(), audio_buffer_->buffer_id(), diff);
+    SPDLOG_DEBUG("New buffer. Processing it. Start stream time {}, id {}, time diff {}",
+                 audio_buffer_->start_time(), audio_buffer_->buffer_id(), diff);
 
     auto hop_data = audio_buffer_->data();
     beat_tracker_.process_audio_frame(hop_data);

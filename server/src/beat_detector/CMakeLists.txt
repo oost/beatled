@@ -21,3 +21,8 @@ target_link_libraries(beat_detector
 )
 
 target_include_directories(beat_detector PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include)
+
+# Suppress warnings from external headers
+target_include_directories(beat_detector SYSTEM PRIVATE
+    ${CMAKE_CURRENT_LIST_DIR}/../../external/beatled-beat-tracker/src/include
+    ${BEATLED_PROTOCOL_PATH}/include)

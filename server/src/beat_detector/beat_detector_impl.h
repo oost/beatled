@@ -24,9 +24,9 @@ class BeatDetector::Impl {
 public:
   Impl(uint32_t sample_rate, std::size_t audio_buffer_size,
        beat_detector_cb_t beat_callback, beat_detector_cb_t next_beat_callback)
-      : sample_rate_{sample_rate}, beat_callback_{beat_callback},
-        next_beat_callback_{next_beat_callback},
-        audio_buffer_size_{audio_buffer_size}, beat_count_{0}
+      : sample_rate_{sample_rate}, audio_buffer_size_{audio_buffer_size},
+        beat_callback_{beat_callback},
+        next_beat_callback_{next_beat_callback}, beat_count_{0}
 
   {
     audio_buffer_pool_ =

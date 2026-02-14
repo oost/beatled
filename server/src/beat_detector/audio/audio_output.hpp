@@ -34,7 +34,6 @@ private:
 
   std::vector<audio_buffer_t> audio_data_;
   int read_index_ = 0;
-  std::size_t audio_buffer_size_;
 
   PaStreamParameters output_parameters_;
 };

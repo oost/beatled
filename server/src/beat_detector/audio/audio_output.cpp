@@ -23,8 +23,7 @@ AudioOutput::AudioOutput(std::vector<audio_buffer_t> &audio_data,
                          uint32_t sample_rate, std::size_t audio_buffer_size,
                          unsigned long frames_per_buffer)
     : AudioInterface(audio_buffer_pool, sample_rate, frames_per_buffer),
-      audio_data_{std::move(audio_data)}, read_index_{0},
-      audio_buffer_size_{audio_buffer_size} {}
+      audio_data_{std::move(audio_data)}, read_index_{0} {}
 
 const PaStreamParameters *AudioOutput::get_output_parameters() {
 
