@@ -33,7 +33,7 @@ COPY client /home
 RUN npm ci && npm run build
 
 
-FROM debian:bookworm-slim
+FROM debian:trixie-slim
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates libasound2 libportaudio2 libfftw3-single3 \
   && rm -rf /var/lib/apt/lists/* \
