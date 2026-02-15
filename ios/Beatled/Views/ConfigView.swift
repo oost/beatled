@@ -12,6 +12,7 @@ struct ConfigView: View {
                 securitySection
                 aboutSection
             }
+            .formStyle(.grouped)
             .navigationTitle("Config")
             .task { await viewModel.runHealthChecks() }
             .alert("Security Warning", isPresented: $showInsecureWarning) {
@@ -30,38 +31,38 @@ struct ConfigView: View {
     @ViewBuilder
     private var serverSection: some View {
         Section("Server") {
-            ForEach(HostPreset.allCases) { preset in
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
+            Picker(selection: Binding(
+                get: { viewModel.selectedPreset },
+                set: { viewModel.selectedPreset = $0 }
+            )) {
+                ForEach(HostPreset.allCases) { preset in
+                    HStack {
                         Text(preset.label)
                         if let subtitle = preset.subtitle {
-                            Text(subtitle)
-                                .font(.caption)
+                            Text(" · \(subtitle)")
                                 .foregroundStyle(.secondary)
                         }
+                        if preset != .custom {
+                            Spacer()
+                            HealthDot(status: viewModel.healthStatuses[preset] ?? .unknown)
+                        }
                     }
-                    Spacer()
-                    if preset != .custom {
-                        HealthDot(status: viewModel.healthStatuses[preset] ?? .unknown)
-                    }
-                    if viewModel.selectedPreset == preset {
-                        Image(systemName: "checkmark")
-                            .foregroundStyle(.tint)
-                            .fontWeight(.semibold)
-                    }
+                    .tag(preset)
                 }
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    viewModel.selectedPreset = preset
-                }
+            } label: {
+                EmptyView()
             }
+            .pickerStyle(.inline)
+            .labelsHidden()
 
             if viewModel.selectedPreset == .custom {
                 TextField("Custom URL", text: $viewModel.customHost)
                     .textContentType(.URL)
                     .autocorrectionDisabled()
+                    #if os(iOS)
                     .textInputAutocapitalization(.never)
                     .keyboardType(.URL)
+                    #endif
             }
 
             LabeledContent("Current") {
@@ -77,7 +78,9 @@ struct ConfigView: View {
         Section("Authentication") {
             SecureField("API Token", text: $viewModel.settings.apiToken)
                 .autocorrectionDisabled()
+                #if os(iOS)
                 .textInputAutocapitalization(.never)
+                #endif
         }
     }
 
@@ -85,6 +88,7 @@ struct ConfigView: View {
     private var securitySection: some View {
         Section {
             Toggle("Allow Insecure Connections", isOn: $viewModel.settings.allowInsecureConnections)
+                .toggleStyle(.switch)
                 .onChange(of: viewModel.settings.allowInsecureConnections) {
                     if viewModel.settings.allowInsecureConnections {
                         showInsecureWarning = true

@@ -12,6 +12,9 @@ struct BeatledApp: App {
                 .environment(apiClient ?? createClient())
                 .tint(Color("AccentColor"))
         }
+        #if os(macOS)
+        .defaultSize(width: 900, height: 600)
+        #endif
     }
 
     private func createClient() -> APIClient {

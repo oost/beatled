@@ -5,26 +5,24 @@ struct ContentView: View {
     @Environment(AppSettings.self) private var settings
 
     var body: some View {
+        #if os(iOS)
         TabView {
-            StatusView(viewModel: StatusViewModel(api: api))
-                .tabItem {
-                    Label("Status", systemImage: "waveform.path")
-                }
-
-            ProgramView(viewModel: ProgramViewModel(api: api))
-                .tabItem {
-                    Label("Program", systemImage: "music.note")
-                }
-
-            LogView(viewModel: LogViewModel(api: api))
-                .tabItem {
-                    Label("Log", systemImage: "text.alignleft")
-                }
-
-            ConfigView(viewModel: ConfigViewModel(settings: settings))
-                .tabItem {
-                    Label("Config", systemImage: "gearshape")
-                }
+            Tab("Status", systemImage: "waveform.path") {
+                StatusView(viewModel: StatusViewModel(api: api))
+            }
+            Tab("Program", systemImage: "music.note") {
+                ProgramView(viewModel: ProgramViewModel(api: api))
+            }
+            Tab("Log", systemImage: "text.alignleft") {
+                LogView(viewModel: LogViewModel(api: api))
+            }
+            Tab("Config", systemImage: "gearshape") {
+                ConfigView(viewModel: ConfigViewModel(settings: settings))
+            }
         }
+        .tabBarMinimizeBehavior(.onScrollDown)
+        #else
+        MacContentView(api: api, settings: settings)
+        #endif
     }
 }

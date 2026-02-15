@@ -75,6 +75,7 @@ struct StatusView: View {
                         get: { services[key] ?? false },
                         set: { viewModel.toggleService(id: key, enabled: $0) }
                     ))
+                    .toggleStyle(.switch)
                 }
             }
         }

@@ -1,32 +1,32 @@
 ---
-title: iOS Controller
+title: iOS & macOS Controller
 layout: default
 parent: Components
 nav_order: 4
 ---
 
-# iOS Controller
+# iOS & macOS Controller
 
 Source code: [github.com/oost/beatled](https://github.com/oost/beatled) (`ios/`)
 
-A native iOS app for monitoring and controlling the Beatled system. Built with SwiftUI, it provides the same functionality as the [Web Controller](client.html) in a native experience.
+A native universal app for monitoring and controlling the Beatled system. Built with SwiftUI, it runs on both iOS and macOS and provides the same functionality as the [Web Controller](client.html) in a native experience.
 
 ## Technology Stack
 
 | Layer | Technology |
 |-------|-----------|
 | Framework | SwiftUI |
-| Minimum iOS | 17.0 |
+| Platforms | iOS 26+, macOS 26+ |
 | Charts | Swift Charts |
 | Networking | URLSession (async/await) |
 | Settings | UserDefaults |
 
 ## Views
 
-The app uses a tab-based layout with four screens:
+On iOS the app uses a tab bar; on macOS it uses a sidebar with `NavigationSplitView`. Both layouts expose the same four screens:
 
-| Tab | Description |
-|-----|-------------|
+| Screen | Description |
+|--------|-------------|
 | Status | Real-time BPM display, tempo history chart, service toggles, connected devices table |
 | Program | Browse and select the active LED pattern |
 | Log | Server log viewer with auto-scroll and 10-second polling |
@@ -37,13 +37,13 @@ The app uses a tab-based layout with four screens:
 The app follows an MVVM pattern:
 
 ```
-Views/           → SwiftUI views
+Views/           → SwiftUI views (+ MacContentView for sidebar)
 ViewModels/      → @Observable view models with async polling
 Services/        → APIClient (networking), AppSettings (persistence)
 Models/          → Codable response types
 ```
 
-Each view model polls its endpoint on a timer (2s for status, 10s for logs) and exposes loading/error state to the view.
+Each view model polls its endpoint on a timer (2s for status, 10s for logs) and exposes loading/error state to the view. All views are shared between iOS and macOS — platform-specific code is limited to `ContentView` (tab bar vs sidebar) and a few `#if os()` guards for iOS-only modifiers.
 
 ## Configuration
 
@@ -70,7 +70,7 @@ Each preset shows a live health indicator. The app also supports:
 The project file is generated from `project.yml` using [XcodeGen](https://github.com/yonaskolb/XcodeGen):
 
 ```bash
-scripts/beatled.sh ios generate
+xcodegen generate --spec ios/project.yml --project ios/
 ```
 
 ### Build and run
@@ -79,16 +79,24 @@ scripts/beatled.sh ios generate
 # Open in Xcode
 scripts/beatled.sh ios
 
-# Or build from command line
+# Build iOS (simulator)
 scripts/beatled.sh ios build
+
+# Build and run in iOS Simulator
+scripts/beatled.sh ios sim
+
+# Build and run macOS app
+scripts/beatled.sh ios mac
 ```
 
 ### Self-Signed Certificates
 
-For the iOS Simulator to trust self-signed mkcert certificates:
+On the **iOS Simulator**, install the mkcert root CA so it trusts self-signed certificates:
 
 ```bash
 xcrun simctl keychain booted add-root-cert "$(mkcert -CAROOT)/rootCA.pem"
 ```
 
-Alternatively, enable "Allow insecure connections" in the app's Config tab.
+On **macOS**, the mkcert root CA is installed in the system keychain automatically by `mkcert -install`.
+
+Alternatively, enable "Allow insecure connections" in the app's Config screen on either platform.

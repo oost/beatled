@@ -36,7 +36,7 @@ Commands:
   test [component]    Run tests (server, client, pico, or all)
   build [component]   Build without running (server, client, pico, rpi, or all)
   deploy <user> <host> Deploy the RPi build to a Raspberry Pi via SSH
-  ios [subcommand]    iOS commands (open, build, sim). Default: open
+  ios [subcommand]    iOS/macOS commands (open, build, sim, mac). Default: open
   docs                Start the Jekyll docs site locally
   certs [domain ...]  Generate locally-trusted development certificates for the given domains (default: oost.test)
 
@@ -372,8 +372,31 @@ sys.exit(1)
       xcrun simctl launch "$sim_id" com.beatled.app
       ok "Beatled running in simulator"
       ;;
+    mac)
+      info "Building Beatled macOS app (Debug)..."
+      xcodebuild build \
+        -project "$XCODEPROJ" \
+        -scheme Beatled \
+        -configuration Debug \
+        -destination "platform=macOS" \
+        -quiet
+      ok "macOS build complete"
+
+      local app_path
+      app_path=$(xcodebuild build \
+        -project "$XCODEPROJ" \
+        -scheme Beatled \
+        -configuration Debug \
+        -destination "platform=macOS" \
+        -showBuildSettings 2>/dev/null \
+        | grep -m1 "BUILT_PRODUCTS_DIR" | awk '{print $3}')
+
+      info "Launching Beatled.app..."
+      open "$app_path/Beatled.app"
+      ok "Beatled running"
+      ;;
     *)
-      error "Unknown ios subcommand: $subcommand (use open, build, or sim)"
+      error "Unknown ios subcommand: $subcommand (use open, build, sim, or mac)"
       exit 1
       ;;
   esac

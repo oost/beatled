@@ -24,6 +24,7 @@ targets:
         NSBonjourServices:
           - "_http._tcp"
           - "_https._tcp"
+        UILaunchScreen: {}
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.beatled.app

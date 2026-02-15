@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 63;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -13,6 +13,7 @@
 		17AA8488ED21DA995E4004AD /* StatusResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9106995968A0316F9F31622 /* StatusResponse.swift */; };
 		1AE3A9C872DF2DB0053C50D7 /* StatusViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1354C68D97A0EDB225AFE1 /* StatusViewModel.swift */; };
 		22A439037DA2BFBEEA8CEAD9 /* DevicesTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751F82AA9019C576A3CA4DCC /* DevicesTableView.swift */; };
+		294185E826CA797E9D99B903 /* MacContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76A9BB2113721CF86270068E /* MacContentView.swift */; };
 		98E71B9F1D77A561665111B7 /* ServiceControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6D076B1289D1C9656679428 /* ServiceControl.swift */; };
 		A49B97CC153881C9779DCEDD /* ProgramResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83FC5634E6FA65CF4627004E /* ProgramResponse.swift */; };
 		AF4D496681165E601BAC855E /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 839640A36A93157BFCCF5C56 /* APIClient.swift */; };
@@ -32,11 +33,12 @@
 		224D8192416624C79A642712 /* ProgramViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramViewModel.swift; sourceTree = "<group>"; };
 		438BA41F4508CC3B23E2F2DA /* ConfigViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigViewModel.swift; sourceTree = "<group>"; };
 		46BF06DDE0B6B8803F5B42F1 /* LogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogView.swift; sourceTree = "<group>"; };
-		47812C89F3AD1CE8CF2044FE /* Beatled.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Beatled.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		47812C89F3AD1CE8CF2044FE /* Beatled.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Beatled.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		55E57C1A3245EEAE87CF9636 /* BeatledApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BeatledApp.swift; sourceTree = "<group>"; };
 		5CB1CF167EDC1703B1BD416A /* LogViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogViewModel.swift; sourceTree = "<group>"; };
 		5FE8D2C5E265ECEE76B4B0ED /* ConfigView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigView.swift; sourceTree = "<group>"; };
 		751F82AA9019C576A3CA4DCC /* DevicesTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevicesTableView.swift; sourceTree = "<group>"; };
+		76A9BB2113721CF86270068E /* MacContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacContentView.swift; sourceTree = "<group>"; };
 		83299CC20BCCD48CD6362F2F /* ProgramView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramView.swift; sourceTree = "<group>"; };
 		839640A36A93157BFCCF5C56 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
 		83FC5634E6FA65CF4627004E /* ProgramResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramResponse.swift; sourceTree = "<group>"; };
@@ -70,6 +72,7 @@
 				5FE8D2C5E265ECEE76B4B0ED /* ConfigView.swift */,
 				751F82AA9019C576A3CA4DCC /* DevicesTableView.swift */,
 				46BF06DDE0B6B8803F5B42F1 /* LogView.swift */,
+				76A9BB2113721CF86270068E /* MacContentView.swift */,
 				83299CC20BCCD48CD6362F2F /* ProgramView.swift */,
 				EB6DA0681D3C952853AF5F46 /* StatusView.swift */,
 				CF061D6FC1D21E78A7427344 /* TempoChartView.swift */,
@@ -151,7 +154,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1500;
+				LastUpgradeCheck = 2600;
 			};
 			buildConfigurationList = 21D01A19D389542571A8E004 /* Build configuration list for PBXProject "Beatled" */;
 			compatibilityVersion = "Xcode 14.0";
@@ -163,7 +166,6 @@
 			);
 			mainGroup = A5D5884DAA6E317E647FB761;
 			minimizedProjectReferenceProxies = 1;
-			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -197,6 +199,7 @@
 				22A439037DA2BFBEEA8CEAD9 /* DevicesTableView.swift in Sources */,
 				1418267305D97C73FB25E29E /* LogView.swift in Sources */,
 				D6CE087E09DF5CD65CADCD0D /* LogViewModel.swift in Sources */,
+				294185E826CA797E9D99B903 /* MacContentView.swift in Sources */,
 				A49B97CC153881C9779DCEDD /* ProgramResponse.swift in Sources */,
 				B7A2B6ECD6591DB165FC5455 /* ProgramView.swift in Sources */,
 				E26406D081CE62B3B2D97FF6 /* ProgramViewModel.swift in Sources */,
@@ -256,11 +259,12 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
+				SDKROOT = auto;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
@@ -318,12 +322,13 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
+				SDKROOT = auto;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -337,6 +342,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = C9RK364LS9;
 				INFOPLIST_FILE = Beatled/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -344,7 +350,11 @@
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.beatled.app;
-				SDKROOT = iphoneos;
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -357,6 +367,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = C9RK364LS9;
 				INFOPLIST_FILE = Beatled/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -364,7 +375,11 @@
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.beatled.app;
-				SDKROOT = iphoneos;
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
