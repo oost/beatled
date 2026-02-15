@@ -17,7 +17,7 @@
 A single script handles building and running all components locally:
 
 ```
-utils/beatled.sh <command> [options]
+scripts/beatled.sh <command> [options]
 ```
 
 | Command | Description |
@@ -43,10 +43,10 @@ For local development with hot-reload, run the server and client in separate ter
 
 ```
 # Terminal 1 - beat server
-utils/beatled.sh server --start-http --cors-origin "https://localhost:5173"
+scripts/beatled.sh server --start-http --cors-origin "https://localhost:5173"
 
 # Terminal 2 - Vite dev server with HMR
-utils/beatled.sh client
+scripts/beatled.sh client
 ```
 
 ## Cross Compilation
@@ -62,13 +62,13 @@ In this step, we cross-compile the server for the Raspberry Pi and build the Rea
 2. Build the Docker builder image and the ARM64 server executable:
 
    ```
-   utils/beatled.sh build rpi
+   scripts/beatled.sh build rpi
    ```
 
 3. Deploy to the Raspberry Pi:
 
    ```
-   utils/beatled.sh deploy ${RPI_USERNAME} ${RPI_HOST}
+   scripts/beatled.sh deploy ${RPI_USERNAME} ${RPI_HOST}
    ```
 
 ## Requirements

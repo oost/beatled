@@ -10,7 +10,7 @@
 namespace beatled::server {
 class FileHandler : public ResponseHandler {
 public:
-  FileHandler(const std::string &root_dir);
+  FileHandler(const std::string &root_dir, const std::string &cors_origin = "");
 
   restinio::request_handling_status_t on_file_request(const restinio::request_handle_t &req,
                                                       restinio::router::route_params_t);

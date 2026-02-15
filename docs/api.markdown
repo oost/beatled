@@ -38,6 +38,18 @@ All POST endpoints reject request bodies larger than **4 KB** with a `400 Bad Re
 
 ## Endpoints
 
+### GET /api/health
+
+Lightweight health check endpoint. Returns a fixed response with no authentication required. Used by clients to check server reachability.
+
+**Response** `200 OK`
+
+```json
+{ "status": "ok" }
+```
+
+---
+
 ### GET /api/status
 
 Returns the server health status, service states, current tempo, and connected device count.

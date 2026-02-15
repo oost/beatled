@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useState } from "react";
 import { useLoaderData, useSubmit } from "react-router-dom";
 import type { ActionFunctionArgs } from "react-router-dom";
 import PageHeader from "../components/page-header";
@@ -5,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { getAPIHost, setAPIHost, getAPIToken, setAPIToken } from "../lib/api";
+import { useInterval } from "../hooks/interval";
 
 export async function loader() {
   return { host: getAPIHost(), token: getAPIToken() };
@@ -23,16 +25,74 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 const API_HOSTS = [
-  { name: "Vite Proxy", value: "http://localhost:5173" },
-  { name: "Localhost", value: "https://localhost:8443" },
-  // { name: "Localhost (HTTP)", value: "http://localhost:8080" },
-  // { name: "Localhost (HTTP/8443)", value: "http://localhost:8443" },
+  { name: "beatled.local", value: "https://beatled.local:8443" },
+  { name: "beatled.test", value: "https://beatled.test:8443" },
   { name: "Raspberry Pi", value: "https://raspberrypi1.local:8443" },
+  { name: "Localhost", value: "https://localhost:8443" },
+  { name: "Vite Proxy", value: "http://localhost:5173" },
 ];
+
+type HealthStatus = "unknown" | "ok" | "error";
+
+function StatusDot({ status }: { status: HealthStatus }) {
+  const color =
+    status === "ok"
+      ? "bg-green-500"
+      : status === "error"
+        ? "bg-red-500"
+        : "bg-gray-400";
+  return (
+    <span className="relative inline-flex h-2.5 w-2.5">
+      {status === "ok" && (
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
+      )}
+      <span className={`relative inline-flex h-2.5 w-2.5 rounded-full ${color}`} />
+    </span>
+  );
+}
+
+function useHealthChecks() {
+  const [statuses, setStatuses] = useState<Record<string, HealthStatus>>(() =>
+    Object.fromEntries(API_HOSTS.map((h) => [h.value, "unknown"])),
+  );
+
+  const checkAll = useCallback(() => {
+    for (const host of API_HOSTS) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3000);
+
+      fetch(new URL("/api/health", host.value), {
+        signal: controller.signal,
+        mode: "cors",
+        cache: "no-cache",
+      })
+        .then((res) => {
+          clearTimeout(timeout);
+          setStatuses((prev) => ({
+            ...prev,
+            [host.value]: res.ok ? "ok" : "error",
+          }));
+        })
+        .catch(() => {
+          clearTimeout(timeout);
+          setStatuses((prev) => ({ ...prev, [host.value]: "error" }));
+        });
+    }
+  }, []);
+
+  useEffect(() => {
+    checkAll();
+  }, [checkAll]);
+
+  useInterval(checkAll, 5000);
+
+  return statuses;
+}
 
 export default function ConfigPage() {
   const submit = useSubmit();
   const { host, token } = useLoaderData() as { host: string; token: string };
+  const healthStatuses = useHealthChecks();
 
   const onHostChange = (value: string) => {
     const formData = new FormData();
@@ -58,11 +118,12 @@ export default function ConfigPage() {
                 {API_HOSTS.map((api_host) => (
                   <div key={api_host.value} className="flex items-center space-x-3 py-2">
                     <RadioGroupItem value={api_host.value} id={`host-${api_host.value}`} />
-                    <Label htmlFor={`host-${api_host.value}`} className="text-sm font-normal">
+                    <Label htmlFor={`host-${api_host.value}`} className="text-sm font-normal flex items-center gap-2">
                       {api_host.name}{" "}
                       <span className="text-muted-foreground">
                         {new URL(api_host.value).hostname}
                       </span>
+                      <StatusDot status={healthStatuses[api_host.value]} />
                     </Label>
                   </div>
                 ))}

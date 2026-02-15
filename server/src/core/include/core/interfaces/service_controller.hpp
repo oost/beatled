@@ -28,6 +28,7 @@ public:
     const std::lock_guard<std::mutex> lock(status_mtx_);
     if (running_) {
       SPDLOG_INFO("{} is already running", name());
+      return;
     }
     SPDLOG_INFO("Starting {}", name());
     start_sync();
@@ -38,6 +39,7 @@ public:
     const std::lock_guard<std::mutex> lock(status_mtx_);
     if (!running_) {
       SPDLOG_INFO("{} is not running", name());
+      return;
     }
     SPDLOG_INFO("Stopping {} server", name());
     stop_sync();

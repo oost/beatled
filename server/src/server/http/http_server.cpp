@@ -23,7 +23,7 @@ using router_t = rr::express_router_t<>;
 std::unique_ptr<router_t> HTTPServer::server_handler(const std::string &root_dir) {
   auto router = std::make_unique<router_t>();
 
-  auto file_handler = std::make_shared<FileHandler>(root_dir);
+  auto file_handler = std::make_shared<FileHandler>(root_dir, cors_origin_);
 
   auto by_file_handler = [file_handler](auto method) {
     using namespace std::placeholders;
@@ -36,6 +36,8 @@ std::unique_ptr<router_t> HTTPServer::server_handler(const std::string &root_dir
     using namespace std::placeholders;
     return std::bind(method, api_handler, _1, _2);
   };
+
+  router->http_get("/api/health", by_api_handler(&APIHandler::on_get_health));
 
   router->http_get("/api/status", by_api_handler(&APIHandler::on_get_status));
 

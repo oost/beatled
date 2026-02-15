@@ -31,16 +31,16 @@ A React single-page application for monitoring and controlling the Beatled syste
 | Status | `/status` | Real-time tempo display, beat history chart, service controls, connected devices |
 | Program | `/program` | Select the active LED pattern across all devices |
 | Log | `/log` | Server log viewer and client console log |
-| Config | `/config` | API host selection and authentication token |
+| Config | `/config` | API host selection with live health checks, authentication token |
 
 ## Local Development
 
 ```bash
 # Start the Vite dev server with hot module replacement
-utils/beatled.sh client
+scripts/beatled.sh client
 
 # Production build
-utils/beatled.sh client-build
+scripts/beatled.sh client-build
 
 # Run tests
 cd client && npm test

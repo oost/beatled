@@ -258,6 +258,12 @@ APIHandler::req_status_t APIHandler::on_get_devices(const req_handle_t &req,
       .done();
 }
 
+APIHandler::req_status_t APIHandler::on_get_health(const req_handle_t &req, route_params_t params) {
+  return init_resp(req->create_response(restinio::status_ok()))
+      .set_body(R"({"status":"ok"})")
+      .done();
+}
+
 APIHandler::req_status_t APIHandler::on_preflight(const req_handle_t &req, route_params_t params) {
   return init_resp(req->create_response(restinio::status_ok())).done();
 }

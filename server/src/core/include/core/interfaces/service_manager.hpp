@@ -26,6 +26,13 @@ public:
   virtual ~ServiceManagerInterface() {}
 
 protected:
+  void destroy_services() {
+    for (auto &&[id, svc] : interface_map_) {
+      svc->stop();
+    }
+    interface_map_.clear();
+  }
+
   void registerController(ServiceControllerInterface::Ptr controller) {
     if (service(controller->id()) != nullptr) {
       throw std::invalid_argument(

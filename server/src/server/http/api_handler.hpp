@@ -35,6 +35,7 @@ public:
   req_status_t on_get_log(const req_handle_t &req, route_params_t params);
   req_status_t on_get_devices(const req_handle_t &req, route_params_t params);
 
+  req_status_t on_get_health(const req_handle_t &req, route_params_t params);
   req_status_t on_preflight(const req_handle_t &req, route_params_t params);
 
   bool check_auth(const req_handle_t &req) const;
@@ -46,6 +47,8 @@ private:
                  .append_header(restinio::http_field::content_type, "text/json; charset=utf-8");
     if (!cors_origin_.empty()) {
       r.append_header(restinio::http_field::access_control_allow_origin, cors_origin_)
+          .append_header(restinio::http_field::access_control_allow_methods,
+                         "GET, POST, OPTIONS")
           .append_header(restinio::http_field::access_control_allow_headers,
                          "Origin, X-Requested-With, Content-Type, Accept, Authorization");
     }

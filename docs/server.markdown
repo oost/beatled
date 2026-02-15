@@ -26,19 +26,19 @@ The beat server is a C++ application that captures audio, detects beats in real 
 
 ```bash
 # Build and start the HTTPS server with the web client
-utils/beatled.sh server --start-http
+scripts/beatled.sh server --start-http
 
 # With UDP server for Pico devices
-utils/beatled.sh server --start-http --start-udp
+scripts/beatled.sh server --start-http --start-udp
 
 # With CORS for the Vite dev server
-utils/beatled.sh server --start-http --cors-origin "https://localhost:5173"
+scripts/beatled.sh server --start-http --cors-origin "https://localhost:5173"
 
 # With Bearer token authentication
-utils/beatled.sh server --start-http --api-token "secret"
+scripts/beatled.sh server --start-http --api-token "secret"
 
 # Run server tests
-utils/beatled.sh test server
+scripts/beatled.sh test server
 ```
 
 The server is built with CMake and uses vcpkg for dependency management. The first build will configure CMake and install dependencies automatically.
@@ -49,15 +49,48 @@ The server is built with CMake and uses vcpkg for dependency management. The fir
 - **vcpkg**: Must be installed and `VCPKG_ROOT` set in your environment
 - A **USB microphone** for audio capture (or use a virtual audio device for testing)
 
+## Custom Test Domain
+
+The default development domain is `beatled.test`. To use it locally, add an entry to `/etc/hosts`:
+
+```bash
+sudo sh -c 'echo "127.0.0.1 beatled.test" >> /etc/hosts'
+```
+
+Or open `/etc/hosts` in an editor and add the line manually:
+
+```
+127.0.0.1 beatled.test
+```
+
+On a Raspberry Pi, point the domain to the Pi's IP instead:
+
+```
+192.168.1.100 beatled.test
+```
+
+The `.test` TLD is [reserved by IANA](https://datatracker.ietf.org/doc/html/rfc6761) for testing and will never resolve publicly, making it safe for local development.
+{: .note }
+
 ## TLS Certificates
 
 The server requires TLS certificates for HTTPS. Generate self-signed certificates for local development:
 
 ```bash
-utils/beatled.sh certs localhost
+# Default domain (beatled.test)
+scripts/beatled.sh certs
+
+# Or specify one or more domains
+scripts/beatled.sh certs beatled.test localhost 127.0.0.1
 ```
 
-This creates certificates in the `certs/` directory. The server expects `cert.pem`, `key.pem`, and `dh_param.pem`.
+This creates certificates in `server/certs/` using [mkcert](https://github.com/FiloSotto/mkcert). The server expects `cert.pem`, `key.pem`, and `dh_param.pem`.
+
+For iOS Simulator, install the mkcert root CA so the app trusts self-signed certs:
+
+```bash
+xcrun simctl keychain booted add-root-cert "$(mkcert -CAROOT)/rootCA.pem"
+```
 
 ## API Authentication
 
@@ -80,7 +113,7 @@ Cross-compile for Raspberry Pi (ARM64) using Docker:
 2. Build the Docker builder image and the ARM64 server executable:
 
    ```bash
-   utils/beatled.sh build rpi
+   scripts/beatled.sh build rpi
    ```
 
    The output binary is written to `./out/`.
@@ -88,7 +121,7 @@ Cross-compile for Raspberry Pi (ARM64) using Docker:
 3. Deploy to your Raspberry Pi:
 
    ```bash
-   utils/beatled.sh deploy ${RPI_USERNAME} ${RPI_HOST}
+   scripts/beatled.sh deploy ${RPI_USERNAME} ${RPI_HOST}
    ```
 
 The deployment script copies the server binary, built client, and scripts, then restarts the systemd service on the Pi.

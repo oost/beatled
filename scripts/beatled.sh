@@ -1,23 +1,23 @@
 #!/bin/bash
 
-set -e
+set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
-VCPKG_DIR="${VCPKG_DIR:-$HOME/coding/external/vcpkg}"
-SERVER_DIR="$PROJECT_DIR/server"
-SERVER_BUILD_DIR="$SERVER_DIR/build"
-CLIENT_DIR="$PROJECT_DIR/client"
-PICO_DIR="${PICO_DIR:-$HOME/coding/projects/beatled-pico}"
-PICO_BUILD_DIR="$PICO_DIR/build"
+readonly VCPKG_DIR="${VCPKG_DIR:-$HOME/coding/external/vcpkg}"
+readonly SERVER_DIR="$PROJECT_DIR/server"
+readonly SERVER_BUILD_DIR="$SERVER_DIR/build"
+readonly CLIENT_DIR="$PROJECT_DIR/client"
+readonly PICO_DIR="${PICO_DIR:-$HOME/coding/projects/beatled-pico}"
+readonly PICO_BUILD_DIR="$PICO_DIR/build"
 
 # --- Colors ---
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
-CYAN='\033[0;36m'
-NC='\033[0m'
+readonly RED='\033[0;31m'
+readonly GREEN='\033[0;32m'
+readonly YELLOW='\033[0;33m'
+readonly CYAN='\033[0;36m'
+readonly NC='\033[0m'
 
 info()  { echo -e "${CYAN}==> $1${NC}"; }
 ok()    { echo -e "${GREEN}==> $1${NC}"; }
@@ -36,8 +36,9 @@ Commands:
   test [component]    Run tests (server, client, pico, or all)
   build [component]   Build without running (server, client, pico, rpi, or all)
   deploy <user> <host> Deploy the RPi build to a Raspberry Pi via SSH
+  ios [subcommand]    iOS commands (open, build, sim). Default: open
   docs                Start the Jekyll docs site locally
-  certs <domain>      Generate self-signed TLS certificates
+  certs [domain ...]  Generate locally-trusted development certificates for the given domains (default: oost.test)
 
 Server options (passed through to beat_server):
   --start-http        Start the HTTP/S server
@@ -126,7 +127,7 @@ cmd_server() {
   local CLIENT_DIST="$CLIENT_DIR/dist"
 
   # Default args
-  local ARGS=("--certs-dir" "$CERTS_DIR")
+  local ARGS=("--certs-dir" "$CERTS_DIR" "-a" "0.0.0.0")
 
   # Serve built client if dist exists
   if [ -d "$CLIENT_DIST" ]; then
@@ -139,7 +140,7 @@ cmd_server() {
   # Check certs exist
   if [ ! -f "$CERTS_DIR/cert.pem" ]; then
     warn "No TLS certificates found in $CERTS_DIR"
-    warn "Run '$(basename "$0") certs localhost' to generate them"
+    warn "Run '$(basename "$0") certs' to generate them"
   fi
 
   info "Starting beat server..."
@@ -180,6 +181,9 @@ cmd_test() {
       "$SERVER_BUILD_DIR/tests/api_handler/test_api_handler"
       "$SERVER_BUILD_DIR/tests/state_manager/test_state_manager"
       "$SERVER_BUILD_DIR/tests/test_audio_buffer_pool"
+      "$SERVER_BUILD_DIR/tests/udp/test_udp_protocol"
+      "$SERVER_BUILD_DIR/tests/udp/test_udp_request_handler"
+      "$SERVER_BUILD_DIR/tests/http/test_mime_types"
       ;;
     client)
       info "Running client tests..."
@@ -227,8 +231,8 @@ cmd_build() {
 }
 
 cmd_deploy() {
-  local username="$1"
-  local host="$2"
+  local username="${1:-}"
+  local host="${2:-}"
 
   if [ -z "$username" ] || [ -z "$host" ]; then
     error "Usage: $(basename "$0") deploy <username> <host>"
@@ -237,17 +241,12 @@ cmd_deploy() {
 
   local out_dir="$PROJECT_DIR/out"
   local tgz="beat-server.tar.gz"
-  local install_script="$SCRIPT_DIR/install-server-on-raspberry-pi.sh"
   local remote_home="/home/${username}"
+  local install_dir="\$HOME/beat-server"
 
   if [ ! -d "$out_dir" ] || [ -z "$(ls -A "$out_dir" 2>/dev/null)" ]; then
     error "Build output not found in $out_dir"
     error "Run '$(basename "$0") build rpi' first"
-    exit 1
-  fi
-
-  if [ ! -f "$install_script" ]; then
-    error "Install script not found: $install_script"
     exit 1
   fi
 
@@ -256,14 +255,19 @@ cmd_deploy() {
   info "Packaging build output..."
   (cd "$out_dir" && rm -f "$tgz" && tar -czf "$tgz" ./*)
 
-  info "Copying files to ${host}..."
-  scp "$out_dir/$tgz" "$install_script" "${username}@${host}:${remote_home}" > /dev/null
+  info "Copying tarball to ${host}..."
+  scp "$out_dir/$tgz" "${username}@${host}:${remote_home}/" > /dev/null
 
   rm "$out_dir/$tgz"
 
   info "Installing and restarting service on ${host}..."
   local remote_out
-  if remote_out=$(ssh "${username}@${host}" "bash ${remote_home}/install-server-on-raspberry-pi.sh ${host} ${tgz}" 2>&1); then
+  if remote_out=$(ssh "${username}@${host}" "set -e; \
+    rm -rf ${install_dir} && mkdir ${install_dir}; \
+    tar -xf ${remote_home}/${tgz} -C ${install_dir}; \
+    rm ${remote_home}/${tgz}; \
+    ${install_dir}/scripts/deploy/reload-service.sh ${host}; \
+    systemctl status beat-server.service" 2>&1); then
     ok "Deploy complete — server running at https://${host}:8443/"
   else
     error "Failed to start service on ${host}:"
@@ -277,6 +281,78 @@ cmd_deploy() {
   fi
 }
 
+cmd_ios() {
+  local readonly XCODEPROJ="$PROJECT_DIR/ios/Beatled.xcodeproj"
+  local subcommand="${1:-open}"
+  shift 2>/dev/null || true
+
+  if [ ! -d "$XCODEPROJ" ]; then
+    error "iOS project not found: $XCODEPROJ"
+    error "Run 'xcodegen generate --spec $PROJECT_DIR/ios/project.yml' to generate it"
+    exit 1
+  fi
+
+  case "$subcommand" in
+    open)
+      info "Opening Beatled iOS project in Xcode..."
+      open "$XCODEPROJ"
+      ;;
+    build)
+      info "Building Beatled iOS app (Debug, iphonesimulator)..."
+      xcodebuild build \
+        -project "$XCODEPROJ" \
+        -scheme Beatled \
+        -configuration Debug \
+        -destination "generic/platform=iOS Simulator" \
+        -quiet
+      ok "iOS build complete"
+      ;;
+    sim)
+      cmd_ios build
+
+      info "Booting iOS Simulator..."
+      local sim_id
+      sim_id=$(xcrun simctl list devices available iPhone -j \
+        | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+for runtime, devices in data['devices'].items():
+    for d in devices:
+        if d['isAvailable'] and 'iPhone' in d['name']:
+            print(d['udid'])
+            sys.exit(0)
+sys.exit(1)
+")
+
+      if [ -z "$sim_id" ]; then
+        error "No available iPhone simulator found"
+        exit 1
+      fi
+
+      xcrun simctl boot "$sim_id" 2>/dev/null || true
+      open -a Simulator
+
+      info "Installing and launching Beatled..."
+      local app_path
+      app_path=$(xcodebuild build \
+        -project "$XCODEPROJ" \
+        -scheme Beatled \
+        -configuration Debug \
+        -destination "id=$sim_id" \
+        -showBuildSettings 2>/dev/null \
+        | grep -m1 "BUILT_PRODUCTS_DIR" | awk '{print $3}')
+
+      xcrun simctl install "$sim_id" "$app_path/Beatled.app"
+      xcrun simctl launch "$sim_id" com.beatled.app
+      ok "Beatled running in simulator"
+      ;;
+    *)
+      error "Unknown ios subcommand: $subcommand (use open, build, or sim)"
+      exit 1
+      ;;
+  esac
+}
+
 cmd_docs() {
   local DOCS_DIR="$PROJECT_DIR/docs"
   info "Starting Jekyll docs site..."
@@ -285,10 +361,10 @@ cmd_docs() {
 }
 
 cmd_certs() {
-  local domain="${1:-localhost}"
   local certs_dir="$SERVER_DIR/certs"
-  info "Generating certificates for '$domain' in $certs_dir"
-  "$PROJECT_DIR/scripts/create-certs.sh" "$domain" "$certs_dir"
+  local domains=("${@:-beatled.test}")
+  info "Generating certificates for '${domains[*]}' in $certs_dir"
+  "$SCRIPT_DIR/deploy/create-certs.sh" --output "$certs_dir" "${domains[@]}"
   ok "Certificates created in $certs_dir"
 }
 
@@ -309,6 +385,7 @@ case "$COMMAND" in
   test)         cmd_test "$@" ;;
   build)        cmd_build "$@" ;;
   deploy)       cmd_deploy "$@" ;;
+  ios)          cmd_ios "$@" ;;
   docs)         cmd_docs "$@" ;;
   certs)        cmd_certs "$@" ;;
   help|-h|--help) usage ;;

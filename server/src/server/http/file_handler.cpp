@@ -31,9 +31,7 @@ restinio::request_handling_status_t FileHandler::serve_file(const restinio::requ
     auto expires_at = restinio::make_date_field_value(std::chrono::system_clock::now() +
                                                       std::chrono::hours(24 * 7));
 
-    return req->create_response()
-        .append_header(restinio::http_field::server, "RESTinio")
-        .append_header_date_field()
+    return init_resp(req->create_response())
         .append_header(restinio::http_field::last_modified, std::move(modified_at))
         .append_header(restinio::http_field::expires, std::move(expires_at))
         .append_header(restinio::http_field::content_type,
@@ -48,7 +46,10 @@ restinio::request_handling_status_t FileHandler::serve_file(const restinio::requ
   }
 }
 
-FileHandler::FileHandler(const std::string &root_dir) : root_dir_{root_dir} {}
+FileHandler::FileHandler(const std::string &root_dir, const std::string &cors_origin)
+    : root_dir_{root_dir} {
+  build_csp(cors_origin);
+}
 
 restinio::request_handling_status_t
 FileHandler::on_file_request(const restinio::request_handle_t &req,

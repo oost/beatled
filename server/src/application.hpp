@@ -19,6 +19,7 @@ using core::StateManager;
 class Application : public ServiceManagerInterface {
 public:
   Application(const Config &beatled_config);
+  ~Application();
 
   void run();
 

@@ -39,6 +39,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /
 COPY --from=build-server /home/final/bin server
 COPY --from=build-client /home/dist client
-COPY scripts scripts
+COPY scripts/deploy scripts/deploy
 EXPOSE 8443 9090
 USER beatled

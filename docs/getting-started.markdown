@@ -29,22 +29,32 @@ cd beatled
 git submodule update --init --recursive
 ```
 
+## Set Up the Test Domain
+
+Add `beatled.test` to your `/etc/hosts` so it resolves to localhost:
+
+```bash
+sudo sh -c 'echo "127.0.0.1 beatled.test" >> /etc/hosts'
+```
+
+See [Beatled Server — Custom Test Domain](server.html#custom-test-domain) for more details.
+
 ## 1. Start the Server
 
 Build and start the beat server with the HTTP API and UDP server for Pico devices:
 
 ```bash
-utils/beatled.sh server --start-http --start-udp --no-tls
+scripts/beatled.sh server --start-http --start-udp --no-tls
 ```
 
-The server listens on `localhost:8080` (HTTP) and `localhost:9000` (UDP). Add `--start-broadcast` to also broadcast beat timing.
+The server listens on `localhost:8443` (HTTP) and `localhost:9090` (UDP). Add `--start-broadcast` to also broadcast beat timing.
 
 ## 2. Start the Web Client
 
 In a second terminal, start the Vite dev server:
 
 ```bash
-utils/beatled.sh client
+scripts/beatled.sh client
 ```
 
 Open [https://localhost:5173](https://localhost:5173) in your browser. The dev server proxies API requests to the beat server.
@@ -54,7 +64,7 @@ Open [https://localhost:5173](https://localhost:5173) in your browser. The dev s
 In a third terminal, build and run the POSIX port with the Metal LED visualizer:
 
 ```bash
-utils/beatled.sh pico
+scripts/beatled.sh pico
 ```
 
 A window opens rendering a 3D LED ring. The simulator connects to `localhost`, registers with the server, and starts receiving beat timing.
@@ -63,12 +73,12 @@ A window opens rendering a 3D LED ring. The simulator connects to `localhost`, r
 
 ```bash
 # All tests
-utils/beatled.sh test all
+scripts/beatled.sh test all
 
 # Individual components
-utils/beatled.sh test server
-utils/beatled.sh test client
-utils/beatled.sh test pico
+scripts/beatled.sh test server
+scripts/beatled.sh test client
+scripts/beatled.sh test pico
 ```
 
 ## Next Steps

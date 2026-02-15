@@ -124,7 +124,7 @@ cmake --build build
 Or using the project utility script from the `beatled` repo:
 
 ```bash
-utils/beatled.sh pico
+scripts/beatled.sh pico
 ```
 
 By default, the POSIX port connects to `localhost`. Set `BEATLED_SERVER_NAME` before configuring to override.

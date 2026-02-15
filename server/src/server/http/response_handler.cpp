@@ -83,7 +83,7 @@ const char *ResponseHandler::content_type_by_file_extention(const std::string_vi
     return "application/"
            "vnd.openxmlformats-officedocument.presentationml.presentation";
   if (ext == "rar")
-    return "archive	application/x-rar-compressed";
+    return "application/x-rar-compressed";
   if (ext == "rtf")
     return "application/rtf";
   if (ext == "sh")
@@ -125,7 +125,7 @@ const char *ResponseHandler::content_type_by_file_extention(const std::string_vi
   if (ext == "xul")
     return "application/vnd.mozilla.xul+xml";
   if (ext == "zip")
-    return "archive	application/zip";
+    return "application/zip";
   if (ext == "3gp")
     return "video/3gpp";
   if (ext == "3g2")

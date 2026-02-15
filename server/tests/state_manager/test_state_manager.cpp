@@ -1,8 +1,11 @@
 #include <catch2/catch_test_macros.hpp>
+#include <core/clock.hpp>
 #include <core/state_manager.hpp>
 #include <thread>
 
 using beatled::core::ClientStatus;
+using beatled::core::Clock;
+using beatled::core::DEVICE_EXPIRY_US;
 using beatled::core::StateManager;
 using beatled::core::tempo_ref_t;
 
@@ -179,5 +182,85 @@ TEST_CASE("StateManager thread safety", "[state_manager]") {
 
     t1.join();
     t2.join();
+  }
+}
+
+TEST_CASE("StateManager initial defaults", "[state_manager]") {
+  StateManager sm;
+
+  SECTION("Tempo defaults to zero") {
+    tempo_ref_t tr = sm.get_tempo_ref();
+    REQUIRE(tr.tempo == 0.0f);
+    REQUIRE(tr.tempo_period_us == 0);
+    REQUIRE(tr.beat_time_ref == 0);
+  }
+
+  SECTION("Next beat time defaults to zero") {
+    REQUIRE(sm.get_next_beat_time_ref() == 0);
+  }
+
+  SECTION("No clients registered initially") {
+    REQUIRE(sm.get_clients().empty());
+  }
+}
+
+TEST_CASE("StateManager zero tempo", "[state_manager]") {
+  StateManager sm;
+
+  SECTION("Zero tempo returns zero period (no division by zero)") {
+    sm.update_tempo(0.0f, 12345);
+    tempo_ref_t tr = sm.get_tempo_ref();
+    REQUIRE(tr.tempo == 0.0f);
+    REQUIRE(tr.tempo_period_us == 0);
+    REQUIRE(tr.beat_time_ref == 12345);
+  }
+}
+
+TEST_CASE("StateManager client expiry", "[state_manager]") {
+  StateManager sm;
+
+  SECTION("Expired clients are removed by get_clients()") {
+    ClientStatus::board_id_t bid{};
+    bid[0] = 'X';
+    auto cs = std::make_shared<ClientStatus>(bid, asio::ip::make_address("10.0.0.1"));
+    // Set last_status_time to well past the expiry threshold
+    cs->last_status_time = Clock::wall_time_us_64() - DEVICE_EXPIRY_US - 1000000ULL;
+    sm.register_client(cs);
+
+    // Client is registered
+    REQUIRE(sm.client_status(asio::ip::make_address("10.0.0.1")) != nullptr);
+
+    // get_clients() should prune it
+    auto clients = sm.get_clients();
+    REQUIRE(clients.empty());
+  }
+
+  SECTION("Fresh clients are preserved by get_clients()") {
+    ClientStatus::board_id_t bid{};
+    bid[0] = 'F';
+    auto cs = std::make_shared<ClientStatus>(bid, asio::ip::make_address("10.0.0.2"));
+    cs->last_status_time = Clock::wall_time_us_64();
+    sm.register_client(cs);
+
+    auto clients = sm.get_clients();
+    REQUIRE(clients.size() == 1);
+  }
+
+  SECTION("Mixed fresh and expired clients - only fresh survive") {
+    ClientStatus::board_id_t bid1{};
+    bid1[0] = 'A';
+    auto expired = std::make_shared<ClientStatus>(bid1, asio::ip::make_address("10.0.0.1"));
+    expired->last_status_time = Clock::wall_time_us_64() - DEVICE_EXPIRY_US - 1000000ULL;
+    sm.register_client(expired);
+
+    ClientStatus::board_id_t bid2{};
+    bid2[0] = 'B';
+    auto fresh = std::make_shared<ClientStatus>(bid2, asio::ip::make_address("10.0.0.2"));
+    fresh->last_status_time = Clock::wall_time_us_64();
+    sm.register_client(fresh);
+
+    auto clients = sm.get_clients();
+    REQUIRE(clients.size() == 1);
+    REQUIRE(clients[0]->ip_address == asio::ip::make_address("10.0.0.2"));
   }
 }

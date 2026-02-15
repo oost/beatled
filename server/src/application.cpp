@@ -20,6 +20,12 @@ const char *TEMPO_BROADCASTER_ID = "tempo-broadcaster";
 using namespace beatled;
 using beatled::core::Config;
 
+Application::~Application() {
+  // Services hold references to Application members (io_context_, state_manager_, etc.)
+  // and must be destroyed before those members are.
+  destroy_services();
+}
+
 Application::Application(const Config &beatled_config)
     : server_parameters_{beatled_config.server_parameters()},
       logger_{server_parameters_.logger}, signals_{io_context_} {

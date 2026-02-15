@@ -6,8 +6,10 @@ include(Catch)
 
 add_subdirectory(api_handler)
 add_subdirectory(fftw)
+add_subdirectory(http)
 add_subdirectory(logger)
 add_subdirectory(state_manager)
+add_subdirectory(udp)
 
 add_executable(async_udp_echo_server async_udp_echo_server.cpp)
 add_executable(blocking_udp_echo_server blocking_udp_echo_server.cpp)
