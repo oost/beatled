@@ -38,8 +38,9 @@ info "Copying service file to /etc/systemd/system/"
 sudo cp "$SERVICE_FILE" /etc/systemd/system/beat-server.service
 sudo chmod 644 /etc/systemd/system/beat-server.service
 
-info "Reloading systemd and starting service..."
+info "Reloading systemd, enabling and starting service..."
 sudo systemctl daemon-reload
+sudo systemctl enable beat-server.service
 sudo systemctl start beat-server.service
 
 info "Service status:"

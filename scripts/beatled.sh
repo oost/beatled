@@ -243,6 +243,7 @@ cmd_deploy() {
   local tgz="beat-server.tar.gz"
   local remote_home="/home/${username}"
   local install_dir="\$HOME/beat-server"
+  local certs_dir="$HOME/certs"
 
   if [ ! -d "$out_dir" ] || [ -z "$(ls -A "$out_dir" 2>/dev/null)" ]; then
     error "Build output not found in $out_dir"
@@ -251,6 +252,17 @@ cmd_deploy() {
   fi
 
   info "Deploying beatled server to ${username}@${host}"
+
+  # Ensure certificates exist on remote host
+  if ! ssh "${username}@${host}" "test -f ~/certs/cert.pem" 2>/dev/null; then
+    if [ ! -d "$certs_dir" ] || [ ! -f "$certs_dir/cert.pem" ]; then
+      error "No certificates found locally at $certs_dir"
+      error "Generate them first: scripts/deploy/create-certs.sh ${host}"
+      exit 1
+    fi
+    info "Copying certificates to ${host}..."
+    scp -r "$certs_dir" "${username}@${host}:${remote_home}/certs" > /dev/null
+  fi
 
   info "Packaging build output..."
   (cd "$out_dir" && rm -f "$tgz" && tar -czf "$tgz" ./*)
@@ -263,16 +275,30 @@ cmd_deploy() {
   info "Installing and restarting service on ${host}..."
   local remote_out
   if remote_out=$(ssh "${username}@${host}" "set -e; \
-    rm -rf ${install_dir} && mkdir ${install_dir}; \
+    mv ${install_dir} ${install_dir}.bak 2>/dev/null || true; \
+    mkdir -p ${install_dir}; \
     tar -xf ${remote_home}/${tgz} -C ${install_dir}; \
     rm ${remote_home}/${tgz}; \
-    ${install_dir}/scripts/deploy/reload-service.sh ${host}; \
+    ${install_dir}/scripts/deploy/reload-service.sh; \
     systemctl status beat-server.service" 2>&1); then
+    ssh "${username}@${host}" "rm -rf ${install_dir}.bak" 2>/dev/null || true
     ok "Deploy complete — server running at https://${host}:8443/"
   else
-    error "Failed to start service on ${host}:"
+    error "Deploy failed, restoring previous version..."
+    ssh "${username}@${host}" "rm -rf ${install_dir}; \
+      mv ${install_dir}.bak ${install_dir} 2>/dev/null || true" 2>/dev/null
+    error "Service output:"
     echo -e "$remote_out"
     exit 1
+  fi
+
+  # Health check — verify the server is actually responding
+  info "Verifying server is responding..."
+  if curl -sk --retry 3 --retry-delay 2 --max-time 10 \
+    "https://${host}:8443/api/health" > /dev/null 2>&1; then
+    ok "Health check passed"
+  else
+    warn "Health check failed — server may still be starting up"
   fi
 
   if [ "$(uname -s)" = "Darwin" ]; then

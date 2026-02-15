@@ -2,30 +2,22 @@
 #
 # Reload or install the beat-server service on a Raspberry Pi.
 # Called during deployment to ensure the service is running.
+# Certificates must already exist (handled by cmd_deploy).
 #
 
 set -euo pipefail
 
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-readonly CERTS_DIR="$SCRIPT_DIR/../../../certs"
 
 info()  { echo "==> $1"; }
 error() { echo "==> ERROR: $1" >&2; }
 
-if [[ $# -lt 1 ]]; then
-  error "Usage: $0 <domain>"
+# Verify certificates are present
+if [ ! -f "$HOME/certs/cert.pem" ]; then
+  error "Certificates not found at $HOME/certs/"
+  error "Certificates should be copied during deployment"
   exit 1
 fi
-
-readonly DOMAIN="$1"
-
-# Ensure certificates exist
-info "Checking certificates..."
-if [ ! -d "$CERTS_DIR" ]; then
-  info "No certificates found, generating..."
-  "$SCRIPT_DIR/create-certs.sh" "$DOMAIN" "$CERTS_DIR"
-fi
-info "Certificates OK"
 
 # Check if service is installed
 info "Checking service status..."

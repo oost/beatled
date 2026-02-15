@@ -100,31 +100,17 @@ When started with `--api-token`, the server requires a Bearer token for all API 
 Authorization: Bearer <token>
 ```
 
-## Cross-Compilation
+## Cross-Compilation and Deployment
 
 Cross-compile for Raspberry Pi (ARM64) using Docker:
 
-1. Initialize submodules:
+```bash
+git submodule update --init --recursive   # first time only
+scripts/beatled.sh build rpi
+scripts/beatled.sh deploy <username> <host>
+```
 
-   ```bash
-   git submodule update --init --recursive
-   ```
-
-2. Build the Docker builder image and the ARM64 server executable:
-
-   ```bash
-   scripts/beatled.sh build rpi
-   ```
-
-   The output binary is written to `./out/`.
-
-3. Deploy to your Raspberry Pi:
-
-   ```bash
-   scripts/beatled.sh deploy ${RPI_USERNAME} ${RPI_HOST}
-   ```
-
-The deployment script copies the server binary, built client, and scripts, then restarts the systemd service on the Pi.
+See the [Deployment](deployment.html) page for the full guide covering certificates, service management, and troubleshooting.
 
 ## Dependencies
 

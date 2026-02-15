@@ -6,9 +6,15 @@ StartLimitIntervalSec=0
 [Service]
 Type=simple
 Restart=always
+RestartSec=5
+User=${USERNAME}
+Group=${USERNAME}
 ExecStart=$ROOT_DIR/server/beat_server -a 0.0.0.0 --root-dir $ROOT_DIR/client/ --certs-dir /home/${USERNAME}/certs/ --start-http --start-udp
 WorkingDirectory=$ROOT_DIR
-RestartSec=5
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=$ROOT_DIR
 
 [Install]
 WantedBy=multi-user.target
