@@ -6,59 +6,51 @@ struct ProgramView: View {
     var body: some View {
         NavigationStack {
             List {
-                errorSection
+                if let error = viewModel.error {
+                    Section {
+                        Label(error, systemImage: "exclamationmark.triangle")
+                            .foregroundStyle(.red)
+                            .font(.caption)
+                    }
+                }
+
                 programsSection
             }
             .navigationTitle("Program")
             .overlay {
-                loadingOverlay
+                if viewModel.isLoading && viewModel.programs.isEmpty {
+                    ProgressView()
+                } else if !viewModel.isLoading && viewModel.programs.isEmpty && viewModel.error == nil {
+                    ContentUnavailableView {
+                        Label("No Programs", systemImage: "music.note.list")
+                    } description: {
+                        Text("No programs available on the server.")
+                    }
+                }
             }
             .onAppear { viewModel.load() }
             .refreshable { viewModel.load() }
         }
     }
-    
-    @ViewBuilder
-    private var errorSection: some View {
-        if let error = viewModel.error {
-            Section {
-                Label(error, systemImage: "exclamationmark.triangle")
-                    .foregroundStyle(.red)
-                    .font(.caption)
-            }
-        }
-    }
-    
+
     @ViewBuilder
     private var programsSection: some View {
-        Section("Programs") {
-            ForEach(viewModel.programs, id: \.id) { program in
-                programRow(program)
-            }
-        }
-    }
-    
-    private func programRow(_ program: Program) -> some View {
-        Button {
-            viewModel.selectProgram(program.id)
-        } label: {
-            HStack {
-                Text(program.name)
-                    .foregroundStyle(.primary)
-                Spacer()
-                if program.id == viewModel.selectedProgramId {
-                    Image(systemName: "checkmark")
-                        .foregroundStyle(Color.accentColor)
-                        .fontWeight(.semibold)
+        if !viewModel.programs.isEmpty {
+            Section("Programs") {
+                Picker(selection: Binding(
+                    get: { viewModel.selectedProgramId },
+                    set: { viewModel.selectProgram($0) }
+                )) {
+                    ForEach(viewModel.programs) { program in
+                        Text(program.name)
+                            .tag(program.id)
+                    }
+                } label: {
+                    EmptyView()
                 }
+                .pickerStyle(.inline)
+                .labelsHidden()
             }
-        }
-    }
-    
-    @ViewBuilder
-    private var loadingOverlay: some View {
-        if viewModel.isLoading && viewModel.programs.isEmpty {
-            ProgressView()
         }
     }
 }

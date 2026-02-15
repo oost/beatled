@@ -33,6 +33,7 @@ struct LogView: View {
                     } label: {
                         Image(systemName: "arrow.clockwise")
                     }
+                    .keyboardShortcut("r", modifiers: .command)
                 }
             }
             .overlay {

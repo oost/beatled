@@ -7,9 +7,9 @@ struct DevicesTableView: View {
         ForEach(devices) { device in
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(device.board_id)
+                    Text(device.boardId)
                         .font(.system(.body, design: .monospaced))
-                    Text(device.ip_address)
+                    Text(device.ipAddress)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -18,6 +18,7 @@ struct DevicesTableView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+            .accessibilityElement(children: .combine)
         }
     }
 }

@@ -13,17 +13,17 @@ struct DevicesResponse: Codable {
 }
 
 struct Device: Codable, Identifiable {
-    let client_id: Int
-    let board_id: String
-    let ip_address: String
-    let last_status_time: UInt64
+    let clientId: Int
+    let boardId: String
+    let ipAddress: String
+    let lastStatusTime: UInt64
 
-    var id: Int { client_id }
+    var id: Int { clientId }
 
     var lastSeenText: String {
         let nowUs = UInt64(Date().timeIntervalSince1970 * 1_000_000)
-        guard last_status_time > 0, nowUs > last_status_time else { return "unknown" }
-        let elapsedSeconds = Double(nowUs - last_status_time) / 1_000_000
+        guard lastStatusTime > 0, nowUs > lastStatusTime else { return "unknown" }
+        let elapsedSeconds = Double(nowUs - lastStatusTime) / 1_000_000
         if elapsedSeconds < 60 {
             return "\(Int(elapsedSeconds))s ago"
         } else if elapsedSeconds < 3600 {
@@ -31,5 +31,12 @@ struct Device: Codable, Identifiable {
         } else {
             return "\(Int(elapsedSeconds / 3600))h ago"
         }
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case clientId = "client_id"
+        case boardId = "board_id"
+        case ipAddress = "ip_address"
+        case lastStatusTime = "last_status_time"
     }
 }

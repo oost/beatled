@@ -1,13 +1,11 @@
 import Foundation
-import Combine
 
 @Observable
 class LogViewModel {
     var lines: [String] = []
     var error: String?
-    var isLoading = false
 
-    private var timer: AnyCancellable?
+    private var pollingTask: Task<Void, Never>?
     private let api: APIClient
 
     init(api: APIClient) {
@@ -15,31 +13,33 @@ class LogViewModel {
     }
 
     func startPolling() {
-        fetch()
-        timer = Timer.publish(every: 10, on: .main, in: .common)
-            .autoconnect()
-            .sink { [weak self] _ in self?.fetch() }
+        pollingTask?.cancel()
+        pollingTask = Task { @MainActor in
+            while !Task.isCancelled {
+                await fetch()
+                try? await Task.sleep(for: .seconds(10))
+            }
+        }
     }
 
     func stopPolling() {
-        timer?.cancel()
-        timer = nil
+        pollingTask?.cancel()
+        pollingTask = nil
     }
 
     func refresh() {
-        fetch()
+        Task { @MainActor in await fetch() }
     }
 
-    private func fetch() {
-        Task { @MainActor in
-            do {
-                let data = try await api.getRaw("/api/log")
-                let decoded = try JSONDecoder().decode([String].self, from: data)
-                self.lines = decoded
-                self.error = nil
-            } catch {
-                self.error = error.localizedDescription
-            }
+    @MainActor
+    private func fetch() async {
+        do {
+            let data = try await api.getRaw("/api/log")
+            let decoded = try JSONDecoder().decode([String].self, from: data)
+            self.lines = decoded
+            self.error = nil
+        } catch {
+            self.error = error.localizedDescription
         }
     }
 }

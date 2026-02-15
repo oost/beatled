@@ -14,6 +14,7 @@ struct BeatledApp: App {
         }
         #if os(macOS)
         .defaultSize(width: 900, height: 600)
+        .windowToolbarStyle(.unified)
         #endif
     }
 

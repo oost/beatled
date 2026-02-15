@@ -111,7 +111,9 @@ struct ConfigView: View {
     private var aboutSection: some View {
         Section("About") {
             LabeledContent("App", value: "Beatled")
-            LabeledContent("Version", value: "1.0")
+            LabeledContent("Version") {
+                Text(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—")
+            }
         }
     }
 }
@@ -123,6 +125,7 @@ private struct HealthDot: View {
         Circle()
             .fill(color)
             .frame(width: 8, height: 8)
+            .accessibilityLabel(accessibilityText)
     }
 
     private var color: Color {
@@ -130,6 +133,14 @@ private struct HealthDot: View {
         case .ok: .green
         case .error: .red
         case .unknown: .gray
+        }
+    }
+
+    private var accessibilityText: String {
+        switch status {
+        case .ok: "Reachable"
+        case .error: "Unreachable"
+        case .unknown: "Checking"
         }
     }
 }

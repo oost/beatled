@@ -1,5 +1,4 @@
 import Foundation
-import Combine
 
 struct TempoReading: Identifiable {
     let id = UUID()
@@ -14,9 +13,8 @@ class StatusViewModel {
     var tempoHistory: [TempoReading] = []
     var lastUpdate: Date?
     var error: String?
-    var isLoading = false
 
-    private var timer: AnyCancellable?
+    private var pollingTask: Task<Void, Never>?
     private let api: APIClient
     private let maxHistory = 30
 
@@ -25,19 +23,22 @@ class StatusViewModel {
     }
 
     func startPolling() {
-        fetch()
-        timer = Timer.publish(every: 2, on: .main, in: .common)
-            .autoconnect()
-            .sink { [weak self] _ in self?.fetch() }
+        pollingTask?.cancel()
+        pollingTask = Task { @MainActor in
+            while !Task.isCancelled {
+                await fetch()
+                try? await Task.sleep(for: .seconds(2))
+            }
+        }
     }
 
     func stopPolling() {
-        timer?.cancel()
-        timer = nil
+        pollingTask?.cancel()
+        pollingTask = nil
     }
 
     func refresh() {
-        fetch()
+        Task { @MainActor in await fetch() }
     }
 
     func toggleService(id: String, enabled: Bool) {
@@ -47,32 +48,31 @@ class StatusViewModel {
                     "/api/service/control",
                     body: ServiceControlRequest(id: id, status: enabled)
                 )
-                fetch()
+                await fetch()
             } catch {
                 self.error = error.localizedDescription
             }
         }
     }
 
-    private func fetch() {
-        Task { @MainActor in
-            do {
-                async let statusReq: StatusResponse = api.get("/api/status")
-                async let devicesReq: DevicesResponse = api.get("/api/devices")
-                let (s, d) = try await (statusReq, devicesReq)
-                self.status = s
-                self.devices = d.devices
-                self.lastUpdate = Date()
-                self.error = nil
+    @MainActor
+    private func fetch() async {
+        do {
+            async let statusReq: StatusResponse = api.get("/api/status")
+            async let devicesReq: DevicesResponse = api.get("/api/devices")
+            let (s, d) = try await (statusReq, devicesReq)
+            self.status = s
+            self.devices = d.devices
+            self.lastUpdate = Date()
+            self.error = nil
 
-                let reading = TempoReading(time: Date(), bpm: s.tempo)
-                tempoHistory.append(reading)
-                if tempoHistory.count > maxHistory {
-                    tempoHistory.removeFirst(tempoHistory.count - maxHistory)
-                }
-            } catch {
-                self.error = error.localizedDescription
+            let reading = TempoReading(time: Date(), bpm: s.tempo)
+            tempoHistory.append(reading)
+            if tempoHistory.count > maxHistory {
+                tempoHistory.removeFirst(tempoHistory.count - maxHistory)
             }
+        } catch {
+            self.error = error.localizedDescription
         }
     }
 }

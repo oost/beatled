@@ -25,6 +25,7 @@ struct StatusView: View {
                     Button { viewModel.refresh() } label: {
                         Image(systemName: "arrow.clockwise")
                     }
+                    .keyboardShortcut("r", modifiers: .command)
                 }
             }
             .onAppear { viewModel.startPolling() }
@@ -39,17 +40,21 @@ struct StatusView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(String(format: "%.1f", viewModel.status?.tempo ?? 0))
                         .font(.system(size: 48, weight: .bold, design: .rounded))
+                        .accessibilityLabel("\(String(format: "%.1f", viewModel.status?.tempo ?? 0)) BPM")
                     Text("BPM")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                        .accessibilityHidden(true)
                 }
                 Spacer()
                 VStack(alignment: .trailing, spacing: 4) {
                     Text("\(viewModel.devices.count)")
                         .font(.system(size: 28, weight: .semibold, design: .rounded))
+                        .accessibilityLabel("\(viewModel.devices.count) devices connected")
                     Text("Devices")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                        .accessibilityHidden(true)
                 }
             }
             .padding(.vertical, 4)
@@ -85,11 +90,12 @@ struct StatusView: View {
     private var tempoChartSection: some View {
         Section("Tempo History") {
             if viewModel.tempoHistory.isEmpty {
-                Text("Beat Detector Paused")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.vertical, 8)
+                ContentUnavailableView {
+                    Label("No Data", systemImage: "waveform.slash")
+                } description: {
+                    Text("Beat detector is paused or not yet running.")
+                }
+                .frame(height: 160)
             } else {
                 TempoChartView(readings: viewModel.tempoHistory)
                     .frame(height: 160)
@@ -101,9 +107,11 @@ struct StatusView: View {
     private var devicesSection: some View {
         Section("Devices (\(viewModel.devices.count))") {
             if viewModel.devices.isEmpty {
-                Text("No devices connected")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                ContentUnavailableView {
+                    Label("No Devices", systemImage: "antenna.radiowaves.left.and.right.slash")
+                } description: {
+                    Text("No devices connected to the server.")
+                }
             } else {
                 DevicesTableView(devices: viewModel.devices)
             }
