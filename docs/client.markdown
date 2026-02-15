@@ -1,11 +1,11 @@
 ---
-title: Beatled Controller
+title: Web Controller
 layout: default
 parent: Components
 nav_order: 3
 ---
 
-# Beatled Web Client
+# Web Controller
 
 Source code: [github.com/oost/beatled](https://github.com/oost/beatled) (`client/`)
 
@@ -59,7 +59,7 @@ The client is built as static assets and served by the beat server over HTTPS. T
 https://raspberrypi.local:8443/
 ```
 
-Replace the hostname with your Raspberry Pi's local domain name.
+Replace the hostname with your Raspberry Pi's local domain name. See the [Deployment](deployment.html) page for the full guide.
 
 ## PWA Support
 

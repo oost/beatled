@@ -23,20 +23,22 @@ graph LR
     PI -->|UDP| P1["Pico W + LEDs"]
     PI -->|UDP| P2["Pico W + LEDs"]
     PI -->|UDP| P3["Pico W + LEDs"]
-    PI -->|HTTPS| WEB["Phone / Browser"]
+    PI -->|HTTPS| WEB["Web Controller"]
+    PI -->|HTTPS| IOS["iOS Controller"]
 ```
 
 1. A **Raspberry Pi** captures audio from a USB microphone and runs real-time beat detection (BTrack algorithm)
 2. Beat timing is broadcast over **UDP** to all Pico W devices on the local network
 3. Each **Pico W** uses NTP-style time synchronization to align its clock with the server, then drives a WS2812 LED strip in sync with the beat
-4. A **React web dashboard** lets you monitor tempo, switch LED programs, and control services from your phone
+4. A **web dashboard** or **iOS app** lets you monitor tempo, switch LED programs, and control services from your phone
 
 ## Components
 
 | Component | Technology | Description |
 |-----------|-----------|-------------|
 | [Beat Server](server.html) | C++ (CMake, ASIO, PortAudio) | Audio capture, beat detection, UDP broadcast, HTTPS API |
-| [Web Client](client.html) | React 18, TypeScript, Vite | Dashboard for tempo monitoring and LED program control |
+| [Web Controller](client.html) | React 18, TypeScript, Vite | PWA dashboard for tempo monitoring and LED program control |
+| [iOS Controller](ios.html) | SwiftUI, Swift Charts | Native iOS app for monitoring and control |
 | [Pico Firmware](pico.html) | C (Pico SDK) | Dual-core: networking on Core 0, LED rendering on Core 1 |
 | [Protocol](protocol.html) | Binary UDP | Packed structs for registration, time sync, and beat data |
 
