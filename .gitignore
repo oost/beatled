@@ -21,6 +21,13 @@ certs
 *.key
 *.p12
 
+# Claude Code
+.claude/
+
+# Xcode user data
+*.xcuserstate
+xcuserdata/
+
 # General
 .DS_Store
 .AppleDouble
