@@ -69,15 +69,20 @@ void StateManager::register_client(ClientStatus::Ptr client_status) {
 
   for (auto it = clients_.begin(); it != clients_.end();) {
     if (client_status->board_id == (*it)->board_id) {
-      // board_id has already been registered. Delete it
-      SPDLOG_INFO("Board was already registered. Deleting old registration");
+      // Same board reconnecting - update its registration
+      SPDLOG_INFO("Board {} was already registered. Updating registration",
+                  client_status->board_id.data());
       it = clients_.erase(it);
       continue;
     }
     if (client_status->ip_address == (*it)->ip_address) {
-      SPDLOG_INFO("IP was registered with another board");
-      it = clients_.erase(it);
-      continue;
+      // IP conflict: different board trying to use same IP
+      // Keep existing registration, reject new registration attempt
+      SPDLOG_WARN("IP {} already registered to board {}. Rejecting registration "
+                  "for board {} to prevent IP conflict",
+                  client_status->ip_address.to_string(), (*it)->board_id.data(),
+                  client_status->board_id.data());
+      return;  // Don't add the new registration
     }
     it++;
   }
