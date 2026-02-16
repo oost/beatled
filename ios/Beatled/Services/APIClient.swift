@@ -113,6 +113,25 @@ class APIClient: NSObject {
         do {
             return try JSONDecoder().decode(T.self, from: data)
         } catch {
+            print("❌ Decoding error for \(T.self):")
+            print("   Error: \(error)")
+            if let decodingError = error as? DecodingError {
+                switch decodingError {
+                case .keyNotFound(let key, let context):
+                    print("   Missing key '\(key.stringValue)' - \(context.debugDescription)")
+                case .typeMismatch(let type, let context):
+                    print("   Type mismatch for type '\(type)' - \(context.debugDescription)")
+                case .valueNotFound(let type, let context):
+                    print("   Value not found for type '\(type)' - \(context.debugDescription)")
+                case .dataCorrupted(let context):
+                    print("   Data corrupted - \(context.debugDescription)")
+                @unknown default:
+                    print("   Unknown decoding error")
+                }
+            }
+            if let jsonString = String(data: data, encoding: .utf8) {
+                print("   Raw JSON: \(jsonString)")
+            }
             throw APIError.decodingError(error)
         }
     }

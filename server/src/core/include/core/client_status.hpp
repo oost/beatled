@@ -8,6 +8,8 @@
 #include <fmt/ranges.h>
 #include <forward_list>
 #include <functional>
+#include <iomanip>  // std::setw, std::setfill
+#include <sstream>  // std::ostringstream
 #include <nlohmann/json.hpp>
 
 #include "beatled/protocol.h"
@@ -38,9 +40,22 @@ public:
   asio::ip::address ip_address;
 };
 
-void to_json(json &j, const ClientStatus::board_id_t &board_id);
+// Manually define to_json for ClientStatus to have full control over board_id serialization
+// board_id contains raw binary bytes from the Pico, so we convert to hex string
+inline void to_json(json &j, const ClientStatus &cs) {
+  // Convert raw binary board_id bytes to hex string representation
+  // Always convert exactly 8 bytes (PICO_UNIQUE_BOARD_ID_SIZE_BYTES)
+  std::ostringstream hex_stream;
+  hex_stream << std::hex << std::setfill('0');
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ClientStatus, client_id, last_status_time, board_id);
+  for (size_t i = 0; i < PICO_UNIQUE_BOARD_ID_SIZE_BYTES; i++) {
+    hex_stream << std::setw(2) << static_cast<unsigned int>(static_cast<unsigned char>(cs.board_id[i]));
+  }
+
+  j = json{{"client_id", cs.client_id},
+           {"last_status_time", cs.last_status_time},
+           {"board_id", hex_stream.str()}};
+}
 
 } // namespace beatled::core
 

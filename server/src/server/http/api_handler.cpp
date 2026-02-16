@@ -245,6 +245,7 @@ APIHandler::req_status_t APIHandler::on_get_devices(const req_handle_t &req,
   json devices = json::array();
   for (const auto &cs : clients) {
     json device = *cs;
+    // Add ip_address (not included in NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE)
     device["ip_address"] = cs->ip_address.to_string();
     devices.push_back(device);
   }

@@ -35,6 +35,7 @@ Commands:
   pico                Build (if needed) and run the Pico firmware (posix port)
   test [component]    Run tests (server, client, pico, or all)
   build [component]   Build without running (server, client, pico, rpi, or all)
+  clean [component]   Clean build artifacts (server, client, pico, or all)
   deploy <user> <host> Deploy the RPi build to a Raspberry Pi via SSH
   ios [subcommand]    iOS/macOS commands (open, build, sim, mac). Default: open
   docs                Start the Jekyll docs site locally
@@ -69,6 +70,7 @@ build_server() {
     cmake -G Ninja \
       -DCMAKE_TOOLCHAIN_FILE="$VCPKG_DIR/scripts/buildsystems/vcpkg.cmake" \
       -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
       -B "$SERVER_BUILD_DIR" \
       -S "$SERVER_DIR"
   fi
@@ -115,6 +117,34 @@ build_pico() {
   info "Building pico (posix)..."
   cmake --build "$PICO_BUILD_DIR"
   ok "Pico build complete"
+}
+
+# --- Clean helpers ---
+
+clean_server() {
+  if [ -d "$SERVER_BUILD_DIR" ]; then
+    info "Cleaning server build..."
+    rm -rf "$SERVER_BUILD_DIR"
+    ok "Server build cleaned"
+  else
+    info "Server build directory does not exist (already clean)"
+  fi
+}
+
+clean_client() {
+  info "Cleaning client build..."
+  (cd "$CLIENT_DIR" && rm -rf dist node_modules/.vite)
+  ok "Client build cleaned"
+}
+
+clean_pico() {
+  if [ -d "$PICO_BUILD_DIR" ]; then
+    info "Cleaning pico build..."
+    rm -rf "$PICO_BUILD_DIR"
+    ok "Pico build cleaned"
+  else
+    info "Pico build directory does not exist (already clean)"
+  fi
 }
 
 # --- Commands ---
@@ -225,6 +255,26 @@ cmd_build() {
       ;;
     *)
       error "Unknown build component: $component (use server, client, pico, rpi, or all)"
+      exit 1
+      ;;
+  esac
+}
+
+cmd_clean() {
+  local component="${1:-all}"
+
+  case "$component" in
+    server)  clean_server ;;
+    client)  clean_client ;;
+    pico)    clean_pico ;;
+    all)
+      clean_server
+      clean_client
+      clean_pico
+      ok "All build artifacts cleaned"
+      ;;
+    *)
+      error "Unknown clean component: $component (use server, client, pico, or all)"
       exit 1
       ;;
   esac
@@ -433,6 +483,7 @@ case "$COMMAND" in
   pico)         cmd_pico "$@" ;;
   test)         cmd_test "$@" ;;
   build)        cmd_build "$@" ;;
+  clean)        cmd_clean "$@" ;;
   deploy)       cmd_deploy "$@" ;;
   ios)          cmd_ios "$@" ;;
   docs)         cmd_docs "$@" ;;
