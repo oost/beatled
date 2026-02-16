@@ -31,7 +31,7 @@ private:
   bool m_no_tls{false};
   std::uint16_t m_http_port{8443};
   std::uint16_t m_udp_port{9090};
-  std::string m_broadcasting_address{"192.168.86.255"};
+  std::string m_broadcasting_address{"255.255.255.255"};
   std::uint16_t m_broadcasting_port{8765};
   std::size_t m_pool_size{2};
   std::string m_root_dir{"."};
