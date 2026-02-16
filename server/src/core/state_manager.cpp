@@ -69,20 +69,32 @@ void StateManager::register_client(ClientStatus::Ptr client_status) {
 
   for (auto it = clients_.begin(); it != clients_.end();) {
     if (client_status->board_id == (*it)->board_id) {
-      // Same board reconnecting - update its registration
-      SPDLOG_INFO("Board {} was already registered. Updating registration",
-                  client_status->board_id.data());
-      it = clients_.erase(it);
-      continue;
+      // Same board reconnecting
+      if (client_status->ip_address == (*it)->ip_address) {
+        // Same board, same IP: just update timestamp (lightweight heartbeat)
+        (*it)->last_status_time = client_status->last_status_time;
+        SPDLOG_DEBUG("Board {} heartbeat from {}",
+                     client_status->board_id.data(),
+                     client_status->ip_address.to_string());
+        return;  // Don't add new registration
+      } else {
+        // Same board, different IP: board changed networks, replace registration
+        SPDLOG_INFO("Board {} changed IP from {} to {}",
+                    client_status->board_id.data(),
+                    (*it)->ip_address.to_string(),
+                    client_status->ip_address.to_string());
+        it = clients_.erase(it);
+        continue;
+      }
     }
     if (client_status->ip_address == (*it)->ip_address) {
-      // IP conflict: different board trying to use same IP
-      // Keep existing registration, reject new registration attempt
-      SPDLOG_WARN("IP {} already registered to board {}. Rejecting registration "
-                  "for board {} to prevent IP conflict",
-                  client_status->ip_address.to_string(), (*it)->board_id.data(),
-                  client_status->board_id.data());
-      return;  // Don't add the new registration
+      // Different board, same IP: new board took over IP, keep newest
+      SPDLOG_INFO("IP {} has new board {}. Replacing old board {}",
+                  client_status->ip_address.to_string(),
+                  client_status->board_id.data(),
+                  (*it)->board_id.data());
+      it = clients_.erase(it);
+      continue;
     }
     it++;
   }
