@@ -11,6 +11,8 @@ readonly SERVER_BUILD_DIR="$SERVER_DIR/build"
 readonly CLIENT_DIR="$PROJECT_DIR/client"
 readonly PICO_DIR="${PICO_DIR:-$HOME/coding/projects/beatled-pico}"
 readonly PICO_BUILD_DIR="$PICO_DIR/build"
+readonly PICO_FREERTOS_BUILD_DIR="$PICO_DIR/build_posix_freertos"
+readonly NUM_PIXELS="${NUM_PIXELS:-30}"
 
 # --- Colors ---
 readonly RED='\033[0;31m'
@@ -33,9 +35,10 @@ Commands:
   client              Start the Vite dev server (with proxy to beat server)
   client-build        Build the client for production
   pico                Build (if needed) and run the Pico firmware (posix port)
+  pico-freertos       Build (if needed) and run the Pico firmware (posix_freertos port)
   test [component]    Run tests (server, client, pico, or all)
-  build [component]   Build without running (server, client, pico, rpi, or all)
-  clean [component]   Clean build artifacts (server, client, pico, or all)
+  build [component]   Build without running (server, client, pico, pico-freertos, rpi, or all)
+  clean [component]   Clean build artifacts (server, client, pico, pico-freertos, or all)
   deploy <user> <host> Deploy the RPi build to a Raspberry Pi via SSH
   ios [subcommand]    iOS/macOS commands (open, build, sim, mac). Default: open
   docs                Start the Jekyll docs site locally
@@ -108,6 +111,7 @@ build_pico() {
     info "Configuring pico build (posix port, first time)..."
     cmake \
       -DPORT=posix \
+      -DNUM_PIXELS="$NUM_PIXELS" \
       -DCMAKE_TOOLCHAIN_FILE="$VCPKG_DIR/scripts/buildsystems/vcpkg.cmake" \
       -DCMAKE_BUILD_TYPE=Debug \
       -B "$PICO_BUILD_DIR" \
@@ -117,6 +121,29 @@ build_pico() {
   info "Building pico (posix)..."
   cmake --build "$PICO_BUILD_DIR"
   ok "Pico build complete"
+}
+
+build_pico_freertos() {
+  if [ ! -d "$PICO_DIR" ]; then
+    error "Pico directory not found: $PICO_DIR"
+    error "Set PICO_DIR to your beatled-pico checkout"
+    exit 1
+  fi
+
+  if [ ! -d "$PICO_FREERTOS_BUILD_DIR" ]; then
+    info "Configuring pico build (posix_freertos port, first time)..."
+    cmake \
+      -DPORT=posix_freertos \
+      -DNUM_PIXELS="$NUM_PIXELS" \
+      -DCMAKE_TOOLCHAIN_FILE="$VCPKG_DIR/scripts/buildsystems/vcpkg.cmake" \
+      -DCMAKE_BUILD_TYPE=Debug \
+      -B "$PICO_FREERTOS_BUILD_DIR" \
+      -S "$PICO_DIR"
+  fi
+
+  info "Building pico (posix_freertos)..."
+  cmake --build "$PICO_FREERTOS_BUILD_DIR"
+  ok "Pico FreeRTOS build complete"
 }
 
 # --- Clean helpers ---
@@ -144,6 +171,16 @@ clean_pico() {
     ok "Pico build cleaned"
   else
     info "Pico build directory does not exist (already clean)"
+  fi
+}
+
+clean_pico_freertos() {
+  if [ -d "$PICO_FREERTOS_BUILD_DIR" ]; then
+    info "Cleaning pico FreeRTOS build..."
+    rm -rf "$PICO_FREERTOS_BUILD_DIR"
+    ok "Pico FreeRTOS build cleaned"
+  else
+    info "Pico FreeRTOS build directory does not exist (already clean)"
   fi
 }
 
@@ -201,6 +238,19 @@ cmd_pico() {
   exec "$BIN" "$@"
 }
 
+cmd_pico_freertos() {
+  build_pico_freertos
+
+  local BIN="$PICO_FREERTOS_BUILD_DIR/src/pico_w_beatled.app/Contents/MacOS/pico_w_beatled"
+  if [ ! -f "$BIN" ]; then
+    # Fallback for non-macOS
+    BIN="$PICO_FREERTOS_BUILD_DIR/src/pico_w_beatled"
+  fi
+
+  info "Starting pico firmware (posix_freertos)..."
+  exec "$BIN" "$@"
+}
+
 cmd_test() {
   local component="${1:-all}"
 
@@ -244,17 +294,19 @@ cmd_build() {
   local component="${1:-all}"
 
   case "$component" in
-    server)  build_server ;;
-    client)  build_client ;;
-    pico)    build_pico ;;
-    rpi)     build_rpi ;;
+    server)         build_server ;;
+    client)         build_client ;;
+    pico)           build_pico ;;
+    pico-freertos)  build_pico_freertos ;;
+    rpi)            build_rpi ;;
     all)
       build_server
       build_client
       build_pico
+      build_pico_freertos
       ;;
     *)
-      error "Unknown build component: $component (use server, client, pico, rpi, or all)"
+      error "Unknown build component: $component (use server, client, pico, pico-freertos, rpi, or all)"
       exit 1
       ;;
   esac
@@ -264,17 +316,19 @@ cmd_clean() {
   local component="${1:-all}"
 
   case "$component" in
-    server)  clean_server ;;
-    client)  clean_client ;;
-    pico)    clean_pico ;;
+    server)         clean_server ;;
+    client)         clean_client ;;
+    pico)           clean_pico ;;
+    pico-freertos)  clean_pico_freertos ;;
     all)
       clean_server
       clean_client
       clean_pico
+      clean_pico_freertos
       ok "All build artifacts cleaned"
       ;;
     *)
-      error "Unknown clean component: $component (use server, client, pico, or all)"
+      error "Unknown clean component: $component (use server, client, pico, pico-freertos, or all)"
       exit 1
       ;;
   esac
@@ -480,8 +534,9 @@ case "$COMMAND" in
   server)       cmd_server "$@" ;;
   client)       cmd_client "$@" ;;
   client-build) cmd_client_build "$@" ;;
-  pico)         cmd_pico "$@" ;;
-  test)         cmd_test "$@" ;;
+  pico)          cmd_pico "$@" ;;
+  pico-freertos) cmd_pico_freertos "$@" ;;
+  test)          cmd_test "$@" ;;
   build)        cmd_build "$@" ;;
   clean)        cmd_clean "$@" ;;
   deploy)       cmd_deploy "$@" ;;
