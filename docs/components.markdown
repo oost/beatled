@@ -12,7 +12,7 @@ Beatled consists of four main components that work together to deliver real-time
 | Component | Technology | Description |
 |-----------|-----------|-------------|
 | [Beat Server](server.html) | C++ (CMake, ASIO, PortAudio) | Audio capture, beat detection, UDP broadcast, HTTPS API |
-| [Pico Firmware](pico.html) | C (Pico SDK) | Dual-core: networking on Core 0, LED rendering on Core 1 |
+| [Pico Firmware](pico.html) | C (Pico SDK, ESP-IDF, POSIX) | Multi-platform: Pico W, ESP32, macOS simulator. 5 ports with shared HAL |
 | [Web Controller](client.html) | React 18, TypeScript, Vite | PWA dashboard for tempo monitoring and LED program control |
 | [iOS Controller](ios.html) | SwiftUI, Swift Charts | Native iOS app for monitoring and control |
 

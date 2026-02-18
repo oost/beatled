@@ -24,10 +24,10 @@ graph TB
         UI[React SPA] <-->|HTTPS| HTTP
     end
 
-    subgraph Pico["Pico W Devices"]
-        P1[Pico W #1] <-->|UDP Unicast| UDP_S
+    subgraph Devices["LED Devices"]
+        P1[Pico W] <-->|UDP Unicast| UDP_S
         P1 -.->|Receives| BC
-        P2[Pico W #2] <-->|UDP Unicast| UDP_S
+        P2[ESP32] <-->|UDP Unicast| UDP_S
         P2 -.->|Receives| BC
         P1 --> LED1[WS2812 LEDs]
         P2 --> LED2[WS2812 LEDs]
@@ -73,19 +73,20 @@ A single-page application served by the beat server over HTTPS:
 | Build | Vite 7 |
 | PWA | vite-plugin-pwa (offline support) |
 
-### Pico Firmware (C)
+### LED Device Firmware (C)
 
-Firmware running on Raspberry Pi Pico W microcontrollers:
+Firmware running on Raspberry Pi Pico W and ESP32 microcontrollers. A 10-module HAL allows the same application code to compile for 5 targets: `pico`, `pico_freertos`, `posix`, `posix_freertos`, and `esp32`.
 
-- **Dual-core architecture**: Core 0 handles networking, Core 1 drives LEDs
+- **Dual-core architecture**: Core 0 handles networking, Core 1 drives LEDs (single-core chips share via FreeRTOS scheduling)
 - **State machine**: STARTED -> INITIALIZED -> REGISTERED -> TIME_SYNCED -> TEMPO_SYNCED
 - **NTP-style time sync** with the server for precise beat alignment
 - **8 LED patterns**: snakes, random, sparkle, greys, drops, solid, fade, fade color
 - **Inter-core communication** via shared registry with mutex protection
+- **Platform support**: Pico W (PIO+DMA), ESP32-S3/C3 (RMT), macOS (Metal simulation)
 
-## Pico W State Machine
+## Device State Machine
 
-Each Pico W device follows this state machine for synchronization:
+Each device follows this state machine for synchronization:
 
 ```mermaid
 stateDiagram-v2
@@ -135,7 +136,7 @@ sequenceDiagram
     end
 ```
 
-## Pico W Dual-Core Architecture
+## Dual-Core Architecture
 
 ```mermaid
 graph LR
@@ -177,5 +178,7 @@ All POST endpoints validate request body size (max 4KB) and required JSON fields
 
 - **Server**: CMake + vcpkg, cross-compiled for ARM via Docker
 - **Client**: Vite + React, bundled as static assets served by the server
-- **Pico**: CMake + Pico SDK, compiled to UF2 firmware
-- **Deployment**: systemd service on Raspberry Pi, UF2 flash for Picos
+- **Pico W**: CMake + Pico SDK, compiled to UF2 firmware
+- **ESP32**: ESP-IDF (`idf.py build`), flashed via USB serial
+- **POSIX**: CMake native build for macOS/Linux development
+- **Deployment**: systemd service on Raspberry Pi, UF2 flash for Picos, serial flash for ESP32
