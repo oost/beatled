@@ -1,16 +1,22 @@
 # Beatled
 
+Real-time beat-synchronized LED control using a Raspberry Pi server, Pico W / ESP32 microcontrollers, and a React web dashboard.
+
 ## Prerequisites
 
-- A Raspberry Pi 4 or 5
-- One or more Raspberry Pico
-- A Unix/Linux based machine (not strictly necessary but it may be easier to use your laptop to cross compile the code)
+- A Raspberry Pi 4 or 5 (server)
+- One or more Pico W or ESP32 devices with WS2812 LED strips
+- macOS or Linux for local development
 
 ## Repos
 
-- This repo contains the C++ server code and the React frontend.
-- The [Beatled Pico](https://github.com/oost/beatled-pico) repo contains the Pico C code to be flashed on your Pico devices.
-- The [Beatled Beat Tracker](https://github.com/oost/beatled-beat-tracker) repo contains a fork from [BTrack](https://github.com/adamstark/BTrack) that is used for live beat tracking.
+- **This repo** — C++ beat server, React frontend, iOS app, and project documentation
+- [**beatled-pico**](https://github.com/oost/beatled-pico) — Embedded C firmware for Pico W and ESP32 (5 ports: `pico`, `pico_freertos`, `posix`, `posix_freertos`, `esp32`)
+- [**beatled-beat-tracker**](https://github.com/oost/beatled-beat-tracker) — Fork of [BTrack](https://github.com/adamstark/BTrack) for live beat tracking
+
+## Documentation
+
+Full documentation: [oost.github.io/beatled](https://oost.github.io/beatled/)
 
 ## Local Development
 
@@ -30,6 +36,7 @@ scripts/beatled.sh <command> [options]
 | `beatled.sh client` | Start the Vite dev server (proxies `/api` to the beat server) |
 | `beatled.sh client-build` | Production build of the React client |
 | `beatled.sh pico` | Build and run the Pico firmware locally (posix port) |
+| `beatled.sh pico-freertos` | Build and run the Pico firmware locally (posix_freertos port) |
 | `beatled.sh test all` | Run all tests (server + client + pico) |
 | `beatled.sh test server` | Run server tests only |
 | `beatled.sh build all` | Build everything without running |
