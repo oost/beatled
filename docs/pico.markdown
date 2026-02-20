@@ -68,18 +68,25 @@ brew install minicom                    # serial monitor (optional)
 
 ### Build
 
-Set the environment variables for your network and server, then configure and build:
+Copy the template and fill in your values:
+
+```bash
+cp .env.pico.template .env.pico
+# edit .env.pico with your WIFI_SSID, WIFI_PASSWORD, BEATLED_SERVER_NAME, NUM_PIXELS, WS2812_PIN
+```
+
+Then configure and build:
 
 ```bash
 export PICO_TOOLCHAIN_PATH="/Applications/ArmGNUToolchain/12.2.rel1/arm-none-eabi"
-export BEATLED_SERVER_NAME="raspberrypi1.local"
-export WIFI_SSID="your-wifi"
-export WIFI_PASSWORD="your-password"
+source .env.pico   # sets WIFI_SSID, WIFI_PASSWORD, BEATLED_SERVER_NAME, NUM_PIXELS, WS2812_PIN
 
 cmake -B build-pico \
   -DPORT=pico \
   -DPICO_BOARD=pico_w \
-  -DPICO_SDK_PATH=lib/pico-sdk
+  -DPICO_SDK_PATH=lib/pico-sdk \
+  -DNUM_PIXELS=$NUM_PIXELS \
+  -DWS2812_PIN=$WS2812_PIN
 
 cmake --build build-pico
 ```
@@ -92,7 +99,9 @@ For the FreeRTOS variant (uses FreeRTOS SMP instead of bare-metal multicore):
 cmake -B build-pico-freertos \
   -DPORT=pico_freertos \
   -DPICO_BOARD=pico_w \
-  -DPICO_SDK_PATH=lib/pico-sdk
+  -DPICO_SDK_PATH=lib/pico-sdk \
+  -DNUM_PIXELS=$NUM_PIXELS \
+  -DWS2812_PIN=$WS2812_PIN
 
 cmake --build build-pico-freertos
 ```
@@ -123,7 +132,7 @@ The ESP32 port uses a separate ESP-IDF project wrapper in the `esp32/` directory
 
 ### Dependencies
 
-Install [ESP-IDF v5.x](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/get-started/index.html):
+Install [ESP-IDF v5.x or later](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/get-started/index.html):
 
 ```bash
 mkdir -p ~/esp
@@ -136,21 +145,39 @@ cd esp-idf
 
 ### Build
 
+Copy the template and fill in your values:
+
+```bash
+cp .env.esp32.template .env.esp32
+# edit .env.esp32 with WIFI_SSID, WIFI_PASSWORD, BEATLED_SERVER_NAME, ESP32_TARGET, ESP32_PORT, NUM_PIXELS, WS2812_PIN
+```
+
+Then build and flash using the project script from the `beatled` repo:
+
+```bash
+scripts/beatled.sh flash-esp32
+```
+
+Or manually:
+
 ```bash
 cd esp32
+source ../.env.esp32
 
-export WIFI_SSID="your-wifi"
-export WIFI_PASSWORD="your-password"
-export BEATLED_SERVER_NAME="192.168.1.100"
-export NUM_PIXELS=30
-
-idf.py set-target esp32s3   # or esp32, esp32c3
-idf.py build
+idf.py set-target $ESP32_TARGET
+WIFI_SSID="$WIFI_SSID" WIFI_PASSWORD="$WIFI_PASSWORD" \
+  BEATLED_SERVER_NAME="$BEATLED_SERVER_NAME" \
+  NUM_PIXELS="$NUM_PIXELS" WS2812_PIN="$WS2812_PIN" \
+  idf.py build flash monitor -p $ESP32_PORT
 ```
 
 ### Flash & Monitor
 
 ```bash
+# macOS
+idf.py flash monitor -p /dev/cu.usbmodem101
+
+# Linux
 idf.py flash monitor -p /dev/ttyUSB0
 ```
 
@@ -176,11 +203,23 @@ brew install cmake
 
 ### Build
 
+Copy the template and fill in your values:
+
+```bash
+cp .env.pico.template .env.pico
+# edit .env.pico — BEATLED_SERVER_NAME defaults to localhost if unset
+source .env.pico
+```
+
+Then build:
+
 ```bash
 cmake -B build \
   -DPORT=posix \
   -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" \
-  -DCMAKE_BUILD_TYPE=Debug
+  -DCMAKE_BUILD_TYPE=Debug \
+  -DNUM_PIXELS=$NUM_PIXELS \
+  -DWS2812_PIN=$WS2812_PIN
 
 cmake --build build
 ```
@@ -191,7 +230,9 @@ For the FreeRTOS variant (runs a FreeRTOS POSIX simulator to validate RTOS-speci
 cmake -B build_posix_freertos \
   -DPORT=posix_freertos \
   -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" \
-  -DCMAKE_BUILD_TYPE=Debug
+  -DCMAKE_BUILD_TYPE=Debug \
+  -DNUM_PIXELS=$NUM_PIXELS \
+  -DWS2812_PIN=$WS2812_PIN
 
 cmake --build build_posix_freertos
 ```
@@ -202,14 +243,14 @@ cmake --build build_posix_freertos
 ./build/src/pico_w_beatled.app/Contents/MacOS/pico_w_beatled
 ```
 
-Or using the project utility script from the `beatled` repo:
+Or using the project utility script from the `beatled` repo (reads `.env.pico` automatically):
 
 ```bash
 scripts/beatled.sh pico              # posix port
 scripts/beatled.sh pico-freertos     # posix_freertos port
 ```
 
-By default, the POSIX port connects to `localhost`. Set `BEATLED_SERVER_NAME` before configuring to override.
+By default, the POSIX port connects to `localhost`. Set `BEATLED_SERVER_NAME` in `.env.pico` to override.
 
 ### Running Tests
 
@@ -290,7 +331,7 @@ Each port sets one or more of these defines for conditional compilation:
 | **registry** | Shared state with mutex | `registry_lock_mutex()`, `registry_unlock_mutex()` |
 | **runtime** | Application startup | `startup(main_fn)` |
 | **time** | Microsecond clock + alarms | `time_us_64()`, `hal_add_repeating_timer()` |
-| **wifi** | WiFi management | `wifi_init()`, `wifi_check(ssid, password)` |
+| **wifi** | WiFi management | `hal_wifi_init()`, `wifi_check(ssid, password)` |
 | **ws2812** | LED strip driver | `ws2812_init()`, `output_strings_dma(pixels)` |
 
 ### Implementation Per Port

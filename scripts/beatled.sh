@@ -12,7 +12,6 @@ readonly CLIENT_DIR="$PROJECT_DIR/client"
 readonly PICO_DIR="${PICO_DIR:-$HOME/coding/projects/beatled-pico}"
 readonly PICO_BUILD_DIR="$PICO_DIR/build"
 readonly PICO_FREERTOS_BUILD_DIR="$PICO_DIR/build_posix_freertos"
-readonly NUM_PIXELS="${NUM_PIXELS:-30}"
 
 # --- Colors ---
 readonly RED='\033[0;31m'
@@ -41,6 +40,8 @@ Commands:
   clean [component]   Clean build artifacts (server, client, pico, pico-freertos, or all)
   deploy <user> <host> Deploy the RPi build to a Raspberry Pi via SSH
   ios [subcommand]    iOS/macOS commands (open, build, sim, mac). Default: open
+  flash-esp32         Build and flash ESP32 firmware (reads $PICO_DIR/.env.esp32)
+  monitor-esp32       Open serial monitor for ESP32 (reads $PICO_DIR/.env.esp32)
   docs                Start the Jekyll docs site locally
   certs [domain ...]  Generate locally-trusted development certificates for the given domains (default: oost.test)
 
@@ -107,11 +108,14 @@ build_pico() {
     exit 1
   fi
 
+  load_pico_env
+
   if [ ! -d "$PICO_BUILD_DIR" ]; then
     info "Configuring pico build (posix port, first time)..."
     cmake \
       -DPORT=posix \
       -DNUM_PIXELS="$NUM_PIXELS" \
+      -DWS2812_PIN="$WS2812_PIN" \
       -DCMAKE_TOOLCHAIN_FILE="$VCPKG_DIR/scripts/buildsystems/vcpkg.cmake" \
       -DCMAKE_BUILD_TYPE=Debug \
       -B "$PICO_BUILD_DIR" \
@@ -130,11 +134,14 @@ build_pico_freertos() {
     exit 1
   fi
 
+  load_pico_env
+
   if [ ! -d "$PICO_FREERTOS_BUILD_DIR" ]; then
     info "Configuring pico build (posix_freertos port, first time)..."
     cmake \
       -DPORT=posix_freertos \
       -DNUM_PIXELS="$NUM_PIXELS" \
+      -DWS2812_PIN="$WS2812_PIN" \
       -DCMAKE_TOOLCHAIN_FILE="$VCPKG_DIR/scripts/buildsystems/vcpkg.cmake" \
       -DCMAKE_BUILD_TYPE=Debug \
       -B "$PICO_FREERTOS_BUILD_DIR" \
@@ -506,6 +513,56 @@ sys.exit(1)
   esac
 }
 
+load_pico_env() {
+  local env_file="$PICO_DIR/.env.pico"
+  if [[ ! -f "$env_file" ]]; then
+    error "Pico env file not found: $env_file"
+    error "Copy .env.pico.template to .env.pico and fill in your values"
+    exit 1
+  fi
+  # shellcheck disable=SC1090
+  set -a; source "$env_file"; set +a
+}
+
+load_esp32_env() {
+  local env_file="$PICO_DIR/.env.esp32"
+  if [[ ! -f "$env_file" ]]; then
+    error "ESP32 env file not found: $env_file"
+    error "Create it with WIFI_SSID, WIFI_PASSWORD, BEATLED_SERVER_NAME, ESP32_TARGET, ESP32_PORT"
+    exit 1
+  fi
+  # shellcheck disable=SC1090
+  set -a; source "$env_file"; set +a
+}
+
+cmd_flash_esp32() {
+  if [ ! -d "$PICO_DIR" ]; then
+    error "Pico directory not found: $PICO_DIR"
+    error "Set PICO_DIR to your beatled-pico checkout"
+    exit 1
+  fi
+  load_esp32_env
+  info "Building and flashing ESP32 (target: $ESP32_TARGET, port: $ESP32_PORT)..."
+  (cd "$PICO_DIR/esp32" && \
+    idf.py set-target "$ESP32_TARGET" && \
+    WIFI_SSID="$WIFI_SSID" \
+    WIFI_PASSWORD="$WIFI_PASSWORD" \
+    BEATLED_SERVER_NAME="$BEATLED_SERVER_NAME" \
+    WS2812_PIN="$WS2812_PIN" \
+      idf.py build flash monitor -p "$ESP32_PORT")
+}
+
+cmd_monitor_esp32() {
+  if [ ! -d "$PICO_DIR" ]; then
+    error "Pico directory not found: $PICO_DIR"
+    error "Set PICO_DIR to your beatled-pico checkout"
+    exit 1
+  fi
+  load_esp32_env
+  info "Opening ESP32 serial monitor (port: $ESP32_PORT)..."
+  (cd "$PICO_DIR/esp32" && idf.py monitor -p "$ESP32_PORT")
+}
+
 cmd_docs() {
   local DOCS_DIR="$PROJECT_DIR/docs"
   info "Starting Jekyll docs site..."
@@ -541,6 +598,8 @@ case "$COMMAND" in
   clean)        cmd_clean "$@" ;;
   deploy)       cmd_deploy "$@" ;;
   ios)          cmd_ios "$@" ;;
+  flash-esp32)   cmd_flash_esp32 "$@" ;;
+  monitor-esp32) cmd_monitor_esp32 "$@" ;;
   docs)         cmd_docs "$@" ;;
   certs)        cmd_certs "$@" ;;
   help|-h|--help) usage ;;
