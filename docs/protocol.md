@@ -1,12 +1,13 @@
 ---
 title: Beatled Protocol
 layout: default
-nav_order: 6
+parent: Server ↔ Controller Communication
+nav_order: 1
 ---
 
 # Beatled Protocol
 
-Binary UDP protocol for communication between the server (Raspberry Pi 4) and Pico W devices.
+Binary UDP protocol for communication between the server (Raspberry Pi 4) and LED controllers (Pico W, ESP32, or POSIX simulator).
 
 ## Transport
 
@@ -68,7 +69,7 @@ Sent by the server when a request cannot be processed.
 
 ### HELLO_REQUEST (1)
 
-Sent by a Pico W device to register with the server. Contains the device's unique board ID as a hex string.
+Sent by a controller to register with the server. Contains the device's unique board ID as a hex string.
 
 | Offset | Field | Type | Description |
 |--------|-------|------|-------------|
@@ -209,12 +210,42 @@ Broadcast to all devices when a beat is detected. Informational — devices prim
 
 ---
 
-## Synchronization Flow
+## Synchronization Sequence
 
-1. **Registration**: Device sends HELLO_REQUEST with its board ID. Server responds with HELLO_RESPONSE containing an assigned client_id. The server tracks the device's address for future unicast messages.
+Controllers follow a four-phase startup sequence before LEDs become active:
 
-2. **Time Sync**: Device performs multiple rounds of TIME_REQUEST/TIME_RESPONSE exchanges to establish a clock offset between device and server clocks. This offset allows the device to convert server timestamps to local time for precise LED scheduling.
+```mermaid
+sequenceDiagram
+    participant C as Controller
+    participant S as Server
 
-3. **Tempo Sync**: Device sends TEMPO_REQUEST. Server responds with TEMPO_RESPONSE containing the current beat reference time, period, and program.
+    Note over C: STATE: INITIALIZED
+    C->>S: HELLO_REQUEST (board_id)
+    S->>C: HELLO_RESPONSE (client_id)
+    Note over C: STATE: REGISTERED
+
+    loop Time Sync
+        C->>S: TIME_REQUEST (orig_time)
+        S->>C: TIME_RESPONSE (orig, recv, xmit)
+        Note over C: Calculate clock offset
+    end
+    Note over C: STATE: TIME_SYNCED
+
+    C->>S: TEMPO_REQUEST
+    S->>C: TEMPO_RESPONSE (beat_ref, period, program)
+    Note over C: STATE: TEMPO_SYNCED
+
+    loop Steady State
+        S->>C: NEXT_BEAT (beat_ref, period, count, program)
+        Note over C: Schedule LED update at beat_ref
+        S-->>C: BEAT (broadcast, informational)
+    end
+```
+
+1. **Registration**: Controller sends HELLO_REQUEST with its board ID. Server responds with HELLO_RESPONSE containing an assigned `client_id`. The server tracks the device's address for future unicast messages.
+
+2. **Time Sync**: Controller performs multiple rounds of TIME_REQUEST/TIME_RESPONSE exchanges to establish a clock offset between device and server clocks. This offset allows the device to convert server timestamps to local time for precise LED scheduling.
+
+3. **Tempo Sync**: Controller sends TEMPO_REQUEST. Server responds with TEMPO_RESPONSE containing the current beat reference time, period, and program.
 
 4. **Steady State**: Server sends NEXT_BEAT messages (unicast) before each beat and BEAT messages (broadcast) at each beat detection. If the tempo changes significantly, the device may re-enter tempo sync (TEMPO_SYNCED → TEMPO_SYNCED self-transition).

@@ -1,11 +1,11 @@
 ---
-title: iOS & macOS Controller
+title: iOS & macOS
 layout: default
-parent: Components
-nav_order: 4
+parent: Clients
+nav_order: 2
 ---
 
-# iOS & macOS Controller
+# iOS & macOS Client
 
 Source code: [github.com/oost/beatled](https://github.com/oost/beatled) (`ios/`)
 
@@ -76,17 +76,17 @@ xcodegen generate --spec ios/project.yml --project ios/
 ### Build and run
 
 ```bash
-# Open in Xcode
-scripts/beatled.sh ios
-
 # Build iOS (simulator)
-scripts/beatled.sh ios build
+scripts/beatled.sh client ios build
 
 # Build and run in iOS Simulator
-scripts/beatled.sh ios sim
+scripts/beatled.sh client ios sim
+
+# Build macOS app
+scripts/beatled.sh client macos build
 
 # Build and run macOS app
-scripts/beatled.sh ios mac
+scripts/beatled.sh client macos start
 ```
 
 ### Self-Signed Certificates

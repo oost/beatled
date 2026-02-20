@@ -1,17 +1,17 @@
 ---
-title: Beatled Pico
+title: Beatled Controller
 layout: default
 parent: Components
 nav_order: 2
 ---
 
-# Beatled Pico
+# Beatled Controller
 
 Source code: [github.com/oost/beatled-pico](https://github.com/oost/beatled-pico)
 
-Beatled Pico is embedded C firmware that runs on **Raspberry Pi Pico W**, **ESP32**, and as a native **macOS/Linux** application for development. The firmware connects to the Beatled server over WiFi and receives tempo data and control commands via a binary UDP protocol, driving WS2812 LED strips with beat-synchronized lighting patterns.
+Beatled Controller is embedded C firmware that drives WS2812 LED strips with beat-synchronized lighting patterns. It connects to the Beatled server over WiFi and receives tempo data and control commands via a binary UDP protocol.
 
-A Hardware Abstraction Layer (HAL) with 10 modules allows the same application code to compile and run across all targets.
+The firmware runs on **Raspberry Pi Pico W**, **ESP32**, and as a native **macOS/Linux** application for development. A Hardware Abstraction Layer (HAL) with 10 modules allows the same application code to compile and run across all targets.
 
 ## Supported Platforms
 
@@ -155,7 +155,7 @@ cp .env.esp32.template .env.esp32
 Then build and flash using the project script from the `beatled` repo:
 
 ```bash
-scripts/beatled.sh flash-esp32
+scripts/beatled.sh controller esp32-freertos flash
 ```
 
 Or manually:
@@ -189,7 +189,7 @@ On dual-core chips (ESP32, S3), the LED task is pinned to core 1 while networkin
 
 ## Building the POSIX Port (macOS)
 
-The POSIX port builds a native macOS executable that replaces Pico hardware APIs with POSIX equivalents (pthreads, UDP sockets) and renders a 3D LED ring simulation using Metal shaders.
+The POSIX port builds a native macOS executable that replaces hardware APIs with POSIX equivalents (pthreads, UDP sockets) and renders a 3D LED ring simulation using Metal shaders.
 
 ![Image](/beatled/assets/images/simulator-new.gif)
 
@@ -246,8 +246,8 @@ cmake --build build_posix_freertos
 Or using the project utility script from the `beatled` repo (reads `.env.pico` automatically):
 
 ```bash
-scripts/beatled.sh pico              # posix port
-scripts/beatled.sh pico-freertos     # posix_freertos port
+scripts/beatled.sh controller posix build       # posix port
+scripts/beatled.sh controller freertos-sim build # posix_freertos port
 ```
 
 By default, the POSIX port connects to `localhost`. Set `BEATLED_SERVER_NAME` in `.env.pico` to override.
@@ -281,6 +281,61 @@ The project ships with a ready-to-use VS Code debug configuration for the POSIX 
 5. Press **F5** or select the **(lldb) Launch** configuration
 
    This launches the POSIX executable under LLDB with full source-level debugging -- breakpoints, variable inspection, and stepping all work as expected.
+
+---
+
+## Device State Machine
+
+Each controller follows this state machine to establish synchronization with the server:
+
+```mermaid
+stateDiagram-v2
+    [*] --> STARTED
+    STARTED --> INITIALIZED: Board init complete
+    INITIALIZED --> REGISTERED: Hello response received
+    REGISTERED --> TIME_SYNCED: Time sync complete
+    TIME_SYNCED --> TEMPO_SYNCED: Tempo/NextBeat received
+    TEMPO_SYNCED --> TEMPO_SYNCED: Re-sync (new tempo data)
+```
+
+| State        | Description                                     |
+| ------------ | ----------------------------------------------- |
+| STARTED      | Initial state after power-on                    |
+| INITIALIZED  | WiFi connected, peripherals ready               |
+| REGISTERED   | Server acknowledged device (assigned client_id) |
+| TIME_SYNCED  | NTP-style clock offset established              |
+| TEMPO_SYNCED | Receiving beat data, LEDs active                |
+
+See [Server ↔ Controller Communication](../server-controller-communication.html) for the full message exchange sequence.
+
+---
+
+## Dual-Core Architecture
+
+On dual-core targets (Pico W, ESP32-S3), the firmware splits work across two cores to keep LED timing deterministic. On single-core targets (ESP32-C3) and the POSIX port, the same tasks run concurrently via FreeRTOS scheduling or pthreads.
+
+```mermaid
+graph LR
+    subgraph Core0["Core 0 - Network"]
+        EL[Event Loop] --> CMD[Command Handler]
+        CMD --> SM[State Manager]
+        UDP[UDP Listener] --> EQ[Event Queue]
+        EQ --> EL
+    end
+
+    subgraph IPC["Inter-core"]
+        ICQ[Intercore Queue]
+    end
+
+    subgraph Core1["Core 1 - LEDs"]
+        LP[LED Processor] --> WS[WS2812 Driver]
+        REG[Registry<br/>Shared State] --> LP
+    end
+
+    CMD -->|tempo, program updates| ICQ
+    ICQ --> LP
+    CMD -->|mutex-protected| REG
+```
 
 ---
 

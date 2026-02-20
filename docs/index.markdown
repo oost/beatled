@@ -20,29 +20,28 @@ The LED strips used are **WS2812** (also known as NeoPixel) -- addressable RGB L
 ```mermaid
 graph LR
     MIC["USB Mic"] --> PI["Raspberry Pi<br/>(Beat Server)"]
-    PI -->|UDP| P1["Pico W + LEDs"]
-    PI -->|UDP| P2["Pico W + LEDs"]
-    PI -->|UDP| P3["Pico W + LEDs"]
-    PI -->|HTTPS| WEB["Web Controller"]
-    PI -->|HTTPS| IOS["iOS Controller"]
+    PI -->|UDP| Controller_1["Pico W"] -- | LED Strip |
+    PI -->|UDP| Controller_2["ESP32"] -- | LED Strip |
+    PI -->|HTTPS| WEB["React (Web)"]
+    PI -->|HTTPS| IOS["iOS"]
+    PI -->|HTTPS| MACOS["macOS"]
 ```
 
 1. A **Raspberry Pi** captures audio from a USB microphone and runs real-time beat detection (BTrack algorithm)
-2. Beat timing is broadcast over **UDP** to all Pico W devices on the local network
-3. Each **Pico W** uses NTP-style time synchronization to align its clock with the server, then drives a WS2812 LED strip in sync with the beat
-4. A **web dashboard** or **iOS app** lets you monitor tempo, switch LED programs, and control services from your phone
+2. Beat timing is broadcast over **UDP** to all LED controllers on the local network
+3. Each **controller** (Pico W, ESP32, or POSIX simulator) uses NTP-style time synchronization to align its clock with the server, then drives a WS2812 LED strip in sync with the beat
+4. A **web, iOS, or macOS client** lets you monitor tempo, switch LED programs, and control services from your phone or computer
 
 ## Components
 
-| Component | Technology | Description |
-|-----------|-----------|-------------|
-| [Beat Server](server.html) | C++ (CMake, ASIO, PortAudio) | Audio capture, beat detection, UDP broadcast, HTTPS API |
-| [Web Controller](client.html) | React 18, TypeScript, Vite | PWA dashboard for tempo monitoring and LED program control |
-| [iOS Controller](ios.html) | SwiftUI, Swift Charts | Native iOS app for monitoring and control |
-| [Pico Firmware](pico.html) | C (Pico SDK) | Dual-core: networking on Core 0, LED rendering on Core 1 |
-| [Protocol](protocol.html) | Binary UDP | Packed structs for registration, time sync, and beat data |
+| Component                         | Technology                   | Description                                               |
+| --------------------------------- | ---------------------------- | --------------------------------------------------------- |
+| [Beat Server](server.html)        | C++ (CMake, ASIO, PortAudio) | Audio capture, beat detection, UDP broadcast, HTTPS API   |
+| [LED Controller](controller.html) | C (Pico SDK, ESP-IDF, POSIX) | Multi-platform firmware: Pico W, ESP32, macOS/Linux sim   |
+| [Clients](clients.html)           | React / SwiftUI              | Web, iOS, and macOS apps for monitoring and LED control   |
+| [Protocol](protocol.html)         | Binary UDP                   | Packed structs for registration, time sync, and beat data |
 
-See the [Architecture](architecture.html) page for detailed diagrams and the full synchronization sequence.
+See the [Architecture](architecture.html) page for detailed diagrams.
 
 ## Getting Started
 
@@ -52,8 +51,8 @@ Get the server, web client, and Pico simulator running locally in minutes -- no 
 
 ## Repositories
 
-| Repo | Description |
-|------|-------------|
-| [beatled](https://github.com/oost/beatled) | C++ server, React client, Docker build, and documentation |
-| [beatled-pico](https://github.com/oost/beatled-pico) | Pico W firmware (C) with posix test port |
+| Repo                                                                 | Description                                                                       |
+| -------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| [beatled](https://github.com/oost/beatled)                           | C++ server, React client, Docker build, and documentation                         |
+| [beatled-pico](https://github.com/oost/beatled-pico)                 | Pico W firmware (C) with posix test port                                          |
 | [beatled-beat-tracker](https://github.com/oost/beatled-beat-tracker) | Fork of [BTrack](https://github.com/adamstark/BTrack) for real-time beat tracking |

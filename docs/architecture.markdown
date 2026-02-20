@@ -15,16 +15,13 @@ graph TB
     subgraph Server["Raspberry Pi 4 - Server"]
         AI[Audio Input<br/>PortAudio] --> BD[BeatDetector<br/>BTrack]
         BD --> TS[Tempo State]
-        TS --> HTTP[HTTP/S Server<br/>:8443]
         TS --> UDP_S[UDP Server<br/>:9090]
         UDP_S --> BC[UDP Broadcast<br/>:8765]
+        TS --> HTTPS[HTTPS Server<br/>:8443]
     end
 
-    subgraph Client["React Client"]
-        UI[React SPA] <-->|HTTPS| HTTP
-    end
 
-    subgraph Devices["LED Devices"]
+    subgraph Devices["LED Controllers"]
         P1[Pico W] <-->|UDP Unicast| UDP_S
         P1 -.->|Receives| BC
         P2[ESP32] <-->|UDP Unicast| UDP_S
@@ -32,6 +29,11 @@ graph TB
         P1 --> LED1[WS2812 LEDs]
         P2 --> LED2[WS2812 LEDs]
     end
+
+    subgraph Client["Clients (React / iOS / macOS)"]
+        UI[React SPA/iOS/macOS] <--> |HTTPS| HTTPS
+    end
+
 ```
 
 ## Components
@@ -43,142 +45,50 @@ The central server running on a Raspberry Pi. Responsibilities:
 - **Audio capture** via PortAudio from a USB microphone
 - **Beat detection** using the BTrack algorithm (onset detection + tempo estimation)
 - **HTTPS API** (RESTinio + OpenSSL) for the web dashboard
-- **UDP broadcast** of tempo and beat timing to all Pico clients
-- **UDP server** for Pico client registration and time synchronization
+- **UDP broadcast** of tempo and beat timing to all controllers
+- **UDP server** for controller registration and time synchronization
 
-| Component | Description |
-|-----------|-------------|
-| `BeatDetector` | Wraps BTrack for real-time beat detection from audio input |
-| `AudioBufferPool` | Pre-allocated pool of audio buffers (zero-allocation in audio path) |
-| `UDPServer` | Handles device registration, time sync, and tempo distribution |
-| `HTTPServer` | REST API for the web client + static file serving |
-| `ServiceController` | Start/stop management for beat detector and other services |
+| Component           | Description                                                         |
+| ------------------- | ------------------------------------------------------------------- |
+| `BeatDetector`      | Wraps BTrack for real-time beat detection from audio input          |
+| `AudioBufferPool`   | Pre-allocated pool of audio buffers (zero-allocation in audio path) |
+| `UDPServer`         | Handles device registration, time sync, and tempo distribution      |
+| `HTTPServer`        | REST API for the web client + static file serving                   |
+| `ServiceController` | Start/stop management for beat detector and other services          |
 
-### Web Dashboard (React)
+### Clients
 
-A single-page application served by the beat server over HTTPS:
+Three client apps connect to the server over HTTPS:
 
-- Real-time tempo display with beat visualization (Chart.js)
-- Service control (start/stop beat detection, UDP broadcast)
-- LED program selection
-- Server log viewer
-- PWA-enabled for mobile access
+- **React (Web)**: Single-page application served by the beat server. Real-time tempo display, service control, LED program selection, PWA-enabled for mobile.
+- **iOS**: Native SwiftUI app. Same functionality as the web app in a native iOS experience.
+- **macOS**: Native SwiftUI app. Sidebar-based layout sharing the same SwiftUI views as the iOS app.
 
-| Layer | Technology |
-|-------|-----------|
-| UI Framework | React 18 + TypeScript |
-| Routing | React Router v6 (data loaders) |
-| Styling | Tailwind CSS 4 + shadcn/ui |
-| Charts | Chart.js + react-chartjs-2 |
-| Build | Vite 7 |
-| PWA | vite-plugin-pwa (offline support) |
+| Layer        | Technology                        |
+| ------------ | --------------------------------- |
+| UI Framework | React 18 + TypeScript             |
+| Routing      | React Router v6 (data loaders)    |
+| Styling      | Tailwind CSS 4 + shadcn/ui        |
+| Charts       | Chart.js + react-chartjs-2        |
+| Build        | Vite 7                            |
+| PWA          | vite-plugin-pwa (offline support) |
 
-### LED Device Firmware (C)
+### LED Controller Firmware (C)
 
 Firmware running on Raspberry Pi Pico W and ESP32 microcontrollers. A 10-module HAL allows the same application code to compile for 5 targets: `pico`, `pico_freertos`, `posix`, `posix_freertos`, and `esp32`.
 
 - **Dual-core architecture**: Core 0 handles networking, Core 1 drives LEDs (single-core chips share via FreeRTOS scheduling)
-- **State machine**: STARTED -> INITIALIZED -> REGISTERED -> TIME_SYNCED -> TEMPO_SYNCED
+- **State machine**: STARTED → INITIALIZED → REGISTERED → TIME_SYNCED → TEMPO_SYNCED
 - **NTP-style time sync** with the server for precise beat alignment
 - **8 LED patterns**: snakes, random, sparkle, greys, drops, solid, fade, fade color
 - **Inter-core communication** via shared registry with mutex protection
 - **Platform support**: Pico W (PIO+DMA), ESP32-S3/C3 (RMT), macOS (Metal simulation)
 
-## Device State Machine
-
-Each device follows this state machine for synchronization:
-
-```mermaid
-stateDiagram-v2
-    [*] --> STARTED
-    STARTED --> INITIALIZED: Board init complete
-    INITIALIZED --> REGISTERED: Hello response received
-    REGISTERED --> TIME_SYNCED: Time sync complete
-    TIME_SYNCED --> TEMPO_SYNCED: Tempo/NextBeat received
-    TEMPO_SYNCED --> TEMPO_SYNCED: Re-sync (new tempo data)
-```
-
-| State | Description |
-|-------|-------------|
-| STARTED | Initial state after power-on |
-| INITIALIZED | WiFi connected, peripherals ready |
-| REGISTERED | Server acknowledged device (assigned client_id) |
-| TIME_SYNCED | NTP-style clock offset established |
-| TEMPO_SYNCED | Receiving beat data, LEDs active |
-
-## Synchronization Sequence
-
-```mermaid
-sequenceDiagram
-    participant P as Pico W
-    participant S as Server
-
-    Note over P: STATE: INITIALIZED
-    P->>S: HELLO_REQUEST (board_id)
-    S->>P: HELLO_RESPONSE (client_id)
-    Note over P: STATE: REGISTERED
-
-    loop Time Sync
-        P->>S: TIME_REQUEST (orig_time)
-        S->>P: TIME_RESPONSE (orig, recv, xmit)
-        Note over P: Calculate clock offset
-    end
-    Note over P: STATE: TIME_SYNCED
-
-    P->>S: TEMPO_REQUEST
-    S->>P: TEMPO_RESPONSE (beat_ref, period, program)
-    Note over P: STATE: TEMPO_SYNCED
-
-    loop Steady State
-        S->>P: NEXT_BEAT (beat_ref, period, count, program)
-        Note over P: Schedule LED update at beat_ref
-        S-->>P: BEAT (broadcast, informational)
-    end
-```
-
-## Dual-Core Architecture
-
-```mermaid
-graph LR
-    subgraph Core0["Core 0 - Network"]
-        EL[Event Loop] --> CMD[Command Handler]
-        CMD --> SM[State Manager]
-        UDP[UDP Listener] --> EQ[Event Queue]
-        EQ --> EL
-    end
-
-    subgraph IPC["Inter-core"]
-        ICQ[Intercore Queue]
-    end
-
-    subgraph Core1["Core 1 - LEDs"]
-        LP[LED Processor] --> WS[WS2812 Driver]
-        REG[Registry<br/>Shared State] --> LP
-    end
-
-    CMD -->|tempo, program updates| ICQ
-    ICQ --> LP
-    CMD -->|mutex-protected| REG
-```
-
-## HTTP API (HTTPS, port 8443)
-
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `/api/status` | GET | Service status, tempo, client list |
-| `/api/service/control` | POST | Start/stop services |
-| `/api/tempo` | GET | Current tempo and time reference |
-| `/api/program` | GET/POST | Get/set LED program |
-| `/api/log` | GET | Server log tail |
-| `/api/devices` | GET | Connected device list with IPs and last seen time |
-
-All POST endpoints validate request body size (max 4KB) and required JSON fields. When `--api-token` is set, all endpoints require `Authorization: Bearer <token>`.
-
 ## Build & Deployment
 
 - **Server**: CMake + vcpkg, cross-compiled for ARM via Docker
-- **Client**: Vite + React, bundled as static assets served by the server
+- **Clients**: Vite + React (web), Xcode (iOS/macOS)
 - **Pico W**: CMake + Pico SDK, compiled to UF2 firmware
 - **ESP32**: ESP-IDF (`idf.py build`), flashed via USB serial
 - **POSIX**: CMake native build for macOS/Linux development
-- **Deployment**: systemd service on Raspberry Pi, UF2 flash for Picos, serial flash for ESP32
+- **Deployment**: systemd service on Raspberry Pi, UF2 flash for Pico W, serial flash for ESP32

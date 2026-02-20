@@ -1,11 +1,11 @@
 ---
-title: Web Controller
+title: React (Web)
 layout: default
-parent: Components
-nav_order: 3
+parent: Clients
+nav_order: 1
 ---
 
-# Web Controller
+# React (Web) Client
 
 Source code: [github.com/oost/beatled](https://github.com/oost/beatled) (`client/`)
 
@@ -37,10 +37,10 @@ A React single-page application for monitoring and controlling the Beatled syste
 
 ```bash
 # Start the Vite dev server with hot module replacement
-scripts/beatled.sh client
+scripts/beatled.sh client react dev
 
 # Production build
-scripts/beatled.sh client-build
+scripts/beatled.sh client react build
 
 # Run tests
 cd client && npm test

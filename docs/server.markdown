@@ -9,7 +9,7 @@ nav_order: 1
 
 Source code: [github.com/oost/beatled](https://github.com/oost/beatled) (`server/`)
 
-The beat server is a C++ application that captures audio, detects beats in real time, and distributes timing data to Pico W devices over UDP. It also serves an HTTPS REST API and the React web dashboard.
+The beat server is a C++ application that captures audio, detects beats in real time, and distributes timing data to LED controllers over UDP. It also serves an HTTPS REST API and the React web dashboard.
 
 ## Architecture
 
@@ -26,16 +26,16 @@ The beat server is a C++ application that captures audio, detects beats in real 
 
 ```bash
 # Build and start the HTTPS server with the web client
-scripts/beatled.sh server --start-http
+scripts/beatled.sh server start --start-http
 
-# With UDP server for Pico devices
-scripts/beatled.sh server --start-http --start-udp
+# With UDP server for LED controllers
+scripts/beatled.sh server start --start-http --start-udp
 
 # With CORS for the Vite dev server
-scripts/beatled.sh server --start-http --cors-origin "https://localhost:5173"
+scripts/beatled.sh server start --start-http --cors-origin "https://localhost:5173"
 
 # With Bearer token authentication
-scripts/beatled.sh server --start-http --api-token "secret"
+scripts/beatled.sh server start --start-http --api-token "secret"
 
 # Run server tests
 scripts/beatled.sh test server
@@ -107,7 +107,7 @@ Cross-compile for Raspberry Pi (ARM64) using Docker:
 ```bash
 git submodule update --init --recursive   # first time only
 scripts/beatled.sh build rpi
-scripts/beatled.sh deploy <username> <host>
+scripts/beatled.sh server deploy <username> <host>
 ```
 
 See the [Deployment](deployment.html) page for the full guide covering certificates, service management, and troubleshooting.
