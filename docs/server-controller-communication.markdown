@@ -11,4 +11,5 @@ This section covers the binary UDP protocol used between the Beatled server and 
 
 | Page | Description |
 |------|-------------|
-| [Beatled Protocol](protocol.html) | Binary UDP wire format — message types, field layouts, and the full synchronization sequence |
+| [Beatled Protocol](protocol.html) | Binary UDP wire format: message types and field layouts |
+| [Controller Registration and Synchronization](controller-sync.html) | Startup sequence: registration, time sync, tempo sync, and steady state |

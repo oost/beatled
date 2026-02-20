@@ -20,8 +20,8 @@ The LED strips used are **WS2812** (also known as NeoPixel) -- addressable RGB L
 ```mermaid
 graph LR
     MIC["USB Mic"] --> PI["Raspberry Pi<br/>(Beat Server)"]
-    PI -->|UDP| Controller_1["Pico W"] -- | LED Strip |
-    PI -->|UDP| Controller_2["ESP32"] -- | LED Strip |
+    PI -->|UDP| C1["Pico W"] --> LED1["WS2812 LEDs"]
+    PI -->|UDP| C2["ESP32"] --> LED2["WS2812 LEDs"]
     PI -->|HTTPS| WEB["React (Web)"]
     PI -->|HTTPS| IOS["iOS"]
     PI -->|HTTPS| MACOS["macOS"]
