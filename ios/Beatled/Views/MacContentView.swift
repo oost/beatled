@@ -19,7 +19,7 @@ enum SidebarItem: String, CaseIterable, Identifiable {
 
 struct MacContentView: View {
     let api: APIClient
-    let settings: AppSettings
+    let configViewModel: ConfigViewModel
     @State private var selection: SidebarItem? = .status
 
     var body: some View {
@@ -33,7 +33,7 @@ struct MacContentView: View {
             case .status:  StatusView(viewModel: StatusViewModel(api: api))
             case .program: ProgramView(viewModel: ProgramViewModel(api: api))
             case .log:     LogView(viewModel: LogViewModel(api: api))
-            case .config:  ConfigView(viewModel: ConfigViewModel(settings: settings))
+            case .config:  ConfigView(viewModel: configViewModel)
             case nil:      Text("Select a view")
             }
         }

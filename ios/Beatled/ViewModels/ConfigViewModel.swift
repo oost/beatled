@@ -83,9 +83,19 @@ class ConfigViewModel {
 
     @MainActor
     func runHealthChecks() async {
+        await checkAllHealth()
+        autoSelectFirstOnline()
         while !Task.isCancelled {
-            await checkAllHealth()
             try? await Task.sleep(for: .seconds(5))
+            await checkAllHealth()
+        }
+    }
+
+    private func autoSelectFirstOnline() {
+        guard healthStatuses[selectedPreset] != .ok else { return }
+        let ordered = HostPreset.allCases.filter { $0 != .custom }
+        if let first = ordered.first(where: { healthStatuses[$0] == .ok }) {
+            selectedPreset = first
         }
     }
 

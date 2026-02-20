@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useLoaderData, useSubmit } from "react-router-dom";
 import type { ActionFunctionArgs } from "react-router-dom";
 import PageHeader from "../components/page-header";
@@ -94,11 +94,28 @@ export default function ConfigPage() {
   const { host, token } = useLoaderData() as { host: string; token: string };
   const healthStatuses = useHealthChecks();
 
-  const onHostChange = (value: string) => {
+  const onHostChange = useCallback((value: string) => {
     const formData = new FormData();
     formData.set("host", value);
     submit(formData, { method: "post" });
-  };
+  }, [submit]);
+
+  const didAutoSelect = useRef(false);
+  useEffect(() => {
+    if (didAutoSelect.current) return;
+    const currentStatus = healthStatuses[host] as HealthStatus | undefined;
+    if (currentStatus === "ok") {
+      didAutoSelect.current = true;
+      return;
+    }
+    if (currentStatus === "error" || !API_HOSTS.some((h) => h.value === host)) {
+      const first = API_HOSTS.find((h) => healthStatuses[h.value] === "ok");
+      if (first) {
+        didAutoSelect.current = true;
+        onHostChange(first.value);
+      }
+    }
+  }, [healthStatuses, host, onHostChange]);
 
   const onTokenBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const formData = new FormData();

@@ -2,7 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     @Environment(APIClient.self) private var api
-    @Environment(AppSettings.self) private var settings
+    @Environment(ConfigViewModel.self) private var configViewModel
 
     var body: some View {
         #if os(iOS)
@@ -17,12 +17,12 @@ struct ContentView: View {
                 LogView(viewModel: LogViewModel(api: api))
             }
             Tab("Config", systemImage: "gearshape") {
-                ConfigView(viewModel: ConfigViewModel(settings: settings))
+                ConfigView(viewModel: configViewModel)
             }
         }
         .tabBarMinimizeBehavior(.onScrollDown)
         #else
-        MacContentView(api: api, settings: settings)
+        MacContentView(api: api, configViewModel: configViewModel)
         #endif
     }
 }

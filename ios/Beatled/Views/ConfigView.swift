@@ -14,7 +14,6 @@ struct ConfigView: View {
             }
             .formStyle(.grouped)
             .navigationTitle("Config")
-            .task { await viewModel.runHealthChecks() }
             .alert("Security Warning", isPresented: $showInsecureWarning) {
                 Button("Cancel", role: .cancel) {
                     viewModel.settings.allowInsecureConnections = false
