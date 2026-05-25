@@ -41,7 +41,7 @@ Groups:
 Utilities:
   test [component]    Run tests (server, client, pico, or all)
   build [component]   Build without running (server, client, pico, pico-freertos, rpi, or all)
-  clean [component]   Clean build artifacts (server, client, pico, pico-freertos, or all)
+  clean [component]   Clean build artifacts (server, client, pico, pico-freertos, esp32, or all)
   docs                Start the Jekyll docs site locally
   certs [domain ...]  Generate locally-trusted development certificates
 
@@ -110,14 +110,16 @@ Usage: $(basename "$0") controller <subcommand> [action]
 
 Subcommands:
   pico            build    Build Pico W firmware (bare-metal, outputs .uf2)
+  pico            flash    Build and copy .uf2 to a BOOTSEL-mounted Pico
   pico-freertos   build    Build Pico W firmware (FreeRTOS SMP, outputs .uf2)
+  pico-freertos   flash    Build and copy .uf2 to a BOOTSEL-mounted Pico
   posix           build    Build and run POSIX simulator (Metal LED renderer)
   freertos-sim    build    Build and run FreeRTOS POSIX simulator
   esp32-freertos  build    Build ESP32 firmware
   esp32-freertos  flash    Build, flash, and monitor ESP32
   esp32-freertos  monitor  Open ESP32 serial monitor
 
-Pico W flashing: copy the .uf2 from build-pico/src/ to /Volumes/RPI-RP2/
+Pico flashing: hold BOOTSEL while plugging the Pico in so it mounts as /Volumes/RPI-RP2/
 ESP32 config:    copy $PICO_DIR/.env.esp32.template to .env.esp32 and fill in values
 Pico config:     copy $PICO_DIR/.env.pico.template to .env.pico and fill in values
 EOF
@@ -321,22 +323,45 @@ clean_client() {
 }
 
 clean_pico() {
-  if [ -d "$PICO_BUILD_DIR" ]; then
-    info "Cleaning pico build..."
-    rm -rf "$PICO_BUILD_DIR"
+  local cleaned=0
+  for dir in "$PICO_BUILD_DIR" "$PICO_HW_BUILD_DIR"; do
+    if [ -d "$dir" ]; then
+      info "Cleaning $dir..."
+      rm -rf "$dir"
+      cleaned=1
+    fi
+  done
+  if [ "$cleaned" -eq 1 ]; then
     ok "Pico build cleaned"
   else
-    info "Pico build directory does not exist (already clean)"
+    info "Pico build directories do not exist (already clean)"
   fi
 }
 
 clean_pico_freertos() {
-  if [ -d "$PICO_FREERTOS_BUILD_DIR" ]; then
-    info "Cleaning pico FreeRTOS build..."
-    rm -rf "$PICO_FREERTOS_BUILD_DIR"
+  local cleaned=0
+  for dir in "$PICO_FREERTOS_BUILD_DIR" "$PICO_HW_FREERTOS_BUILD_DIR"; do
+    if [ -d "$dir" ]; then
+      info "Cleaning $dir..."
+      rm -rf "$dir"
+      cleaned=1
+    fi
+  done
+  if [ "$cleaned" -eq 1 ]; then
     ok "Pico FreeRTOS build cleaned"
   else
-    info "Pico FreeRTOS build directory does not exist (already clean)"
+    info "Pico FreeRTOS build directories do not exist (already clean)"
+  fi
+}
+
+clean_esp32() {
+  local dir="$PICO_DIR/esp32/build"
+  if [ -d "$dir" ]; then
+    info "Cleaning $dir..."
+    rm -rf "$dir"
+    ok "ESP32 build cleaned"
+  else
+    info "ESP32 build directory does not exist (already clean)"
   fi
 }
 
@@ -592,6 +617,40 @@ cmd_controller_pico_freertos_build() {
   build_pico_freertos_hw
 }
 
+# Copy a .uf2 onto a Pico mounted in BOOTSEL mode at /Volumes/RPI-RP2.
+flash_pico_uf2() {
+  local uf2="$1"
+  local mount="/Volumes/RPI-RP2"
+
+  if [ ! -f "$uf2" ]; then
+    error ".uf2 not found: $uf2"
+    error "Run the matching build subcommand first"
+    exit 1
+  fi
+
+  if [ ! -d "$mount" ]; then
+    warn "Pico not in BOOTSEL mode ($mount not mounted)"
+    warn "Hold BOOTSEL while plugging the Pico in, then re-run this command"
+    exit 1
+  fi
+
+  info "Flashing $(basename "$uf2") -> $mount"
+  cp "$uf2" "$mount/"
+  # macOS unmounts RPI-RP2 the moment cp finishes — that's the Pico
+  # rebooting into the new firmware, not an error.
+  ok "Flash complete (Pico is rebooting)"
+}
+
+cmd_controller_pico_flash() {
+  build_pico_hw
+  flash_pico_uf2 "$PICO_HW_BUILD_DIR/src/pico_w_beatled.uf2"
+}
+
+cmd_controller_pico_freertos_flash() {
+  build_pico_freertos_hw
+  flash_pico_uf2 "$PICO_HW_FREERTOS_BUILD_DIR/src/pico_w_beatled.uf2"
+}
+
 cmd_controller_posix_build() {
   build_pico
 
@@ -719,15 +778,17 @@ cmd_clean() {
     client)         clean_client ;;
     pico)           clean_pico ;;
     pico-freertos)  clean_pico_freertos ;;
+    esp32)          clean_esp32 ;;
     all)
       clean_server
       clean_client
       clean_pico
       clean_pico_freertos
+      clean_esp32
       ok "All build artifacts cleaned"
       ;;
     *)
-      error "Unknown clean component: $component (use server, client, pico, pico-freertos, or all)"
+      error "Unknown clean component: $component (use server, client, pico, pico-freertos, esp32, or all)"
       exit 1
       ;;
   esac
@@ -783,11 +844,13 @@ case "$CMD1" in
       pico)
         case "$CMD3" in
           build)   cmd_controller_pico_build ;;
+          flash)   cmd_controller_pico_flash ;;
           *)       usage_controller ;;
         esac ;;
       pico-freertos)
         case "$CMD3" in
           build)   cmd_controller_pico_freertos_build ;;
+          flash)   cmd_controller_pico_freertos_flash ;;
           *)       usage_controller ;;
         esac ;;
       posix)
