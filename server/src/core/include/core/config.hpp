@@ -33,6 +33,8 @@ private:
   std::uint16_t m_udp_port{9090};
   std::string m_broadcasting_address{"255.255.255.255"};
   std::uint16_t m_broadcasting_port{8765};
+  // limited | subnet | unicast (default unicast — most reliable on Wi-Fi).
+  std::string m_broadcast_mode{"unicast"};
   std::size_t m_pool_size{2};
   std::string m_root_dir{"."};
   std::string m_certs_dir{"./certs"};

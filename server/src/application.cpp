@@ -30,9 +30,13 @@ Application::Application(const Config &beatled_config)
     : server_parameters_{beatled_config.server_parameters()},
       logger_{server_parameters_.logger}, signals_{io_context_} {
 
+  // Program-state refresh: re-push the current program every second so a
+  // controller that misses the on-change push (or boots mid-set) converges
+  // within ~1s. The broadcaster also pushes immediately on state changes
+  // via the StateManager callback it registers in its ctor.
   std::unique_ptr<server::TempoBroadcaster> tempo_broadcaster =
       std::make_unique<server::TempoBroadcaster>(TEMPO_BROADCASTER_ID, io_context_,
-                                                 std::chrono::seconds(2), std::chrono::seconds(2),
+                                                 std::chrono::seconds(1),
                                                  server_parameters_.broadcasting, state_manager_);
 
   registerController(std::make_unique<beatled::detector::BeatDetector>(

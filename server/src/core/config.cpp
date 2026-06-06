@@ -25,6 +25,8 @@ Config::Config(int argc, const char *argv[]) {
           fmt::format("port to listen (default: {})", m_broadcasting_address)) |
       lyra::opt(m_broadcasting_port, "broadcasting port")["-b"]["--broadcasting-port"](
           fmt::format("port to listen (default: {})", m_broadcasting_port)) |
+      lyra::opt(m_broadcast_mode, "limited|subnet|unicast")["--broadcast-mode"](
+          fmt::format("delivery mode for NEXT_BEAT/BEAT/PROGRAM (default: {})", m_broadcast_mode)) |
       lyra::opt(m_pool_size, "thread-pool size")["-n"]["--thread-pool-size"](
           fmt::format("The size of a thread pool to run server (default: {})", m_pool_size)) |
       lyra::opt(m_root_dir, "root-dir")["-r"]["--root-dir"](
@@ -62,8 +64,8 @@ void Config::log_config() const {
   SPDLOG_INFO("  HTTP server:        {} (port {}{})", m_start_http_server ? "on" : "off", m_http_port,
               m_no_tls ? ", no TLS" : "");
   SPDLOG_INFO("  UDP server:         {} (port {})", m_start_udp_server ? "on" : "off", m_udp_port);
-  SPDLOG_INFO("  Broadcaster:        {} ({}:{})", m_start_broadcaster ? "on" : "off",
-              m_broadcasting_address, m_broadcasting_port);
+  SPDLOG_INFO("  Broadcaster:        {} ({}:{}, mode={})", m_start_broadcaster ? "on" : "off",
+              m_broadcasting_address, m_broadcasting_port, m_broadcast_mode);
   SPDLOG_INFO("  Thread pool size:   {}", m_pool_size);
   SPDLOG_INFO("  Root dir:           {}", m_root_dir);
   SPDLOG_INFO("  Certs dir:          {}", m_certs_dir);
@@ -72,6 +74,20 @@ void Config::log_config() const {
 }
 
 beatled::server::Server::parameters_t Config::server_parameters() const {
+  using beatled::server::BroadcastMode;
+  BroadcastMode mode = BroadcastMode::Unicast;
+  if (m_broadcast_mode == "limited") {
+    mode = BroadcastMode::Limited;
+  } else if (m_broadcast_mode == "subnet") {
+    mode = BroadcastMode::Subnet;
+  } else if (m_broadcast_mode == "unicast") {
+    mode = BroadcastMode::Unicast;
+  } else {
+    throw std::runtime_error{
+        fmt::format("Invalid --broadcast-mode '{}' (must be limited, subnet, or unicast)",
+                    m_broadcast_mode)};
+  }
+
   server::Server::parameters_t server_parameters{
       .start_http_server = m_start_http_server,
       .start_udp_server = m_start_udp_server,
@@ -87,7 +103,7 @@ beatled::server::Server::parameters_t Config::server_parameters() const {
               m_no_tls,      // no_tls
           },
       .udp = {m_udp_port},
-      .broadcasting = {m_broadcasting_address, m_broadcasting_port},
+      .broadcasting = {m_broadcasting_address, m_broadcasting_port, mode},
       .logger = {20, m_verbose},
       .thread_pool_size = m_pool_size,
   };

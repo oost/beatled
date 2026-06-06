@@ -23,7 +23,15 @@ tempo_ref_t StateManager::get_tempo_ref() const {
 }
 
 void StateManager::update_program_id(uint16_t program_id) {
-  program_id_ = program_id;
+  uint16_t prev = program_id_.exchange(program_id);
+  if (prev == program_id) {
+    return;
+  }
+  // on_program_change_cbs_ is populated during construction only (before
+  // threads start), so it is safe to iterate without a lock here.
+  for (const auto &cb : on_program_change_cbs_) {
+    cb(program_id);
+  }
 }
 uint16_t StateManager::get_program_id() const {
   return program_id_;
@@ -109,6 +117,23 @@ ClientStatus::client_map_t StateManager::get_clients() {
     return (now - cs->last_status_time) > DEVICE_EXPIRY_US;
   });
   return clients_;
+}
+
+void StateManager::update_client_owd(const asio::ip::address &ip_address, uint64_t owd_us) {
+  std::unique_lock lk(client_mtx_);
+  for (auto &cs : clients_) {
+    if (cs->ip_address == ip_address) {
+      // EWMA with alpha=1/4 — fresh sample contributes 25%, history 75%.
+      // Tightens the broadcaster's compensation enough to track real changes
+      // (route flap, AP roam) while damping Wi-Fi RTT jitter.
+      if (cs->owd_us == 0) {
+        cs->owd_us = owd_us;
+      } else {
+        cs->owd_us = (cs->owd_us * 3 + owd_us) / 4;
+      }
+      return;
+    }
+  }
 }
 
 } // namespace beatled::core

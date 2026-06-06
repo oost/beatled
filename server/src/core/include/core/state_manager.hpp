@@ -42,8 +42,18 @@ public:
   void register_client(ClientStatus::Ptr client_status);
   ClientStatus::client_map_t get_clients();
 
+  // Record a fresh one-way-delay sample for the given client. Smoothed
+  // server-side with an EWMA so a single jittery sample doesn't snap the
+  // broadcaster's compensation around.
+  void update_client_owd(const asio::ip::address &ip_address, uint64_t owd_us);
+
+  using on_program_change_cb_t = std::function<void(uint16_t)>;
+
   // Must be called during construction only (before threads start).
   void register_next_beat_cb(const on_next_beat_cb_t &cb) { on_next_beat_cbs_.push_back(cb); }
+  void register_program_change_cb(const on_program_change_cb_t &cb) {
+    on_program_change_cbs_.push_back(cb);
+  }
 
 private:
   StateManager(const StateManager &) = delete;
@@ -58,6 +68,7 @@ private:
   mutable std::mutex client_mtx_;
   ClientStatus::client_map_t clients_;
   std::vector<on_next_beat_cb_t> on_next_beat_cbs_;
+  std::vector<on_program_change_cb_t> on_program_change_cbs_;
 };
 
 } // namespace beatled::core

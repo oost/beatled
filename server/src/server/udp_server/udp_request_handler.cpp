@@ -58,6 +58,8 @@ DataBuffer::Ptr UDPRequestHandler::process_hello_request() {
   ClientStatus::Ptr cs = std::make_shared<ClientStatus>(
       hello_req->board_id, request_buffer_ptr_->remote_endpoint().address());
   cs->last_status_time = Clock::wall_time_us_64();
+  // Remember the full endpoint (incl. ephemeral port) for unicast delivery.
+  cs->endpoint = request_buffer_ptr_->remote_endpoint();
 
   state_manager_.register_client(cs);
   return std::make_unique<HelloResponseBuffer>(cs->client_id);
@@ -91,9 +93,25 @@ DataBuffer::Ptr UDPRequestHandler::process_time_request() {
 DataBuffer::Ptr UDPRequestHandler::process_tempo_request() {
   SPDLOG_INFO("Tempo request");
 
-  auto cs = state_manager_.client_status(request_buffer_ptr_->remote_endpoint().address());
+  if (request_buffer_ptr_->size() < sizeof(beatled_message_tempo_request_t)) {
+    SPDLOG_ERROR("Tempo request too small: {} bytes", request_buffer_ptr_->size());
+    return error_response(BEATLED_ERROR_NO_DATA);
+  }
+
+  const auto *tempo_req =
+      reinterpret_cast<const beatled_message_tempo_request_t *>(&(request_buffer_ptr_->data()));
+  const auto remote = request_buffer_ptr_->remote_endpoint();
+  uint32_t owd_us = ntohl(tempo_req->owd_us_estimate);
+
+  auto cs = state_manager_.client_status(remote.address());
   if (cs) {
     cs->last_status_time = Clock::wall_time_us_64();
+    // Track the latest endpoint too (the ephemeral source port can shift on
+    // FreeRTOS sockets across reboots).
+    cs->endpoint = remote;
+  }
+  if (owd_us > 0) {
+    state_manager_.update_client_owd(remote.address(), owd_us);
   }
 
   tempo_ref_t tr = state_manager_.get_tempo_ref();

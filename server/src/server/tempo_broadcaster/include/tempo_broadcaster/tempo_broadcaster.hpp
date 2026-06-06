@@ -13,19 +13,28 @@ using beatled::core::StateManager;
 
 namespace beatled::server {
 
-class BroadcastLoop;
+// Delivery mode for the broadcaster. See --broadcast-mode CLI flag.
+//
+// - Limited:  send to 255.255.255.255. Often dropped by consumer Wi-Fi APs.
+// - Subnet:   send to the broadcast address configured via --broadcast-address
+//             (e.g. 192.168.1.255). Forwarded more reliably than limited.
+// - Unicast:  send one packet per registered client to their last-known
+//             endpoint, with per-client OWD compensation applied to
+//             NEXT_BEAT timestamps. Preferred when client count is modest.
+enum class BroadcastMode { Limited, Subnet, Unicast };
 
 class TempoBroadcaster : public ServiceControllerInterface {
 public:
   struct parameters_t {
     const std::string address;
     std::uint16_t port;
+    BroadcastMode mode = BroadcastMode::Limited;
   };
 
   TempoBroadcaster(const std::string &id, asio::io_context &io_context,
-                   std::chrono::nanoseconds alarm_period,
-                   std::chrono::nanoseconds program_alarm_period,
-                   const parameters_t &broadcasting_server_parameters, StateManager &state_manager);
+                   std::chrono::nanoseconds program_refresh_period,
+                   const parameters_t &broadcasting_server_parameters,
+                   StateManager &state_manager);
 
   ~TempoBroadcaster();
 
@@ -35,38 +44,42 @@ public:
   void broadcast_next_beat(uint64_t next_beat_time_ref, uint32_t beat_count);
   void broadcast_beat(uint64_t beat_time_ref, uint32_t beat_count);
 
+  // Push the current program_id immediately. Called from the StateManager
+  // program-change callback so controllers see new programs without waiting
+  // for the next refresh tick.
+  void push_program_now();
+
 private:
   const char *SERVICE_NAME = "Tempo Broadcaster";
   const char *service_name() const override { return SERVICE_NAME; }
 
-  void do_broadcast_beat();
-  void do_broadcast_program();
-  void do_broadcast(const char *sendBuf, uint16_t sendBuf_l, asio::high_resolution_timer &timer,
-                    const std::chrono::nanoseconds &alarm_period,
-                    std::function<void(void)> callback);
+  // Send a single buffer either as broadcast or as N unicast frames.
+  void dispatch(DataBuffer::Ptr response_buffer, bool compensate_owd,
+                uint64_t base_time_for_compensation);
 
-  void send_response(DataBuffer::Ptr &&response_buffer);
+  void send_to_endpoint(std::shared_ptr<DataBuffer> buffer,
+                        const asio::ip::udp::endpoint &endpoint);
+
+  void schedule_program_refresh();
 
   StateManager &state_manager_;
   asio::io_context &io_context_;
 
-  std::chrono::nanoseconds alarm_period_;
-
-  asio::high_resolution_timer program_timer_;
-  std::chrono::nanoseconds program_alarm_period_;
+  asio::high_resolution_timer program_refresh_timer_;
+  std::chrono::nanoseconds program_refresh_period_;
 
   std::shared_ptr<asio::ip::udp::socket> socket_;
   asio::ip::udp::endpoint broadcast_endpoint_;
 
-  int count_;
-  std::uint16_t port_;
-  std::uint8_t led_program;
-
-  std::vector<std::unique_ptr<BroadcastLoop>> loops_;
-  int program_idx_;
-  const parameters_t &broadcasting_server_parameters_;
+  const parameters_t broadcasting_server_parameters_;
 
   asio::strand<asio::io_context::executor_type> strand_;
+
+  // Monotonic sequence numbers per message kind. Wrap is acceptable; the
+  // controller uses 16-bit modular arithmetic to detect gaps.
+  std::atomic<uint16_t> next_beat_seq_{0};
+  std::atomic<uint16_t> beat_seq_{0};
+  std::atomic<uint16_t> program_seq_{0};
 };
 } // namespace beatled::server
 

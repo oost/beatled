@@ -1,7 +1,6 @@
 
-add_library(beatled_tempo_broadcaster 
-  tempo_broadcaster.cpp 
-  broadcast_loop.cpp
+add_library(beatled_tempo_broadcaster
+  tempo_broadcaster.cpp
 )
 
 target_link_libraries(beatled_tempo_broadcaster 

@@ -234,6 +234,26 @@ build_pico_freertos() {
   ok "Pico FreeRTOS build complete"
 }
 
+# Reconfigure on every build so changes to .env.pico (WIFI_SSID, server
+# name, etc.) propagate. CMake's incremental reconfigure is fast and the
+# explicit -D values override any CACHE INTERNAL variables that would
+# otherwise stick to the first value seen.
+configure_pico_hw_cmake() {
+  local port="$1"
+  local build_dir="$2"
+  cmake \
+    -DPORT="$port" \
+    -DPICO_BOARD=pico_w \
+    -DPICO_SDK_PATH="$PICO_DIR/lib/pico-sdk" \
+    -DWIFI_SSID="$WIFI_SSID" \
+    -DWIFI_PASSWORD="$WIFI_PASSWORD" \
+    -DBEATLED_SERVER_NAME="$BEATLED_SERVER_NAME" \
+    -DNUM_PIXELS="$NUM_PIXELS" \
+    -DWS2812_PIN="$WS2812_PIN" \
+    -B "$build_dir" \
+    -S "$PICO_DIR"
+}
+
 build_pico_hw() {
   if [ ! -d "$PICO_DIR" ]; then
     error "Pico directory not found: $PICO_DIR"
@@ -243,17 +263,8 @@ build_pico_hw() {
 
   load_pico_env
 
-  if [ ! -d "$PICO_HW_BUILD_DIR" ]; then
-    info "Configuring pico hardware build (pico port, first time)..."
-    cmake \
-      -DPORT=pico \
-      -DPICO_BOARD=pico_w \
-      -DPICO_SDK_PATH="$PICO_DIR/lib/pico-sdk" \
-      -DNUM_PIXELS="$NUM_PIXELS" \
-      -DWS2812_PIN="$WS2812_PIN" \
-      -B "$PICO_HW_BUILD_DIR" \
-      -S "$PICO_DIR"
-  fi
+  info "Configuring pico hardware build (pico port)..."
+  configure_pico_hw_cmake pico "$PICO_HW_BUILD_DIR"
 
   info "Building pico hardware firmware (pico)..."
   cmake --build "$PICO_HW_BUILD_DIR"
@@ -269,17 +280,8 @@ build_pico_freertos_hw() {
 
   load_pico_env
 
-  if [ ! -d "$PICO_HW_FREERTOS_BUILD_DIR" ]; then
-    info "Configuring pico hardware build (pico_freertos port, first time)..."
-    cmake \
-      -DPORT=pico_freertos \
-      -DPICO_BOARD=pico_w \
-      -DPICO_SDK_PATH="$PICO_DIR/lib/pico-sdk" \
-      -DNUM_PIXELS="$NUM_PIXELS" \
-      -DWS2812_PIN="$WS2812_PIN" \
-      -B "$PICO_HW_FREERTOS_BUILD_DIR" \
-      -S "$PICO_DIR"
-  fi
+  info "Configuring pico hardware build (pico_freertos port)..."
+  configure_pico_hw_cmake pico_freertos "$PICO_HW_FREERTOS_BUILD_DIR"
 
   info "Building pico hardware firmware (pico_freertos)..."
   cmake --build "$PICO_HW_FREERTOS_BUILD_DIR"

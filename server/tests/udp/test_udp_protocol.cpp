@@ -86,12 +86,10 @@ TEST_CASE("TempoResponseBuffer serialization", "[udp][protocol]") {
 
 TEST_CASE("NextBeatBuffer serialization", "[udp][protocol]") {
   uint64_t next_beat_time_ref = 9999999ULL;
-  uint32_t tempo_period_us = 500000;
   uint32_t beat_count = 100;
-  uint16_t program_id = 3;
+  uint16_t seq = 12345;
 
-  NextBeatBuffer buf(next_beat_time_ref, tempo_period_us, beat_count,
-                     program_id);
+  NextBeatBuffer buf(next_beat_time_ref, beat_count, seq);
 
   REQUIRE(buf.size() == sizeof(beatled_message_next_beat_t));
   REQUIRE(buf.type() == BEATLED_MESSAGE_NEXT_BEAT);
@@ -99,20 +97,18 @@ TEST_CASE("NextBeatBuffer serialization", "[udp][protocol]") {
   const auto *msg =
       reinterpret_cast<const beatled_message_next_beat_t *>(&buf.data());
   REQUIRE(ntohll(msg->next_beat_time_ref) == next_beat_time_ref);
-  REQUIRE(ntohl(msg->tempo_period_us) == tempo_period_us);
   REQUIRE(ntohl(msg->beat_count) == beat_count);
-  REQUIRE(ntohs(msg->program_id) == program_id);
+  REQUIRE(ntohs(msg->seq) == seq);
 }
 
 // --- BeatBuffer ---
 
 TEST_CASE("BeatBuffer serialization", "[udp][protocol]") {
   uint64_t beat_time_ref = 8888888ULL;
-  uint32_t tempo_period_us = 333333;
   uint32_t beat_count = 50;
-  uint16_t program_id = 7;
+  uint16_t seq = 4242;
 
-  BeatBuffer buf(beat_time_ref, tempo_period_us, beat_count, program_id);
+  BeatBuffer buf(beat_time_ref, beat_count, seq);
 
   REQUIRE(buf.size() == sizeof(beatled_message_beat_t));
   REQUIRE(buf.type() == BEATLED_MESSAGE_BEAT);
@@ -120,9 +116,25 @@ TEST_CASE("BeatBuffer serialization", "[udp][protocol]") {
   const auto *msg =
       reinterpret_cast<const beatled_message_beat_t *>(&buf.data());
   REQUIRE(ntohll(msg->beat_time_ref) == beat_time_ref);
-  REQUIRE(ntohl(msg->tempo_period_us) == tempo_period_us);
   REQUIRE(ntohl(msg->beat_count) == beat_count);
+  REQUIRE(ntohs(msg->seq) == seq);
+}
+
+// --- ProgramPushBuffer ---
+
+TEST_CASE("ProgramPushBuffer serialization", "[udp][protocol]") {
+  uint16_t program_id = 5;
+  uint16_t seq = 7;
+
+  ProgramPushBuffer buf(program_id, seq);
+
+  REQUIRE(buf.size() == sizeof(beatled_message_program_t));
+  REQUIRE(buf.type() == BEATLED_MESSAGE_PROGRAM);
+
+  const auto *msg =
+      reinterpret_cast<const beatled_message_program_t *>(&buf.data());
   REQUIRE(ntohs(msg->program_id) == program_id);
+  REQUIRE(ntohs(msg->seq) == seq);
 }
 
 // --- UDPRequestBuffer ---

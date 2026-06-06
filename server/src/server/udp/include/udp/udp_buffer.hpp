@@ -74,14 +74,17 @@ public:
 
 class NextBeatBuffer : public ResponseBuffer<beatled_message_next_beat_t> {
 public:
-  NextBeatBuffer(uint64_t next_beat_time_ref, uint32_t tempo_period_us, uint32_t beat_count,
-                 uint16_t program_id);
+  NextBeatBuffer(uint64_t next_beat_time_ref, uint32_t beat_count, uint16_t seq);
 };
 
 class BeatBuffer : public ResponseBuffer<beatled_message_beat_t> {
 public:
-  BeatBuffer(uint64_t beat_time_ref, uint32_t tempo_period_us, uint32_t beat_count,
-             uint16_t program_id);
+  BeatBuffer(uint64_t beat_time_ref, uint32_t beat_count, uint16_t seq);
+};
+
+class ProgramPushBuffer : public ResponseBuffer<beatled_message_program_t> {
+public:
+  ProgramPushBuffer(uint16_t program_id, uint16_t seq);
 };
 
 class UDPRequestBuffer : public DataBuffer {

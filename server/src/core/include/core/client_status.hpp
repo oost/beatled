@@ -38,6 +38,16 @@ public:
   uint64_t last_status_time;
   board_id_t board_id;
   asio::ip::address ip_address;
+
+  // UDP endpoint (address + port) the client should be reached at. Populated
+  // from the source endpoint of HELLO_REQUEST and updated on subsequent
+  // requests; the broadcaster uses it for unicast delivery.
+  asio::ip::udp::endpoint endpoint;
+
+  // Measured one-way delay (server→client) in microseconds, taken from the
+  // most recent TIME_REQUEST round-trip as RTT/2. 0 means no sample yet —
+  // the broadcaster should fall back to no compensation in that case.
+  uint64_t owd_us = 0;
 };
 
 // Manually define to_json for ClientStatus to have full control over board_id serialization

@@ -45,28 +45,33 @@ TempoResponseBuffer::TempoResponseBuffer(uint64_t beat_time_ref, uint32_t tempo_
   set_data(tempo_msg);
 }
 
-NextBeatBuffer::NextBeatBuffer(uint64_t next_beat_time_ref, uint32_t tempo_period_us,
-                               uint32_t beat_count, uint16_t program_id) {
-  beatled_message_next_beat_t bext_beat_msg;
-  bext_beat_msg.base.type = BEATLED_MESSAGE_NEXT_BEAT;
-  bext_beat_msg.next_beat_time_ref = htonll(next_beat_time_ref);
-  bext_beat_msg.tempo_period_us = htonl(tempo_period_us);
-  bext_beat_msg.beat_count = htonl(beat_count);
-  bext_beat_msg.program_id = htons(program_id);
+NextBeatBuffer::NextBeatBuffer(uint64_t next_beat_time_ref, uint32_t beat_count, uint16_t seq) {
+  beatled_message_next_beat_t msg;
+  msg.base.type = BEATLED_MESSAGE_NEXT_BEAT;
+  msg.next_beat_time_ref = htonll(next_beat_time_ref);
+  msg.beat_count = htonl(beat_count);
+  msg.seq = htons(seq);
 
-  set_data(bext_beat_msg);
-};
+  set_data(msg);
+}
 
-BeatBuffer::BeatBuffer(uint64_t beat_time_ref, uint32_t tempo_period_us, uint32_t beat_count,
-                       uint16_t program_id) {
-  beatled_message_beat_t bext_beat_msg;
-  bext_beat_msg.base.type = BEATLED_MESSAGE_BEAT;
-  bext_beat_msg.beat_time_ref = htonll(beat_time_ref);
-  bext_beat_msg.tempo_period_us = htonl(tempo_period_us);
-  bext_beat_msg.beat_count = htonl(beat_count);
-  bext_beat_msg.program_id = htons(program_id);
+BeatBuffer::BeatBuffer(uint64_t beat_time_ref, uint32_t beat_count, uint16_t seq) {
+  beatled_message_beat_t msg;
+  msg.base.type = BEATLED_MESSAGE_BEAT;
+  msg.beat_time_ref = htonll(beat_time_ref);
+  msg.beat_count = htonl(beat_count);
+  msg.seq = htons(seq);
 
-  set_data(bext_beat_msg);
-};
+  set_data(msg);
+}
+
+ProgramPushBuffer::ProgramPushBuffer(uint16_t program_id, uint16_t seq) {
+  beatled_message_program_t msg;
+  msg.base.type = BEATLED_MESSAGE_PROGRAM;
+  msg.program_id = htons(program_id);
+  msg.seq = htons(seq);
+
+  set_data(msg);
+}
 
 } // namespace beatled::server
