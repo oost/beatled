@@ -188,7 +188,7 @@ build_rpi() {
 build_pico() {
   if [ ! -d "$PICO_DIR" ]; then
     error "Pico directory not found: $PICO_DIR"
-    error "Set PICO_DIR to your beatled-pico checkout"
+    error "Set PICO_DIR to the controller/ directory (defaults to \$PROJECT_DIR/controller)"
     exit 1
   fi
 
@@ -214,7 +214,7 @@ build_pico() {
 build_pico_freertos() {
   if [ ! -d "$PICO_DIR" ]; then
     error "Pico directory not found: $PICO_DIR"
-    error "Set PICO_DIR to your beatled-pico checkout"
+    error "Set PICO_DIR to the controller/ directory (defaults to \$PROJECT_DIR/controller)"
     exit 1
   fi
 
@@ -260,7 +260,7 @@ configure_pico_hw_cmake() {
 build_pico_hw() {
   if [ ! -d "$PICO_DIR" ]; then
     error "Pico directory not found: $PICO_DIR"
-    error "Set PICO_DIR to your beatled-pico checkout"
+    error "Set PICO_DIR to the controller/ directory (defaults to \$PROJECT_DIR/controller)"
     exit 1
   fi
 
@@ -277,7 +277,7 @@ build_pico_hw() {
 build_pico_freertos_hw() {
   if [ ! -d "$PICO_DIR" ]; then
     error "Pico directory not found: $PICO_DIR"
-    error "Set PICO_DIR to your beatled-pico checkout"
+    error "Set PICO_DIR to the controller/ directory (defaults to \$PROJECT_DIR/controller)"
     exit 1
   fi
 
@@ -294,7 +294,7 @@ build_pico_freertos_hw() {
 build_esp32() {
   if [ ! -d "$PICO_DIR" ]; then
     error "Pico directory not found: $PICO_DIR"
-    error "Set PICO_DIR to your beatled-pico checkout"
+    error "Set PICO_DIR to the controller/ directory (defaults to \$PROJECT_DIR/controller)"
     exit 1
   fi
   load_esp32_env
@@ -687,7 +687,7 @@ cmd_controller_esp32_build() {
 cmd_controller_esp32_flash() {
   if [ ! -d "$PICO_DIR" ]; then
     error "Pico directory not found: $PICO_DIR"
-    error "Set PICO_DIR to your beatled-pico checkout"
+    error "Set PICO_DIR to the controller/ directory (defaults to \$PROJECT_DIR/controller)"
     exit 1
   fi
   load_esp32_env
@@ -704,7 +704,7 @@ cmd_controller_esp32_flash() {
 cmd_controller_esp32_monitor() {
   if [ ! -d "$PICO_DIR" ]; then
     error "Pico directory not found: $PICO_DIR"
-    error "Set PICO_DIR to your beatled-pico checkout"
+    error "Set PICO_DIR to the controller/ directory (defaults to \$PROJECT_DIR/controller)"
     exit 1
   fi
   load_esp32_env

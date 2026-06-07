@@ -1,6 +1,8 @@
-# Beatled Pico
+# Beatled Controller Firmware
 
-Embedded C firmware for beat-synchronized LED control. Connects to a [Beatled server](https://github.com/oost/beatled) over WiFi and drives WS2812 LED strips in time with the music.
+Embedded C firmware for beat-synchronized LED control. Connects to the [Beatled server](https://github.com/oost/beatled) over Wi-Fi and drives WS2812 LED strips in time with the music.
+
+Lives in-tree at `controller/` inside the main Beatled repo (absorbed from the now-archived `oost/beatled-pico` mirror).
 
 Runs on **Raspberry Pi Pico W**, **ESP32** (S3, C3), and as a native **macOS** simulator for development.
 
@@ -19,9 +21,10 @@ A 10-module [Hardware Abstraction Layer](https://oost.github.io/beatled/pico.htm
 ## Quick Start
 
 ```bash
-git clone https://github.com/oost/beatled-pico.git
-cd beatled-pico
-git submodule update --init
+git clone https://github.com/oost/beatled.git
+cd beatled
+git submodule update --init --recursive
+cd controller
 ```
 
 Copy the env template and fill in your values:
