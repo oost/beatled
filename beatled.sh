@@ -212,6 +212,22 @@ Broadcaster config (only relevant when --start-broadcast is on):
                             faster catch-up for controllers that
                             missed both copies.
 
+QoS / diagnostics config (protocol v4):
+  --status-probe-ms MS      STATUS probe period in ms (default 5000;
+                            0 disables). The server unicasts a
+                            STATUS_REQUEST to each registered client
+                            at this cadence; the response carries a
+                            fresh RTT measurement plus the same
+                            diagnostic block that piggy-backs on
+                            TEMPO_REQUEST. Surfaced on /api/qos.
+  --qos-skew-warn-us US     Fleet skew (max-min controller offset in
+                            us) at which the QoS pip turns amber
+                            (default 5000).
+  --qos-skew-fail-us US     Fleet skew at which the QoS pip turns red
+                            (default 20000). A non-zero intercore
+                            drop or TIME-sync outlier total anywhere
+                            in the fleet also forces red.
+
   unicast (default): one packet per registered client, with per-client OWD
                      compensation. Best on Wi-Fi for <=10 controllers.
   subnet:            broadcast to --m_broadcasting-address (e.g. 192.168.1.255).

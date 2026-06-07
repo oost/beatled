@@ -43,6 +43,11 @@ public:
     std::string cors_origin;
     std::string api_token;
     bool no_tls{false};
+    // QoS health-pip thresholds (microseconds) — surfaced through to
+    // /api/qos via APIHandler::QosThresholds. Match the defaults in
+    // core::Config so a never-overridden run stays consistent end-to-end.
+    std::uint32_t qos_skew_warn_us{5000};
+    std::uint32_t qos_skew_fail_us{20000};
   };
 
   HTTPServer(const std::string &id, const parameters_t &http_server_parameters,
@@ -68,6 +73,8 @@ private:
   std::string api_token_;
   std::string address_;
   std::uint16_t port_;
+  std::uint32_t qos_skew_warn_us_{5000};
+  std::uint32_t qos_skew_fail_us_{20000};
 
   std::variant<std::unique_ptr<tls_server_t>, std::unique_ptr<plain_server_t>> server_;
   std::unique_ptr<router_t> server_handler(const std::string &root_dir);

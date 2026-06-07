@@ -53,6 +53,12 @@ private:
   // reply with STATUS_RESPONSE which the server folds into
   // ClientStatus::latest_qos. 0 disables the probe entirely.
   std::uint32_t m_status_probe_ms{5000};
+  // QoS health-pip thresholds, in microseconds. Fleet skew (max-min
+  // controller offset) at or above warn turns the Fleet QoS pip amber;
+  // at or above fail turns it red. Total intercore-drop / time-sync
+  // outlier counts also turn the pip red regardless of skew.
+  std::uint32_t m_qos_skew_warn_us{5000};
+  std::uint32_t m_qos_skew_fail_us{20000};
 };
 
 } // namespace beatled::core

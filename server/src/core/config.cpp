@@ -42,7 +42,13 @@ Config::Config(int argc, const char *argv[]) {
       lyra::opt(m_program_refresh_ms, "ms")["--program-refresh-ms"](fmt::format(
           "PROGRAM background refresh period in ms (default: {})", m_program_refresh_ms)) |
       lyra::opt(m_status_probe_ms, "ms")["--status-probe-ms"](
-          fmt::format("STATUS probe period in ms; 0 disables (default: {})", m_status_probe_ms));
+          fmt::format("STATUS probe period in ms; 0 disables (default: {})", m_status_probe_ms)) |
+      lyra::opt(m_qos_skew_warn_us, "us")["--qos-skew-warn-us"](
+          fmt::format("Fleet skew (max-min controller offset) above which the QoS pip turns amber "
+                      "(default: {} us)",
+                      m_qos_skew_warn_us)) |
+      lyra::opt(m_qos_skew_fail_us, "us")["--qos-skew-fail-us"](fmt::format(
+          "Fleet skew above which the QoS pip turns red (default: {} us)", m_qos_skew_fail_us));
 
   auto parser_result = cli.parse(lyra::args(argc, argv));
   if (!parser_result) {
@@ -90,6 +96,7 @@ void Config::log_config() const {
   SPDLOG_INFO("  STATUS probe:       {}", m_status_probe_ms == 0
                                               ? std::string("off")
                                               : fmt::format("{} ms", m_status_probe_ms));
+  SPDLOG_INFO("  QoS skew warn/fail: {} us / {} us", m_qos_skew_warn_us, m_qos_skew_fail_us);
 }
 
 beatled::server::Server::parameters_t Config::server_parameters() const {
@@ -112,13 +119,15 @@ beatled::server::Server::parameters_t Config::server_parameters() const {
       .start_broadcaster = m_start_broadcaster,
       .http =
           {
-              m_address,     // address
-              m_http_port,   // port
-              m_root_dir,    // root_dir
-              m_certs_dir,   // cert_dir
-              m_cors_origin, // cors_origin
-              m_api_token,   // api_token
-              m_no_tls,      // no_tls
+              m_address,          // address
+              m_http_port,        // port
+              m_root_dir,         // root_dir
+              m_certs_dir,        // cert_dir
+              m_cors_origin,      // cors_origin
+              m_api_token,        // api_token
+              m_no_tls,           // no_tls
+              m_qos_skew_warn_us, // qos_skew_warn_us
+              m_qos_skew_fail_us, // qos_skew_fail_us
           },
       .udp = {m_udp_port},
       .broadcasting = {m_broadcasting_address, m_broadcasting_port, mode},
@@ -126,6 +135,8 @@ beatled::server::Server::parameters_t Config::server_parameters() const {
       .thread_pool_size = m_pool_size,
       .program_refresh_ms = m_program_refresh_ms,
       .status_probe_ms = m_status_probe_ms,
+      .qos_skew_warn_us = m_qos_skew_warn_us,
+      .qos_skew_fail_us = m_qos_skew_fail_us,
   };
 
   return server_parameters;

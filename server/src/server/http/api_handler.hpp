@@ -17,6 +17,17 @@ using beatled::core::ServiceManagerInterface;
 
 namespace beatled {
 namespace server {
+
+// Thresholds for /api/qos's health pip. Microseconds. `warn` turns the
+// Fleet QoS pip amber when the fleet skew (max-min controller offset)
+// reaches it; `fail` turns it red. A non-zero intercore_drop or
+// time-sync outlier count anywhere in the fleet also turns the pip red
+// regardless of skew — those reflect unambiguous bugs.
+struct QosThresholds {
+  std::uint32_t skew_warn_us = 5000;
+  std::uint32_t skew_fail_us = 20000;
+};
+
 class APIHandler : public ResponseHandler {
 public:
   using req_status_t = restinio::request_handling_status_t;
@@ -24,7 +35,8 @@ public:
   using route_params_t = restinio::router::route_params_t;
 
   APIHandler(ServiceManagerInterface &service_manager, Logger &logger,
-             const std::string &cors_origin = "", const std::string &api_token = "");
+             const std::string &cors_origin = "", const std::string &api_token = "",
+             QosThresholds qos_thresholds = QosThresholds{});
 
   req_status_t on_get_status(const req_handle_t &req, route_params_t params);
 
@@ -69,6 +81,7 @@ private:
   Logger &logger_;
   std::string cors_origin_;
   std::string api_token_;
+  QosThresholds qos_thresholds_;
 
   // Rate limiting: sliding window
   static constexpr size_t kMaxRequestsPerWindow = 60;

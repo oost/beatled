@@ -79,6 +79,11 @@ export interface FleetQos {
   total_next_beat_gap: number;
   total_intercore_drops: number;
   total_time_sync_outliers: number;
+  // Server-side verdict driven by --qos-skew-warn-us / --qos-skew-fail-us
+  // (and a non-zero drop / outlier total). React renders the matching
+  // colour pip; "unknown" while the fleet has zero reporting devices.
+  health: "ok" | "warn" | "fail" | "unknown";
+  thresholds: { skew_warn_us: number; skew_fail_us: number };
 }
 
 export async function getQos(): Promise<FleetQos | null> {

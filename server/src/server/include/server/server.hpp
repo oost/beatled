@@ -45,6 +45,9 @@ public:
     std::uint32_t program_refresh_ms = 200;
     // Active STATUS probe period in ms (--status-probe-ms; 0 = off).
     std::uint32_t status_probe_ms = 5000;
+    // QoS health-pip thresholds (microseconds) consumed by /api/qos.
+    std::uint32_t qos_skew_warn_us = 5000;
+    std::uint32_t qos_skew_fail_us = 20000;
   };
 
   /// Construct the server to listen on the specified TCP address and port, and

@@ -26,14 +26,20 @@ sequenceDiagram
     end
     Note over C: STATE: TIME_SYNCED
 
-    C->>S: TEMPO_REQUEST (owd_us_estimate)
+    C->>S: TEMPO_REQUEST (owd_us_estimate + qos_block_t)
     S->>C: TEMPO_RESPONSE (beat_ref, period, program)
     Note over C: STATE: TEMPO_SYNCED
 
     loop Steady State (per beat, unicast by default)
         S->>C: NEXT_BEAT (next_beat_ref - owd_us, count, seq)
         Note over C: Schedule LED update at next_beat_ref<br/>track seq for loss detection
-        S->>C: PROGRAM (program_id, seq) [on-change + 1Hz refresh]
+        S->>C: PROGRAM (program_id, seq) [on-change + 5Hz refresh]
+    end
+
+    loop QoS probe (every 5s by default, server-initiated)
+        S->>C: STATUS_REQUEST (server_send_time_us)
+        C->>S: STATUS_RESPONSE (echo + qos_block_t)
+        Note over S: Stash qos_block + fresh RTT<br/>on ClientStatus::latest_qos
     end
 ```
 
@@ -69,7 +75,17 @@ The controller sends a [TEMPO_REQUEST](protocol.html#tempo_request-3) carrying i
 
 The server sends [NEXT_BEAT](protocol.html#next_beat-8) messages before each beat (unicast by default; see `--broadcast-mode` in [Deployment](deployment.html)) so the controller can pre-schedule its LED update. In unicast mode the embedded `next_beat_time_ref` is shifted by *this client's* `owd_us`, so heterogeneous Wi-Fi paths land their packets at the same intended hit instant.
 
-[PROGRAM](protocol.html#program-7) is now pushed by the server **on state change** (instant fan-out via a StateManager callback) plus a 1 Hz refresh, so late joiners and missed broadcasts don't strand controllers on a wrong pattern. Each NEXT_BEAT and PROGRAM carries a 16-bit `seq` that the controller uses to count loss and reject stale duplicates.
+[PROGRAM](protocol.html#program-7) is now pushed by the server **on state change** (instant fan-out via a StateManager callback) plus a 5 Hz refresh, so late joiners and missed broadcasts don't strand controllers on a wrong pattern. Each NEXT_BEAT and PROGRAM carries a 16-bit `seq` that the controller uses to count loss and reject stale duplicates.
+
+### 5. QoS / diagnostics (protocol v4)
+
+Two complementary diagnostic channels feed `/api/devices.qos` and `/api/qos` so operators can see fleet sync health and catch silently-degrading controllers.
+
+**Passive metrics on TEMPO_REQUEST.** Every TEMPO_REQUEST (which controllers send every ~10 s while `TEMPO_SYNCED`) now trails a fixed 36 B `beatled_qos_block_t` carrying the controller's current view of `current_offset_us`, `uptime_us`, `median_rtt_us`, `next_beat_gap_total`, `intercore_drop_total`, `time_sync_outlier_total`, `valid_sample_count`, and `last_applied_program_seq`. The server decodes the block into `ClientStatus::latest_qos`. Zero new round-trips — the metrics piggy-back the existing heartbeat.
+
+**Server-initiated STATUS probe.** Every `--status-probe-ms` (default 5 s) the server unicasts a `STATUS_REQUEST` carrying its current wall time to every registered client. The controller echoes the timestamp on `STATUS_RESPONSE` and trails the same `beatled_qos_block_t`; the server stamps a fresh server-controlled RTT on receipt. The probe catches a "stale but online" controller without waiting for the next 10 s TEMPO heartbeat. Set `--status-probe-ms 0` to disable.
+
+`/api/qos` aggregates the latest snapshots: `fleet_skew_us = max_offset - min_offset` (a proxy for max controller-to-controller drift), mean / min / max RTT, slowest device, and totals of NEXT_BEAT gaps, intercore drops, and TIME-sync outliers. The server computes a `health` verdict (`ok` / `warn` / `fail`) from operator-tuned thresholds (`--qos-skew-warn-us`, `--qos-skew-fail-us`) so the React Fleet QoS card renders a single source of truth.
 
 [BEAT](protocol.html#beat-9) is defined in the protocol catalogue for parity with the beat-detector callback but is not currently emitted by the live server. NEXT_BEAT is the steady-state timing channel.
 

@@ -242,7 +242,23 @@ Returns the list of connected Pico W devices.
       "client_id": 1,
       "board_id": "E6614103E72B6A2F",
       "ip_address": "192.168.1.42",
-      "last_status_time": 1707900120000000
+      "last_status_time": 1707900120000000,
+      "port_name": "pico-freertos",
+      "git_sha": "1a2b3c4-dirty",
+      "build_time_us": 1707800000000000,
+      "owd_us": 1500,
+      "qos": {
+        "current_offset_us": -42,
+        "uptime_us": 9999,
+        "median_rtt_us": 1234,
+        "next_beat_gap_total": 3,
+        "intercore_drop_total": 0,
+        "time_sync_outlier_total": 5,
+        "valid_sample_count": 8,
+        "last_applied_program_seq": 7,
+        "server_received_at_us": 1707900120000000,
+        "last_rtt_us": 555
+      }
     }
   ],
   "count": 1
@@ -256,7 +272,52 @@ Returns the list of connected Pico W devices.
 | `devices[].board_id` | string | Pico W unique board identifier (hex) |
 | `devices[].ip_address` | string | Device IP address |
 | `devices[].last_status_time` | number | Wall-clock timestamp (microseconds) of the most recent HELLO or TEMPO_REQUEST received from this device |
+| `devices[].port_name` | string | Firmware port: `pico`, `pico-freertos`, `posix`, `posix-freertos`, `esp32`, or `unknown`. Empty for v2-or-older firmware. |
+| `devices[].git_sha` | string | Short Git SHA of the firmware build (possibly with `-dirty`). Empty for pre-v3 clients. |
+| `devices[].build_time_us` | number | Unix epoch microseconds of the firmware build. 0 for pre-v3 clients. |
+| `devices[].owd_us` | number | Server-smoothed one-way delay estimate (EWMA over the controller's reported `owd_us_estimate`). |
+| `devices[].qos` | object \| null | Protocol v4 diagnostic snapshot. `null` until the device has sent its first TEMPO_REQUEST or STATUS_RESPONSE. Fields: `current_offset_us`, `uptime_us`, `median_rtt_us`, `next_beat_gap_total`, `intercore_drop_total`, `time_sync_outlier_total`, `valid_sample_count`, `last_applied_program_seq`, `server_received_at_us`, `last_rtt_us`. |
 | `count` | number | Total connected devices |
+
+---
+
+## GET /api/qos
+
+Fleet-wide aggregates over the controllers' v4 QoS snapshots. Useful
+for the React Fleet QoS card and any external observability tooling.
+
+```json
+{
+  "device_count": 2,
+  "reporting_count": 2,
+  "min_offset_us": -42,
+  "max_offset_us": 17,
+  "fleet_skew_us": 59,
+  "mean_rtt_us": 1234,
+  "min_rtt_us": 1100,
+  "max_rtt_us": 1400,
+  "slowest_device_board_id": "E6614103E72B6A2F",
+  "total_next_beat_gap": 3,
+  "total_intercore_drops": 0,
+  "total_time_sync_outliers": 5,
+  "thresholds": { "skew_warn_us": 5000, "skew_fail_us": 20000 },
+  "health": "ok"
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `device_count` | number | Total registered controllers |
+| `reporting_count` | number | Number of controllers that have sent at least one v4 QoS snapshot |
+| `min_offset_us` / `max_offset_us` | number \| null | Lowest / highest reported controller-side server-time-offset |
+| `fleet_skew_us` | number \| null | `max_offset_us - min_offset_us`; the spread that drives the health pip |
+| `min_rtt_us` / `mean_rtt_us` / `max_rtt_us` | number \| null | Aggregate over each controller's `median_rtt_us` |
+| `slowest_device_board_id` | string | board_id of the device whose `median_rtt_us` is the largest |
+| `total_next_beat_gap` | number | Sum of `next_beat_gap_total` across all reporting devices |
+| `total_intercore_drops` | number | Sum of `intercore_drop_total` |
+| `total_time_sync_outliers` | number | Sum of `time_sync_outlier_total` |
+| `thresholds` | object | Current values of `--qos-skew-warn-us` and `--qos-skew-fail-us` |
+| `health` | string | `"ok"`, `"warn"`, `"fail"`, or `"unknown"` (zero reporting devices). Computed server-side from `fleet_skew_us` vs. `thresholds` plus the drop / outlier totals — any non-zero forces `fail`. |
 
 ---
 

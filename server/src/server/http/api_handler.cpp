@@ -18,9 +18,10 @@ struct Program {
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Program, name, id)
 
 APIHandler::APIHandler(ServiceManagerInterface &service_manager, Logger &logger,
-                       const std::string &cors_origin, const std::string &api_token)
+                       const std::string &cors_origin, const std::string &api_token,
+                       QosThresholds qos_thresholds)
     : service_manager_{service_manager}, logger_{logger}, cors_origin_{cors_origin},
-      api_token_{api_token} {}
+      api_token_{api_token}, qos_thresholds_{qos_thresholds} {}
 
 bool APIHandler::authorize_request(const std::optional<std::string> &authorization_header,
                                    std::string_view api_token) {
@@ -377,6 +378,27 @@ APIHandler::req_status_t APIHandler::on_get_qos(const req_handle_t &req, route_p
   response["total_next_beat_gap"] = total_next_beat_gap;
   response["total_intercore_drops"] = total_intercore_drops;
   response["total_time_sync_outliers"] = total_time_sync_outliers;
+  response["thresholds"] = {{"skew_warn_us", qos_thresholds_.skew_warn_us},
+                            {"skew_fail_us", qos_thresholds_.skew_fail_us}};
+
+  // Server-side health pip — React just renders the verdict. Either
+  // threshold crossing OR a non-zero drop counter shifts the colour:
+  // those drop counters reflect bugs operators should look at even when
+  // the fleet skew is fine.
+  std::string health = "unknown";
+  if (reporting > 0) {
+    const uint64_t skew_us =
+        (max_offset_us > min_offset_us) ? static_cast<uint64_t>(max_offset_us - min_offset_us) : 0;
+    if (skew_us >= qos_thresholds_.skew_fail_us || total_intercore_drops > 0 ||
+        total_time_sync_outliers > 0) {
+      health = "fail";
+    } else if (skew_us >= qos_thresholds_.skew_warn_us) {
+      health = "warn";
+    } else {
+      health = "ok";
+    }
+  }
+  response["health"] = health;
 
   return init_resp(req->create_response(restinio::status_ok())).set_body(response.dump()).done();
 }

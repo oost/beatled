@@ -114,28 +114,29 @@ interface FleetQosCardProps {
 // /api/qos; renders aggregates that the per-row Devices columns can't
 // express on their own (fleet skew, mean RTT, slowest device).
 function FleetQosCard({ qos }: FleetQosCardProps) {
-  // Health pip: green when both skew and total drops are nominal,
-  // amber when one is elevated, red when either is clearly broken.
-  // Thresholds are deliberately conservative defaults; commit #3
-  // turns these into CLI flags on the server.
-  const skewMs =
-    qos && qos.fleet_skew_us !== null ? Math.abs(qos.fleet_skew_us) / 1000 : null;
-  const drops = qos ? qos.total_intercore_drops + qos.total_time_sync_outliers : 0;
+  // The server computes the verdict from operator-tuned thresholds and
+  // returns it in `qos.health` — React only renders the matching
+  // colour/label so a single source of truth stays on the server.
   let pip = "bg-muted";
   let label = "—";
-  if (qos && qos.reporting_count > 0) {
-    if ((skewMs !== null && skewMs >= 20) || drops > 0) {
-      pip = "bg-red-500";
-      label = "Degraded";
-    } else if (skewMs !== null && skewMs >= 5) {
-      pip = "bg-amber-500";
-      label = "Marginal";
-    } else {
-      pip = "bg-green-500";
-      label = "Healthy";
+  if (qos) {
+    switch (qos.health) {
+      case "ok":
+        pip = "bg-green-500";
+        label = "Healthy";
+        break;
+      case "warn":
+        pip = "bg-amber-500";
+        label = "Marginal";
+        break;
+      case "fail":
+        pip = "bg-red-500";
+        label = "Degraded";
+        break;
+      case "unknown":
+      default:
+        label = qos.reporting_count > 0 ? "—" : "No QoS samples yet";
     }
-  } else if (qos) {
-    label = "No QoS samples yet";
   }
   return (
     <Card className="h-full">

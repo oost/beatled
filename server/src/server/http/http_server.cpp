@@ -31,7 +31,8 @@ std::unique_ptr<router_t> HTTPServer::server_handler(const std::string &root_dir
   };
 
   auto api_handler =
-      std::make_shared<APIHandler>(service_manager_, logger_, cors_origin_, api_token_);
+      std::make_shared<APIHandler>(service_manager_, logger_, cors_origin_, api_token_,
+                                   QosThresholds{qos_skew_warn_us_, qos_skew_fail_us_});
   auto by_api_handler = [api_handler](auto method) {
     using namespace std::placeholders;
     return std::bind(method, api_handler, _1, _2);
@@ -90,7 +91,9 @@ HTTPServer::HTTPServer(const std::string &id, const parameters_t &http_server_pa
       service_manager_{service_manager}, certs_dir_{http_server_parameters.certs_dir},
       cors_origin_{http_server_parameters.cors_origin},
       api_token_{http_server_parameters.api_token}, address_{http_server_parameters.address},
-      port_{http_server_parameters.port} {
+      port_{http_server_parameters.port},
+      qos_skew_warn_us_{http_server_parameters.qos_skew_warn_us},
+      qos_skew_fail_us_{http_server_parameters.qos_skew_fail_us} {
   SPDLOG_INFO("Creating {}", name());
 
   using std::literals::chrono_literals::operator""s;

@@ -146,6 +146,14 @@ Service flags pick which sub-services the binary brings up.
 | `-b, --broadcasting-port PORT`        | `8765`           | UDP destination port |
 | `--program-refresh-ms MS`             | `200`            | PROGRAM background refresh period in ms. On-change pushes are also sent twice ~50 ms apart for Wi-Fi loss insurance; lower this if controllers that miss both copies need to catch up faster. |
 
+### QoS / diagnostics (protocol v4)
+
+| Flag                                  | Default          | Description |
+| ------------------------------------- | ---------------- | ----------- |
+| `--status-probe-ms MS`                | `5000`           | STATUS probe period in ms; `0` disables. The server unicasts a `STATUS_REQUEST` to every registered client at this cadence. The response carries a fresh server-controlled RTT plus the same `beatled_qos_block_t` that piggy-backs on `TEMPO_REQUEST`. Surfaced via `/api/qos`. |
+| `--qos-skew-warn-us US`               | `5000`           | Fleet skew (max-min controller offset in µs) at which `/api/qos.health` flips from `ok` to `warn`. The React Fleet QoS pip turns amber. |
+| `--qos-skew-fail-us US`               | `20000`          | Fleet skew at which the pip turns red (`fail`). A non-zero intercore-drop or time-sync outlier total anywhere in the fleet also forces red, regardless of skew. |
+
 | Mode      | Destination                              | Notes |
 | --------- | ---------------------------------------- | ----- |
 | `unicast` | each registered client's last-known endpoint | Default — per-client OWD compensation, best for ≤10 controllers on Wi-Fi |
