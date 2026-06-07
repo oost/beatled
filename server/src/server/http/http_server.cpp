@@ -96,6 +96,16 @@ HTTPServer::HTTPServer(const std::string &id, const parameters_t &http_server_pa
   auto handler = server_handler(http_server_parameters.root_dir);
 
   if (http_server_parameters.no_tls) {
+    // Loud single-line warning so operators reading boot logs cannot miss
+    // that the API is serving cleartext. Tokens, board IDs, and admin
+    // controls all ride this connection; TLS is the right default in any
+    // deployment a real device can reach.
+    SPDLOG_WARN(
+        "{}: --no-tls is enabled. The API is serving plain HTTP — any API "
+        "tokens, controller payloads, and service-control writes will be "
+        "visible to anything on the network path. Do not use this outside a "
+        "trusted local-only environment.",
+        name());
     SPDLOG_INFO("{}: listening on {}:{} (plain HTTP)", name(), http_server_parameters.address,
                 http_server_parameters.port);
     server_ = std::make_unique<plain_server_t>(restinio::external_io_context(io_context),

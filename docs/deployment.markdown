@@ -127,6 +127,30 @@ The service runs as the deploy user (not root) with these security restrictions:
 - `ProtectSystem=strict` -- filesystem is read-only except for the app directory
 - `ProtectHome=read-only` -- home directory is read-only (certificates are only read)
 
+### Broadcasting Tempo to Controllers
+
+Per-beat tempo broadcasts to the Pico / ESP32 controllers are an *optional*
+service. They're disabled by default — the systemd unit (and the
+`scripts/beatled.sh server start` shorthand for local development) need
+the `--start-broadcast` flag for the broadcaster to come up:
+
+```sh
+beat_server ... --start-udp --start-broadcast
+```
+
+`--broadcast-mode` controls how each NEXT_BEAT reaches the fleet:
+
+| Mode                | Destination                                    | Notes                                                                                                            |
+| ------------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `unicast` (default) | each registered client's last-known endpoint   | per-client one-way-delay compensation applied; preferred for ≤10 controllers                                     |
+| `subnet`            | `--broadcasting-address` (e.g. `192.168.1.255`)| one packet per beat; AP-friendly but no per-client compensation                                                  |
+| `limited`           | `255.255.255.255`                              | one packet per beat; **frequently dropped by consumer Wi-Fi APs** — use only if you've verified yours forwards it |
+
+The unicast default also drives the `PROGRAM` push (server-side state
+change → instant fan-out + 1 Hz refresh) and is what the per-client OWD
+correction in protocol v2 relies on. See
+[Controller Sync](controller-sync.html) for the full handshake.
+
 ### Running Without systemd
 
 To start the server directly (useful for debugging):

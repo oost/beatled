@@ -242,7 +242,7 @@ Returns the list of connected Pico W devices.
       "client_id": 1,
       "board_id": "E6614103E72B6A2F",
       "ip_address": "192.168.1.42",
-      "last_seen": 1707900120000000
+      "last_status_time": 1707900120000000
     }
   ],
   "count": 1
@@ -255,7 +255,7 @@ Returns the list of connected Pico W devices.
 | `devices[].client_id` | number | Server-assigned client ID |
 | `devices[].board_id` | string | Pico W unique board identifier (hex) |
 | `devices[].ip_address` | string | Device IP address |
-| `devices[].last_seen` | number | Last communication timestamp (microseconds) |
+| `devices[].last_status_time` | number | Wall-clock timestamp (microseconds) of the most recent HELLO or TEMPO_REQUEST received from this device |
 | `count` | number | Total connected devices |
 
 ---

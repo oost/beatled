@@ -21,6 +21,16 @@ certs
 *.key
 *.p12
 
+# Local secrets and machine-specific overrides.
+# Anything matching .env / .env.<name> is excluded — that's where Wi-Fi
+# passwords (.env.pico / .env.esp32), API tokens (.env, .env.local), and
+# per-host service configuration live. Templates (.env.*.template) and
+# examples (.env.*.example) remain tracked so onboarding still works.
+.env
+.env.*
+!.env.*.template
+!.env.*.example
+
 # Claude Code
 .claude/
 
