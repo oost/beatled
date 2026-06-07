@@ -7,7 +7,7 @@ nav_order: 2
 
 # Beatled Controller
 
-Source code: [github.com/oost/beatled-pico](https://github.com/oost/beatled-pico)
+Source code lives in the main repo at [`controller/`](https://github.com/oost/beatled/tree/master/controller). (Historically a separate `beatled-pico` repository — that's now a read-only mirror.)
 
 Beatled Controller is embedded C firmware that drives WS2812 LED strips with beat-synchronized lighting patterns. It connects to the Beatled server over WiFi and receives tempo data and control commands via a binary UDP protocol.
 
@@ -41,13 +41,18 @@ The firmware runs on **Raspberry Pi Pico W**, **ESP32**, and as a native **macOS
 
 ## Getting Started
 
-Clone the repo and initialise submodules (includes the Pico SDK):
+Clone the main repo and initialise the controller's vendored submodules
+(includes the Pico SDK and FreeRTOS kernel):
 
 ```bash
-git clone https://github.com/oost/beatled-pico.git
-cd beatled-pico
-git submodule update --init
+git clone https://github.com/oost/beatled.git
+cd beatled
+git submodule update --init --recursive
 ```
+
+All firmware sources are at `controller/`. `scripts/beatled.sh` defaults
+`PICO_DIR` to that path; override it only if you're working on a parallel
+firmware tree.
 
 ---
 

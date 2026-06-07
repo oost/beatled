@@ -9,7 +9,10 @@ readonly VCPKG_DIR="${VCPKG_DIR:-$HOME/coding/external/vcpkg}"
 readonly SERVER_DIR="$PROJECT_DIR/server"
 readonly SERVER_BUILD_DIR="$SERVER_DIR/build"
 readonly CLIENT_DIR="$PROJECT_DIR/client"
-readonly PICO_DIR="${PICO_DIR:-$HOME/coding/projects/beatled-pico}"
+# Controller firmware now lives in-tree at controller/. PICO_DIR retains
+# its env-var override so a developer can point at a sibling clone for
+# experiments, but the default no longer relies on a parallel checkout.
+readonly PICO_DIR="${PICO_DIR:-$PROJECT_DIR/controller}"
 readonly PICO_BUILD_DIR="$PICO_DIR/build"
 readonly PICO_FREERTOS_BUILD_DIR="$PICO_DIR/build_posix_freertos"
 readonly PICO_HW_BUILD_DIR="$PICO_DIR/build-pico"

@@ -35,7 +35,11 @@ find_package(AudioFile CONFIG REQUIRED)
 find_package(OpenSSL REQUIRED)
 
 add_subdirectory(external)
-set(BEATLED_PROTOCOL_PATH "${CMAKE_CURRENT_LIST_DIR}/external/beatled-pico/lib/beatled_protocol")
+# Controller firmware was absorbed in-tree at <project>/controller/ (was a
+# git submodule under server/external/beatled-pico/). The protocol library
+# is the single source of truth for the wire format, shared by server and
+# firmware builds.
+set(BEATLED_PROTOCOL_PATH "${CMAKE_CURRENT_LIST_DIR}/../controller/lib/beatled_protocol")
 
 include("${CMAKE_CURRENT_LIST_DIR}/cmake/beatled_protocol_import.cmake")
 beatled_protocol_init()

@@ -51,8 +51,8 @@ Get the server, web client, and Pico simulator running locally in minutes -- no 
 
 ## Repositories
 
-| Repo                                                                 | Description                                                                       |
-| -------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| [beatled](https://github.com/oost/beatled)                           | C++ server, React client, Docker build, and documentation                         |
-| [beatled-pico](https://github.com/oost/beatled-pico)                 | Pico W firmware (C) with posix test port                                          |
-| [beatled-beat-tracker](https://github.com/oost/beatled-beat-tracker) | Fork of [BTrack](https://github.com/adamstark/BTrack) for real-time beat tracking |
+| Repo                                                                  | Description                                                                       |
+| --------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| [beatled](https://github.com/oost/beatled)                            | C++ server, React client, Docker build, project docs, and controller firmware     |
+| [controller/](https://github.com/oost/beatled/tree/master/controller) | Pico W / ESP32 firmware (C) with POSIX test port — in-tree under `controller/`    |
+| [beatled-beat-tracker](https://github.com/oost/beatled-beat-tracker)  | Fork of [BTrack](https://github.com/adamstark/BTrack) for real-time beat tracking |

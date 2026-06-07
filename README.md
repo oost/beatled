@@ -10,9 +10,9 @@ Real-time beat-synchronized LED control using a Raspberry Pi server, Pico W / ES
 
 ## Repos
 
-- **This repo** — C++ beat server, React frontend, iOS app, and project documentation
-- [**beatled-pico**](https://github.com/oost/beatled-pico) — Embedded C firmware for Pico W and ESP32 (5 ports: `pico`, `pico_freertos`, `posix`, `posix_freertos`, `esp32`)
-- [**beatled-beat-tracker**](https://github.com/oost/beatled-beat-tracker) — Fork of [BTrack](https://github.com/adamstark/BTrack) for live beat tracking
+- **This repo** — C++ beat server, React frontend, iOS app, project documentation, **and the controller firmware** (at `controller/`, 5 ports: `pico`, `pico_freertos`, `posix`, `posix_freertos`, `esp32`)
+- [**beatled-beat-tracker**](https://github.com/oost/beatled-beat-tracker) — Fork of [BTrack](https://github.com/adamstark/BTrack) for live beat tracking, vendored as a submodule under `server/external/beatled-beat-tracker/`
+- The historical [oost/beatled-pico](https://github.com/oost/beatled-pico) repository has been absorbed into this one and is now a read-only mirror; new firmware work goes here.
 
 ## Documentation
 
