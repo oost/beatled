@@ -1,0 +1,147 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"cmake.statusbar.advanced": {
+			"debug": {
+				"visibility": "hidden"
+			},
+			"launch": {
+				"visibility": "hidden"
+			},
+			"build": {
+				"visibility": "hidden"
+			},
+			"buildTarget": {
+				"visibility": "hidden"
+			}
+		},
+		"files.associations": {
+			"dma.h": "c",
+			"constants.h": "c",
+			"sntp.h": "c",
+			"cyw43_arch.h": "c",
+			"core1.h": "c",
+			"multicore.h": "c",
+			"queue.h": "c",
+			"stdlib.h": "c",
+			"pico.h": "c",
+			"stdio.h": "c",
+			"state_manager.h": "c",
+			"stddef.h": "c",
+			"blink.h": "c",
+			"intercore_queue.h": "c",
+			"state.h": "c",
+			"in.h": "c",
+			"inet.h": "c",
+			"unistd.h": "c",
+			"string.h": "c",
+			"unique_id.h": "c",
+			"*.metal": "cpp",
+			"thread": "cpp",
+			"__bit_reference": "cpp",
+			"__bits": "cpp",
+			"__config": "cpp",
+			"__debug": "cpp",
+			"__errc": "cpp",
+			"__hash_table": "cpp",
+			"__locale": "cpp",
+			"__mutex_base": "cpp",
+			"__node_handle": "cpp",
+			"__nullptr": "cpp",
+			"__split_buffer": "cpp",
+			"__string": "cpp",
+			"__threading_support": "cpp",
+			"__tuple": "cpp",
+			"array": "cpp",
+			"atomic": "cpp",
+			"bit": "cpp",
+			"bitset": "cpp",
+			"cctype": "cpp",
+			"charconv": "cpp",
+			"chrono": "cpp",
+			"clocale": "cpp",
+			"cmath": "cpp",
+			"compare": "cpp",
+			"complex": "cpp",
+			"concepts": "cpp",
+			"cstdarg": "cpp",
+			"cstddef": "cpp",
+			"cstdint": "cpp",
+			"cstdio": "cpp",
+			"cstdlib": "cpp",
+			"cstring": "cpp",
+			"ctime": "cpp",
+			"cwchar": "cpp",
+			"cwctype": "cpp",
+			"exception": "cpp",
+			"format": "cpp",
+			"forward_list": "cpp",
+			"initializer_list": "cpp",
+			"ios": "cpp",
+			"iosfwd": "cpp",
+			"istream": "cpp",
+			"limits": "cpp",
+			"locale": "cpp",
+			"memory": "cpp",
+			"mutex": "cpp",
+			"new": "cpp",
+			"optional": "cpp",
+			"ostream": "cpp",
+			"ratio": "cpp",
+			"sstream": "cpp",
+			"stdexcept": "cpp",
+			"streambuf": "cpp",
+			"string": "cpp",
+			"string_view": "cpp",
+			"system_error": "cpp",
+			"tuple": "cpp",
+			"type_traits": "cpp",
+			"typeindex": "cpp",
+			"typeinfo": "cpp",
+			"unordered_map": "cpp",
+			"unordered_set": "cpp",
+			"variant": "cpp",
+			"vector": "cpp",
+			"__tree": "cpp",
+			"condition_variable": "cpp",
+			"deque": "cpp",
+			"iostream": "cpp",
+			"map": "cpp",
+			"numbers": "cpp",
+			"numeric": "cpp",
+			"queue": "cpp",
+			"random": "cpp",
+			"semaphore": "cpp",
+			"set": "cpp",
+			"algorithm": "cpp",
+			"stdint.h": "c",
+			"registry.h": "c"
+		},
+		"editor.tokenColorCustomizations": {
+			"textMateRules": [
+				{
+					"scope": "googletest.failed",
+					"settings": {
+						"foreground": "#f00"
+					}
+				},
+				{
+					"scope": "googletest.passed",
+					"settings": {
+						"foreground": "#0f0"
+					}
+				},
+				{
+					"scope": "googletest.run",
+					"settings": {
+						"foreground": "#0f0"
+					}
+				}
+			]
+		}
+	}
+}

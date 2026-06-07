@@ -1,0 +1,7 @@
+#ifndef STATE_MANAGER__STATES__REGISTERED__REGISTERED_H
+#define STATE_MANAGER__STATES__REGISTERED__REGISTERED_H
+
+int enter_registered_state();
+int exit_registered_state();
+
+#endif // STATE_MANAGER__STATES__REGISTERED__REGISTERED_H

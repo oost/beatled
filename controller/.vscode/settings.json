@@ -1,0 +1,74 @@
+{
+  "cmake.configureOnOpen": false,
+  "cmake.useCMakePresets": "auto",
+  "cmake.statusbar.advanced": {
+    "debug": {
+      "visibility": "hidden"
+    },
+    "launch": {
+      "visibility": "hidden"
+    },
+    "build": {
+      "visibility": "hidden"
+    },
+    "buildTarget": {
+      "visibility": "hidden"
+    },
+  },
+  "cmake.environment": {
+    // "PICO_TOOLCHAIN_PATH": "/Applications/ArmGNUToolchain/12.2.rel1/arm-none-eabi",
+    "BEATLED_SERVER_NAME": "${env:BEATLED_SERVER_NAME}",
+    "WIFI_SSID": "${env:BEATLED_WIFI_SSID}",
+    "WIFI_PASSWORD": "${env:BEATLED_WIFI_PASSWORD}"
+  },
+  "cmake.buildBeforeRun": true,
+  "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+  "cmake.configureSettings": {
+    // "PORT": "pico",
+    "PORT": "posix",
+    "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+    "PICO_PROBE": "ON",
+    "PICO_SDK_PATH": "./lib/pico-sdk",
+    "PICO_BOARD": "pico_w",
+  },
+  "editor.tokenColorCustomizations": {
+    "textMateRules": [
+      {
+        "scope": "googletest.failed",
+        "settings": {
+          "foreground": "#f00"
+        }
+      },
+      {
+        "scope": "googletest.passed",
+        "settings": {
+          "foreground": "#0f0"
+        }
+      },
+      {
+        "scope": "googletest.run",
+        "settings": {
+          "foreground": "#0f0"
+        }
+      }
+    ]
+  },
+  "files.associations": {
+    "time.h": "c",
+    "network.h": "c",
+    "protocol.h": "c",
+    "unique_id.h": "c",
+    "clock.h": "c",
+    "blink.h": "c",
+    "autotest.h": "c",
+    "constants.h": "c",
+    "core1.h": "c",
+    "wifi.h": "c",
+    "started.h": "c",
+    "time_synced.h": "c",
+    "chrono": "cpp",
+    "state_manager.h": "c",
+    "stdint.h": "c",
+    "stdlib.h": "c"
+  }
+}
