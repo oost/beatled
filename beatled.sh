@@ -180,6 +180,12 @@ Service flags (which sub-services to start — none default on):
   --start-udp          UDP server on --udp-port (default 9090) for HELLO / TIME / TEMPO
   --start-broadcast    Per-beat tempo dispatcher + PROGRAM push (see --broadcast-mode)
 
+Script flags (handled by $(basename "$0"), not passed to the binary):
+  --no-client          Don't treat the React bundle as a dependency. By default
+                       'server start' builds client/dist if it's missing and
+                       serves it as the static root; pass this to skip that
+                       (e.g. when you're running 'client react dev' separately).
+
 Server config:
   -a ADDRESS                Listen address (default: localhost — script overrides to 0.0.0.0)
   -p, --http-port PORT      HTTP listening port (default: 8443)
@@ -190,7 +196,10 @@ Server config:
   --no-tls                  Serve plain HTTP (development only — logs a WARN)
   --cors-origin URL         Allow CORS from a single origin (default: disabled)
   --api-token TOKEN         Require 'Authorization: Bearer <token>' on every state-changing call
-  --verbose                 Enable DEBUG-level logging (per-beat lines etc.)
+  --log-level LEVEL         spdlog level (default: info). Valid values:
+                            trace, debug, info, warn, err, critical, off.
+                            Falls back to the BEATLED_LOG_LEVEL env var
+                            when the flag is not on the CLI.
 
 Broadcaster config (only relevant when --start-broadcast is on):
   --broadcast-mode MODE     unicast (default) | subnet | limited
@@ -206,6 +215,7 @@ Examples:
   $(basename "$0") server start --start-http --start-udp --start-broadcast
   $(basename "$0") server start --start-http --api-token "\$BEATLED_API_TOKEN"
   $(basename "$0") server start --start-http --no-tls --cors-origin "https://localhost:5173"
+  $(basename "$0") server start --start-http --no-client   # UI served by 'client react dev'
   $(basename "$0") server deploy pi beatled.local
 EOF
   exit 1
@@ -468,13 +478,35 @@ cmd_server_start() {
   local CERTS_DIR="$SERVER_DIR/certs"
   local CLIENT_DIST="$CLIENT_DIR/dist"
 
+  # Pull our own --no-client flag out of the args before they reach the binary
+  # (beat_server doesn't understand it); everything else passes through.
+  local SERVER_NO_CLIENT=0
+  local PASSTHRU=()
+  local arg
+  for arg in "$@"; do
+    if [ "$arg" = "--no-client" ]; then
+      SERVER_NO_CLIENT=1
+    else
+      PASSTHRU+=("$arg")
+    fi
+  done
+  if [ "${#PASSTHRU[@]}" -gt 0 ]; then set -- "${PASSTHRU[@]}"; else set --; fi
+
   local ARGS=("--certs-dir" "$CERTS_DIR" "-a" "0.0.0.0")
 
-  if [ -d "$CLIENT_DIST" ]; then
+  # The client bundle is a dependency of the server: the server serves it as
+  # its static root, so without it GET / 404s (Chrome shows ERR_EMPTY_RESPONSE).
+  # Build it on demand if it's missing rather than starting a server that can't
+  # serve the UI. Pass --no-client to skip (e.g. when using the Vite dev server).
+  if [ "$SERVER_NO_CLIENT" = "1" ]; then
+    info "Skipping client dependency (--no-client); UI must be served elsewhere (e.g. 'client react dev')"
+  elif [ ! -d "$CLIENT_DIST" ]; then
+    warn "Client not built yet ($CLIENT_DIST not found) — building it now"
+    build_client
+  fi
+
+  if [ "$SERVER_NO_CLIENT" != "1" ] && [ -d "$CLIENT_DIST" ]; then
     ARGS+=("--root-dir" "$CLIENT_DIST")
-  else
-    warn "Client not built yet ($CLIENT_DIST not found)"
-    warn "Run '$(basename "$0") client react build' first, or use '$(basename "$0") client react dev' for dev mode"
   fi
 
   if [ ! -f "$CERTS_DIR/cert.pem" ]; then

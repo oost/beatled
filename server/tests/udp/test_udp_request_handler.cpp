@@ -17,8 +17,7 @@ using beatled::core::StateManager;
 namespace {
 
 // Helper: create a UDPRequestBuffer with a message payload and remote endpoint.
-UDPRequestBuffer make_request(const void *msg, size_t size,
-                              const char *ip = "10.0.0.1") {
+UDPRequestBuffer make_request(const void *msg, size_t size, const char *ip = "10.0.0.1") {
   asio::ip::udp::endpoint ep(asio::ip::make_address(ip), 9000);
   UDPRequestBuffer buf(ep);
   std::memcpy(buf.data().data(), msg, size);
@@ -38,8 +37,7 @@ TEST_CASE("UDPRequestHandler dispatch", "[udp][handler]") {
     auto resp = handler.response();
     REQUIRE(resp->type() == BEATLED_MESSAGE_ERROR);
 
-    const auto *err =
-        reinterpret_cast<const beatled_message_error_t *>(&resp->data());
+    const auto *err = reinterpret_cast<const beatled_message_error_t *>(&resp->data());
     REQUIRE(err->error_code == BEATLED_ERROR_NO_DATA);
   }
 
@@ -51,8 +49,7 @@ TEST_CASE("UDPRequestHandler dispatch", "[udp][handler]") {
     auto resp = handler.response();
     REQUIRE(resp->type() == BEATLED_MESSAGE_ERROR);
 
-    const auto *err =
-        reinterpret_cast<const beatled_message_error_t *>(&resp->data());
+    const auto *err = reinterpret_cast<const beatled_message_error_t *>(&resp->data());
     REQUIRE(err->error_code == BEATLED_ERROR_UNKNOWN_MESSAGE_TYPE);
   }
 }
@@ -64,6 +61,10 @@ TEST_CASE("UDPRequestHandler hello request", "[udp][handler]") {
     beatled_message_hello_request_t hello_req{};
     hello_req.base.type = BEATLED_MESSAGE_HELLO_REQUEST;
     std::memcpy(hello_req.board_id, "ABCD1234ABCD1234", sizeof(hello_req.board_id));
+    std::memcpy(hello_req.port_name, "pico-freertos", sizeof("pico-freertos"));
+    std::memcpy(hello_req.git_sha, "abcd123-dirty", sizeof("abcd123-dirty"));
+    const uint64_t kBuildTimeUs = 1700000000000000ULL;
+    hello_req.build_time_us = htonll(kBuildTimeUs);
 
     auto buf = make_request(&hello_req, sizeof(hello_req));
     UDPRequestHandler handler(&buf, sm);
@@ -72,9 +73,12 @@ TEST_CASE("UDPRequestHandler hello request", "[udp][handler]") {
     REQUIRE(resp->type() == BEATLED_MESSAGE_HELLO_RESPONSE);
     REQUIRE(resp->size() == sizeof(beatled_message_hello_response_t));
 
-    // Client should now be registered
+    // Client should now be registered and carry the v3 firmware fields.
     auto client = sm.client_status(asio::ip::make_address("10.0.0.1"));
     REQUIRE(client != nullptr);
+    REQUIRE(client->port_name == "pico-freertos");
+    REQUIRE(client->git_sha == "abcd123-dirty");
+    REQUIRE(client->build_time_us == kBuildTimeUs);
   }
 
   SECTION("Undersized hello request returns error") {
@@ -113,8 +117,7 @@ TEST_CASE("UDPRequestHandler time request", "[udp][handler]") {
     REQUIRE(resp->type() == BEATLED_MESSAGE_TIME_RESPONSE);
     REQUIRE(resp->size() == sizeof(beatled_message_time_response_t));
 
-    const auto *msg =
-        reinterpret_cast<const beatled_message_time_response_t *>(&resp->data());
+    const auto *msg = reinterpret_cast<const beatled_message_time_response_t *>(&resp->data());
     REQUIRE(ntohll(msg->orig_time) == orig);
     // recv and xmit should be non-zero timestamps
     REQUIRE(ntohll(msg->recv_time) > 0);
@@ -151,8 +154,7 @@ TEST_CASE("UDPRequestHandler tempo request", "[udp][handler]") {
     REQUIRE(resp->type() == BEATLED_MESSAGE_TEMPO_RESPONSE);
     REQUIRE(resp->size() == sizeof(beatled_message_tempo_response_t));
 
-    const auto *msg =
-        reinterpret_cast<const beatled_message_tempo_response_t *>(&resp->data());
+    const auto *msg = reinterpret_cast<const beatled_message_tempo_response_t *>(&resp->data());
     REQUIRE(ntohll(msg->beat_time_ref) == 99999ULL);
     REQUIRE(ntohl(msg->tempo_period_us) == 500000); // 60M / 120
     REQUIRE(ntohs(msg->program_id) == 5);

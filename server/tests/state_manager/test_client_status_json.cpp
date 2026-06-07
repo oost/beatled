@@ -12,14 +12,14 @@ TEST_CASE("ClientStatus JSON serialization", "[client_status][json]") {
     // Create a board_id with known values (simulating actual device ID)
     ClientStatus::board_id_t board_id;
     // Fill with test data: -66,-83,80,88,0,0,54,-25 from user's output
-    board_id[0] = static_cast<char>(-66);  // 0xBE
-    board_id[1] = static_cast<char>(-83);  // 0xAD
-    board_id[2] = 'P';   // 80
-    board_id[3] = 'X';   // 88
+    board_id[0] = static_cast<char>(-66); // 0xBE
+    board_id[1] = static_cast<char>(-83); // 0xAD
+    board_id[2] = 'P';                    // 80
+    board_id[3] = 'X';                    // 88
     board_id[4] = 0;
     board_id[5] = 0;
-    board_id[6] = static_cast<char>(54);   // 0x36
-    board_id[7] = static_cast<char>(-25);  // 0xE7
+    board_id[6] = static_cast<char>(54);  // 0x36
+    board_id[7] = static_cast<char>(-25); // 0xE7
     for (int i = 8; i < 17; i++) {
       board_id[i] = 0;
     }
@@ -48,6 +48,40 @@ TEST_CASE("ClientStatus JSON serialization", "[client_status][json]") {
 
     // Verify it doesn't contain the raw bytes (which would fail above anyway)
     REQUIRE_FALSE(j["board_id"].is_array());
+  }
+
+  SECTION("port_name, git_sha, build_time_us round-trip through JSON") {
+    ClientStatus::board_id_t board_id{};
+    board_id[0] = 'F';
+    board_id[1] = 'W';
+    asio::ip::address ip_addr = asio::ip::make_address("127.0.0.1");
+    auto cs = std::make_shared<ClientStatus>(board_id, ip_addr);
+    cs->client_id = 7;
+    cs->last_status_time = 1771268537669552;
+    cs->port_name = "pico-freertos";
+    cs->git_sha = "1a2b3c4-dirty";
+    cs->build_time_us = 1700000000000000ULL;
+
+    json j = *cs;
+    INFO("Serialized JSON: " << j.dump(2));
+
+    REQUIRE(j["port_name"] == "pico-freertos");
+    REQUIRE(j["git_sha"] == "1a2b3c4-dirty");
+    REQUIRE(j["build_time_us"] == 1700000000000000ULL);
+  }
+
+  SECTION("Empty firmware fields serialize as empty string / 0") {
+    ClientStatus::board_id_t board_id{};
+    asio::ip::address ip_addr = asio::ip::make_address("127.0.0.1");
+    auto cs = std::make_shared<ClientStatus>(board_id, ip_addr);
+    cs->client_id = 0;
+    cs->last_status_time = 0;
+    // port_name / git_sha default-constructed to "", build_time_us = 0.
+
+    json j = *cs;
+    REQUIRE(j["port_name"] == "");
+    REQUIRE(j["git_sha"] == "");
+    REQUIRE(j["build_time_us"] == 0);
   }
 
   SECTION("board_id_t direct serialization should produce string") {

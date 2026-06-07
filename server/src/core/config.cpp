@@ -37,7 +37,8 @@ Config::Config(int argc, const char *argv[]) {
                 "cors origin")["--cors-origin"]("CORS allowed origin (default: disabled)") |
       lyra::opt(m_api_token, "api token")["--api-token"](
           "Bearer token for API authentication (default: disabled)") |
-      lyra::opt(m_verbose)["--verbose"]("Enable debug logging");
+      lyra::opt(m_log_level, "trace|debug|info|warn|err|critical|off")["--log-level"](
+          fmt::format("spdlog level (default: {}; also: BEATLED_LOG_LEVEL env var)", m_log_level));
 
   auto parser_result = cli.parse(lyra::args(argc, argv));
   if (!parser_result) {
@@ -56,13 +57,22 @@ Config::Config(int argc, const char *argv[]) {
       m_api_token = env_token;
     }
   }
+  // Log level: CLI wins over env wins over default. The CLI default is
+  // "info"; treat the env var as the source-of-truth only when the user
+  // didn't override on the command line.
+  if (m_log_level == "info") {
+    const char *env_level = std::getenv("BEATLED_LOG_LEVEL");
+    if (env_level && *env_level) {
+      m_log_level = env_level;
+    }
+  }
 }
 
 void Config::log_config() const {
   SPDLOG_INFO("Configuration:");
   SPDLOG_INFO("  Address:            {}", m_address);
-  SPDLOG_INFO("  HTTP server:        {} (port {}{})", m_start_http_server ? "on" : "off", m_http_port,
-              m_no_tls ? ", no TLS" : "");
+  SPDLOG_INFO("  HTTP server:        {} (port {}{})", m_start_http_server ? "on" : "off",
+              m_http_port, m_no_tls ? ", no TLS" : "");
   SPDLOG_INFO("  UDP server:         {} (port {})", m_start_udp_server ? "on" : "off", m_udp_port);
   SPDLOG_INFO("  Broadcaster:        {} ({}:{}, mode={})", m_start_broadcaster ? "on" : "off",
               m_broadcasting_address, m_broadcasting_port, m_broadcast_mode);
@@ -71,6 +81,7 @@ void Config::log_config() const {
   SPDLOG_INFO("  Certs dir:          {}", m_certs_dir);
   SPDLOG_INFO("  CORS origin:        {}", m_cors_origin.empty() ? "disabled" : m_cors_origin);
   SPDLOG_INFO("  API token:          {}", m_api_token.empty() ? "disabled" : "set");
+  SPDLOG_INFO("  Log level:          {}", m_log_level);
 }
 
 beatled::server::Server::parameters_t Config::server_parameters() const {
@@ -83,9 +94,8 @@ beatled::server::Server::parameters_t Config::server_parameters() const {
   } else if (m_broadcast_mode == "unicast") {
     mode = BroadcastMode::Unicast;
   } else {
-    throw std::runtime_error{
-        fmt::format("Invalid --broadcast-mode '{}' (must be limited, subnet, or unicast)",
-                    m_broadcast_mode)};
+    throw std::runtime_error{fmt::format(
+        "Invalid --broadcast-mode '{}' (must be limited, subnet, or unicast)", m_broadcast_mode)};
   }
 
   server::Server::parameters_t server_parameters{
@@ -104,7 +114,7 @@ beatled::server::Server::parameters_t Config::server_parameters() const {
           },
       .udp = {m_udp_port},
       .broadcasting = {m_broadcasting_address, m_broadcasting_port, mode},
-      .logger = {20, m_verbose},
+      .logger = {20, m_log_level},
       .thread_pool_size = m_pool_size,
   };
 

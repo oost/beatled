@@ -14,7 +14,10 @@ class Logger {
 public:
   struct parameters_t {
     std::size_t queue_size = 20;
-    bool verbose = false;
+    // Free-form log-level string: one of trace / debug / info / warn /
+    // err / critical / off. Defaults to "info"; unrecognized values
+    // also fall back to "info" with a SPDLOG_WARN at startup.
+    std::string log_level = "info";
   };
 
   Logger(const parameters_t &logger_parameters);

@@ -1,11 +1,14 @@
 #include <inttypes.h>
+#include <string.h>
 
 #include "hal/unique_id.h"
 
 #include "beatled/protocol.h"
+#include "beatled_version.h"
 #include "command/hello.h"
 #include "command/utils.h"
 #include "config/constants.h"
+#include "config/port_name.h"
 #include "hal/blink.h"
 #include "hal/network.h"
 #include "hal/time.h"
@@ -23,30 +26,33 @@ int prepare_hello_request(void *buffer_payload, size_t buf_len) {
     return 1;
   }
 
-  beatled_message_hello_request_t *msg =
-      (beatled_message_hello_request_t *)buffer_payload;
+  beatled_message_hello_request_t *msg = (beatled_message_hello_request_t *)buffer_payload;
   msg->base.type = BEATLED_MESSAGE_HELLO_REQUEST;
 
   get_unique_board_id(msg->board_id);
 
-  // pico_get_unique_board_id_string(msg->board_id,
-  // count_of(msg->board_id));
+  // Firmware self-description for /api/devices. All three are stamped at
+  // build time — strncpy with one-byte slack guarantees the NUL even if a
+  // future port name is exactly LEN characters.
+  memset(msg->port_name, 0, sizeof(msg->port_name));
+  strncpy(msg->port_name, BEATLED_PORT_NAME, sizeof(msg->port_name) - 1);
+  memset(msg->git_sha, 0, sizeof(msg->git_sha));
+  strncpy(msg->git_sha, BEATLED_GIT_HASH, sizeof(msg->git_sha) - 1);
+  msg->build_time_us = htonll((uint64_t)BEATLED_BUILD_TIME_US);
+
   return 0;
 }
 
 int send_hello_request() {
   state_manager_state_t st = state_manager_get_state();
   if (last_hello_response_us == 0) {
-    printf("[NET] Sending hello request (state=%s, no response yet)\n",
-           state_name(st));
+    printf("[NET] Sending hello request (state=%s, no response yet)\n", state_name(st));
   } else {
     uint64_t since_us = time_us_64() - last_hello_response_us;
-    printf("[NET] Sending hello request (state=%s, last response %" PRIu64
-           "s ago)\n",
+    printf("[NET] Sending hello request (state=%s, last response %" PRIu64 "s ago)\n",
            state_name(st), since_us / 1000000ULL);
   }
-  int err = send_udp_request(sizeof(beatled_message_hello_request_t),
-                             prepare_hello_request);
+  int err = send_udp_request(sizeof(beatled_message_hello_request_t), prepare_hello_request);
   if (err) {
     printf("[ERR] send_hello_request: send_udp_request returned %d\n", err);
   }
@@ -58,8 +64,7 @@ int process_hello_msg(beatled_message_t *server_msg, size_t data_length) {
     return 1;
   }
 
-  beatled_message_hello_response_t *hello_msg =
-      (beatled_message_hello_response_t *)server_msg;
+  beatled_message_hello_response_t *hello_msg = (beatled_message_hello_response_t *)server_msg;
   uint16_t client_id = ntohs(hello_msg->client_id);
   last_hello_response_us = time_us_64();
   printf("[CMD] Registered with client_id=%d\n", client_id);

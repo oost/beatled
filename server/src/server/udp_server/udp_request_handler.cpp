@@ -1,4 +1,5 @@
 #include <arpa/inet.h>
+#include <cstring>
 #include <spdlog/spdlog.h>
 #include <string>
 
@@ -48,7 +49,8 @@ DataBuffer::Ptr UDPRequestHandler::process_hello_request() {
   SPDLOG_INFO("Hello request");
 
   if (request_buffer_ptr_->size() < sizeof(beatled_message_hello_request_t)) {
-    SPDLOG_ERROR("Hello request too small: {} bytes", request_buffer_ptr_->size());
+    SPDLOG_ERROR("Hello request too small: {} bytes (expected {} for v3)",
+                 request_buffer_ptr_->size(), sizeof(beatled_message_hello_request_t));
     return error_response(BEATLED_ERROR_NO_DATA);
   }
 
@@ -60,6 +62,16 @@ DataBuffer::Ptr UDPRequestHandler::process_hello_request() {
   cs->last_status_time = Clock::wall_time_us_64();
   // Remember the full endpoint (incl. ephemeral port) for unicast delivery.
   cs->endpoint = request_buffer_ptr_->remote_endpoint();
+
+  // Pull the firmware self-description carried since protocol v3. The
+  // wire fields are fixed-size, null-terminated strings; build_time_us
+  // is network byte order.
+  cs->port_name =
+      std::string(hello_req->port_name, strnlen(hello_req->port_name, BEATLED_PORT_NAME_LEN));
+  cs->git_sha = std::string(hello_req->git_sha, strnlen(hello_req->git_sha, BEATLED_GIT_HASH_LEN));
+  cs->build_time_us = ntohll(hello_req->build_time_us);
+  SPDLOG_INFO("Client hello: board_id={} port={} sha={} built_us={}", hello_req->board_id,
+              cs->port_name, cs->git_sha, cs->build_time_us);
 
   state_manager_.register_client(cs);
   return std::make_unique<HelloResponseBuffer>(cs->client_id);

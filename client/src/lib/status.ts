@@ -21,6 +21,11 @@ export interface Device {
   board_id: string;
   ip_address: string;
   last_status_time: number;
+  // Firmware self-description carried on HELLO_REQUEST since protocol v3.
+  // Empty / 0 when the server is talking to a v2-or-older client.
+  port_name?: string;
+  git_sha?: string;
+  build_time_us?: number;
 }
 
 export interface DevicesResponse {

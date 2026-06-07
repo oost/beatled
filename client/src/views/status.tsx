@@ -56,6 +56,19 @@ function formatLastSeen(lastStatusTimeUs: number): string {
   return formatDistanceToNow(date, { addSuffix: true });
 }
 
+// Render the firmware self-description: "port · sha · built X ago".
+// Empty when none of the three fields are populated — that's a v2 client
+// or a server build that didn't capture them.
+function formatFirmware(device: Device): string {
+  const parts: string[] = [];
+  if (device.port_name) parts.push(device.port_name);
+  if (device.git_sha) parts.push(device.git_sha);
+  if (device.build_time_us && device.build_time_us > 0) {
+    parts.push("built " + formatDistanceToNow(new Date(device.build_time_us / 1000), { addSuffix: true }));
+  }
+  return parts.length === 0 ? "—" : parts.join(" · ");
+}
+
 export default function StatusPage() {
   const fetcher = useFetcher();
 
@@ -189,6 +202,7 @@ export default function StatusPage() {
                   <TableRow>
                     <TableHead>Board ID</TableHead>
                     <TableHead>IP Address</TableHead>
+                    <TableHead>Firmware</TableHead>
                     <TableHead className="text-right">Last Seen</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -197,6 +211,9 @@ export default function StatusPage() {
                     <TableRow key={device.client_id}>
                       <TableCell className="font-mono text-xs">{device.board_id}</TableCell>
                       <TableCell>{device.ip_address}</TableCell>
+                      <TableCell className="font-mono text-xs">
+                        {formatFirmware(device)}
+                      </TableCell>
                       <TableCell className="text-right">
                         {formatLastSeen(device.last_status_time)}
                       </TableCell>

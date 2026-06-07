@@ -20,9 +20,10 @@ TEST_CASE("Protocol struct sizes match wire format", "[protocol]") {
     REQUIRE(sizeof(beatled_message_error_t) == 2);
   }
 
-  SECTION("Hello request includes board_id") {
-    // 1 byte type + 17 bytes board_id (2 * 8 + 1)
-    REQUIRE(sizeof(beatled_message_hello_request_t) == 18);
+  SECTION("Hello request includes board_id + firmware self-description (v3)") {
+    // 1 byte type + 17 bytes board_id (2 * 8 + 1) + 16 port_name +
+    // 16 git_sha + 8 build_time_us = 58 bytes total.
+    REQUIRE(sizeof(beatled_message_hello_request_t) == 58);
   }
 
   SECTION("Hello response is 3 bytes") {

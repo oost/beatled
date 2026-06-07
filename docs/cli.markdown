@@ -103,14 +103,24 @@ The relevant subcommand sources the file automatically. Both
 
 ### Service flags
 
-`start` builds nothing on its own — service flags pick which sub-services
-the binary brings up.
+Service flags pick which sub-services the binary brings up.
 
 | Flag                 | Default | Notes |
 | -------------------- | ------- | ----- |
 | `--start-http`       | off     | HTTPS API + static client on `--http-port` (default 8443) |
 | `--start-udp`        | off     | UDP server on `--udp-port` (default 9090) — HELLO / TIME / TEMPO requests |
 | `--start-broadcast`  | off     | Per-beat tempo dispatcher + PROGRAM push (see `--broadcast-mode`) |
+
+### Script-handled flags (consumed by `beatled.sh`, not passed to the binary)
+
+| Flag          | Default | Notes |
+| ------------- | ------- | ----- |
+| `--no-client` | off     | Skip the client dependency. By default `server start` builds `client/dist` if it's missing and serves it as the static root (so `GET /` returns the UI instead of a 404). Pass `--no-client` when the UI is served elsewhere — e.g. `client react dev`. |
+
+> The React bundle is a build dependency of `server start`: the server serves
+> `client/dist` as its static root, so a missing bundle makes `GET /` 404
+> (Chrome shows `ERR_EMPTY_RESPONSE`). `server start` builds it on demand unless
+> `--no-client` is given.
 
 ### Server config
 
@@ -125,7 +135,7 @@ the binary brings up.
 | `--no-tls`                                          | off                                    | Serve plain HTTP — development only (emits `SPDLOG_WARN`) |
 | `--cors-origin URL`                                 | disabled                               | Single-origin CORS allowance |
 | `--api-token TOKEN`                                 | disabled                               | Require `Authorization: Bearer <token>` on state-changing calls |
-| `--verbose`                                         | off                                    | DEBUG-level logging (per-beat lines etc.) |
+| `--log-level LEVEL`                                 | `info`                                 | spdlog verbosity. One of `trace`, `debug`, `info`, `warn`, `err`, `critical`, `off`. Falls back to the `BEATLED_LOG_LEVEL` env var when the flag is absent on the CLI. |
 
 ### Broadcaster config (only with `--start-broadcast`)
 
@@ -214,7 +224,8 @@ match (sibling clones, alternate vcpkg root, different ESP32 board).
 | `WS2812_PIN`          | `0`                                  | GPIO data pin |
 | `ESP32_TARGET`        | `esp32s3`                            | `idf.py set-target` value |
 | `ESP32_PORT`          | `/dev/cu.usbmodem*`                  | esptool / monitor serial device |
-| `BEATLED_API_TOKEN`   | *(none)*                             | Fallback API token when `--api-token` is set on the CLI |
+| `BEATLED_API_TOKEN`   | *(none)*                             | Fallback API token when `--api-token` is omitted on the CLI |
+| `BEATLED_LOG_LEVEL`   | `info`                               | Server log level (`trace`/`debug`/`info`/`warn`/`err`/`critical`/`off`); used when `--log-level` is omitted |
 
 `WIFI_SSID`, `WIFI_PASSWORD`, `BEATLED_SERVER_NAME`, `NUM_PIXELS`, and
 `WS2812_PIN` are typically set via `controller/.env.pico` and friends

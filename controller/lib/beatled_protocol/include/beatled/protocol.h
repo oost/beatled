@@ -65,10 +65,28 @@ typedef struct {
   uint16_t program_id;
 } __attribute__((__packed__)) beatled_message_tempo_response_t;
 
+// Sizes of the firmware-version fields carried on HELLO_REQUEST. Both
+// strings are null-terminated; the constants are exposed so the
+// server can mirror them in ClientStatus and the React UI's view of
+// devices.
+#define BEATLED_PORT_NAME_LEN 16
+#define BEATLED_GIT_HASH_LEN 16
+
 // Hello. eCommandType = BEATLED_MESSAGE_HELLO_REQUEST
+//
+// Protocol v3: gained `port_name`, `git_sha`, and `build_time_us` so the
+// server's `/api/devices` response can show what each controller is
+// running. All three are stamped at firmware build time —
+// controller/cmake/gen_version.cmake produces the SHA + build_time and
+// controller/src/config/include/config/port_name.h picks the port
+// string via the same PICO_PORT / FREERTOS_PORT / ESP32_PORT / POSIX_PORT
+// defines used elsewhere.
 typedef struct {
   beatled_message_t base;
   uint8_t board_id[2 * PICO_UNIQUE_BOARD_ID_SIZE_BYTES + 1];
+  char port_name[BEATLED_PORT_NAME_LEN];
+  char git_sha[BEATLED_GIT_HASH_LEN];
+  uint64_t build_time_us;
 } __attribute__((__packed__)) beatled_message_hello_request_t;
 
 // Hello. eCommandType = BEATLED_MESSAGE_HELLO_RESPONSE

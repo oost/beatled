@@ -40,7 +40,10 @@ private:
   std::string m_certs_dir{"./certs"};
   std::string m_cors_origin;
   std::string m_api_token;
-  bool m_verbose{false};
+  // spdlog level: trace / debug / info / warn / err / critical / off.
+  // Resolved from --log-level (highest priority) → BEATLED_LOG_LEVEL env
+  // → built-in default "info".
+  std::string m_log_level{"info"};
 };
 
 } // namespace beatled::core
