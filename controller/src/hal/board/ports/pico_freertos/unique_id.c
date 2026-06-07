@@ -4,9 +4,12 @@
 
 #include "hal/unique_id.h"
 
-pico_unique_board_id_t *board_id_internal;
-
 void get_unique_board_id(uint8_t *board_id) {
-  pico_get_unique_board_id(board_id_internal);
-  memcpy(board_id, board_id_internal->id, BOARD_ID_SIZE_BYTES);
+  // Stack-local destination: the previous global-pointer form was
+  // never assigned, so pico_get_unique_board_id wrote to NULL and
+  // two Picos ended up with identical (all-zero) IDs, causing the
+  // server's register_client to dedupe the second one away.
+  pico_unique_board_id_t id_local;
+  pico_get_unique_board_id(&id_local);
+  memcpy(board_id, id_local.id, BOARD_ID_SIZE_BYTES);
 }
