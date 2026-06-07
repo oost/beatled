@@ -45,12 +45,15 @@ Application::Application(const Config &beatled_config)
                                         double estimated_tempo, uint32_t beat_count) {
         uint64_t next_beat_time_ref = state_manager_.get_next_beat_time_ref();
 
-        SPDLOG_INFO("Beat {}, {} vs. prediction {}", beat_time_ref, tempo,
-                    static_cast<int64_t>(beat_time_ref) - static_cast<int64_t>(next_beat_time_ref));
+        // Per-beat traffic: fires 1–4 times a second at any plausible
+        // tempo, so DEBUG keeps it accessible with --verbose without
+        // burying the INFO log under noise the rest of the time.
+        SPDLOG_DEBUG("Beat {}, {} vs. prediction {}", beat_time_ref, tempo,
+                     static_cast<int64_t>(beat_time_ref) - static_cast<int64_t>(next_beat_time_ref));
       },
       [&, tp = tempo_broadcaster.get()](uint64_t next_beat_time_ref, double tempo,
                                         double estimated_tempo, uint32_t beat_count) {
-        SPDLOG_INFO("Next beat {}, {}", next_beat_time_ref, tempo);
+        SPDLOG_DEBUG("Next beat {}, {}", next_beat_time_ref, tempo);
         state_manager_.update_tempo(tempo, next_beat_time_ref);
         state_manager_.update_next_beat(next_beat_time_ref);
 

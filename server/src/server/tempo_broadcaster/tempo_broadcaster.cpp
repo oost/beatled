@@ -64,7 +64,8 @@ void TempoBroadcaster::broadcast_next_beat(uint64_t next_beat_time_ref, uint32_t
   asio::post(strand_, [this, next_beat_time_ref, beat_count]() {
     uint16_t seq = next_beat_seq_.fetch_add(1, std::memory_order_relaxed);
     auto buffer = std::make_unique<NextBeatBuffer>(next_beat_time_ref, beat_count, seq);
-    SPDLOG_INFO("{} next_beat seq={} t={} count={}", name(), seq, next_beat_time_ref, beat_count);
+    // Per-beat traffic — same reasoning as application.cpp.
+    SPDLOG_DEBUG("{} next_beat seq={} t={} count={}", name(), seq, next_beat_time_ref, beat_count);
     dispatch(std::move(buffer), /*compensate_owd=*/true, next_beat_time_ref);
   });
 }

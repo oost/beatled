@@ -1,3 +1,4 @@
+#include <limits>
 #include <nlohmann/json.hpp>
 
 #include "./api_handler.hpp"
@@ -176,7 +177,29 @@ APIHandler::req_status_t APIHandler::on_post_program(const req_handle_t &req,
           .connection_close()
           .done();
     }
-    uint16_t program_id = request_body["programId"].get<std::uint16_t>();
+    // Per-field type validation. nlohmann::json::get<uint16_t> throws a
+    // generic type_error if the field is the wrong type or out of range,
+    // which previously surfaced to clients as a generic 400 with the
+    // library's own message ("[json.exception.type_error.302] type must
+    // be number, but is …"). Validate explicitly so we can return a
+    // specific, debuggable error.
+    const auto &program_id_field = request_body["programId"];
+    if (!program_id_field.is_number_unsigned()) {
+      response_body["error"] = "Field 'programId' must be a non-negative integer";
+      return init_resp(req->create_response(restinio::status_bad_request()))
+          .set_body(response_body.dump())
+          .connection_close()
+          .done();
+    }
+    uint64_t raw = program_id_field.get<std::uint64_t>();
+    if (raw > std::numeric_limits<std::uint16_t>::max()) {
+      response_body["error"] = "Field 'programId' must fit in a uint16 (0..65535)";
+      return init_resp(req->create_response(restinio::status_bad_request()))
+          .set_body(response_body.dump())
+          .connection_close()
+          .done();
+    }
+    uint16_t program_id = static_cast<std::uint16_t>(raw);
     service_manager_.state_manager().update_program_id(program_id);
 
     response_body["message"] = fmt::format("Updated program to {}", program_id);
