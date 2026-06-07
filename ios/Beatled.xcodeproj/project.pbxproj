@@ -26,6 +26,7 @@
 		E26406D081CE62B3B2D97FF6 /* ProgramViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 224D8192416624C79A642712 /* ProgramViewModel.swift */; };
 		EC59214275F571BF6D1ECC04 /* TempoChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF061D6FC1D21E78A7427344 /* TempoChartView.swift */; };
 		FC8410980F9E9F46F664CFC3 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F0C995D1EE5E94A30CAE62 /* AppSettings.swift */; };
+		B6B7C8D9E0F1A2B3C4D5E6F7 /* KeychainTokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F2 /* KeychainTokenStore.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -44,6 +45,7 @@
 		83FC5634E6FA65CF4627004E /* ProgramResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramResponse.swift; sourceTree = "<group>"; };
 		A9106995968A0316F9F31622 /* StatusResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusResponse.swift; sourceTree = "<group>"; };
 		B3F0C995D1EE5E94A30CAE62 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F6A7B8C9D0E1F2 /* KeychainTokenStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainTokenStore.swift; sourceTree = "<group>"; };
 		B6D076B1289D1C9656679428 /* ServiceControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceControl.swift; sourceTree = "<group>"; };
 		CF061D6FC1D21E78A7427344 /* TempoChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TempoChartView.swift; sourceTree = "<group>"; };
 		E9B679AC0A2CDE8B43CA1363 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -122,6 +124,7 @@
 			children = (
 				839640A36A93157BFCCF5C56 /* APIClient.swift */,
 				B3F0C995D1EE5E94A30CAE62 /* AppSettings.swift */,
+				A1B2C3D4E5F6A7B8C9D0E1F2 /* KeychainTokenStore.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -197,6 +200,7 @@
 			files = (
 				AF4D496681165E601BAC855E /* APIClient.swift in Sources */,
 				FC8410980F9E9F46F664CFC3 /* AppSettings.swift in Sources */,
+				B6B7C8D9E0F1A2B3C4D5E6F7 /* KeychainTokenStore.swift in Sources */,
 				C9CB8BAF3914F5268CD933C5 /* BeatledApp.swift in Sources */,
 				BDDF0EF94ED5043C3A14B532 /* ConfigView.swift in Sources */,
 				B3CEB8211CE326F2D5313C30 /* ConfigViewModel.swift in Sources */,

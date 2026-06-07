@@ -62,14 +62,7 @@ class ConfigViewModel {
         }
     }
 
-    private let healthSession: URLSession
-
     init(settings: AppSettings) {
-        // healthSession must be initialized before any access to other stored properties
-        let config = URLSessionConfiguration.ephemeral
-        config.timeoutIntervalForRequest = 3
-        self.healthSession = URLSession(configuration: config, delegate: InsecureTrustDelegate(), delegateQueue: nil)
-
         self.settings = settings
         self.selectedPreset = HostPreset.from(host: settings.apiHost)
         if self.selectedPreset == .custom {
@@ -79,6 +72,26 @@ class ConfigViewModel {
         for preset in HostPreset.allCases where preset != .custom {
             healthStatuses[preset] = .unknown
         }
+    }
+
+    /// Build a URLSession for the discovery health checks. When the user has
+    /// `allowInsecureConnections` enabled we attach a delegate that accepts
+    /// any server certificate (including the mkcert self-signed bundle used
+    /// by the local dev server); otherwise we use the platform's default
+    /// validation so production hosts are properly verified.
+    ///
+    /// The session is ephemeral and cheap to construct, so we rebuild on
+    /// every batch rather than cache it. That also means a setting toggle
+    /// takes effect immediately on the next 5-second poll, no view restart.
+    private func makeHealthSession() -> URLSession {
+        let config = URLSessionConfiguration.ephemeral
+        config.timeoutIntervalForRequest = 3
+        if settings.allowInsecureConnections {
+            return URLSession(configuration: config,
+                              delegate: InsecureTrustDelegate(),
+                              delegateQueue: nil)
+        }
+        return URLSession(configuration: config)
     }
 
     @MainActor
@@ -101,13 +114,14 @@ class ConfigViewModel {
 
     @MainActor
     private func checkAllHealth() async {
+        let session = makeHealthSession()
         await withTaskGroup(of: (HostPreset, HealthStatus).self) { group in
             for preset in HostPreset.allCases where preset != .custom {
                 guard let url = URL(string: preset.rawValue + "/api/health") else { continue }
                 group.addTask {
                     let request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData)
                     do {
-                        let (_, response) = try await self.healthSession.data(for: request)
+                        let (_, response) = try await session.data(for: request)
                         if let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) {
                             return (preset, .ok)
                         }
