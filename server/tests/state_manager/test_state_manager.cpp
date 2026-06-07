@@ -18,8 +18,7 @@ TEST_CASE("StateManager tempo", "[state_manager]") {
     sm.update_tempo(tempo, timeref);
     tempo_ref_t time_ref = sm.get_tempo_ref();
     REQUIRE(time_ref.tempo == tempo);
-    REQUIRE(time_ref.tempo_period_us ==
-            (static_cast<uint32_t>(1000000 * 60 / tempo)));
+    REQUIRE(time_ref.tempo_period_us == (static_cast<uint32_t>(1000000 * 60 / tempo)));
     REQUIRE(time_ref.beat_time_ref == timeref);
   }
 
@@ -53,8 +52,7 @@ TEST_CASE("StateManager tempo", "[state_manager]") {
     REQUIRE_FALSE(sm.client_status(client_address));
     REQUIRE_FALSE(sm.client_status(client_address2));
 
-    ClientStatus::Ptr cs =
-        std::make_shared<ClientStatus>(board_id, client_address);
+    ClientStatus::Ptr cs = std::make_shared<ClientStatus>(board_id, client_address);
     sm.register_client(cs);
 
     REQUIRE(sm.client_status(client_address) == cs);
@@ -170,8 +168,8 @@ TEST_CASE("StateManager thread safety", "[state_manager]") {
       for (int i = 0; i < 100; i++) {
         ClientStatus::board_id_t bid{};
         bid[0] = static_cast<char>(offset + i);
-        auto addr = asio::ip::make_address(
-            "10.0." + std::to_string(offset) + "." + std::to_string(i % 256));
+        auto addr = asio::ip::make_address("10.0." + std::to_string(offset) + "." +
+                                           std::to_string(i % 256));
         auto cs = std::make_shared<ClientStatus>(bid, addr);
         sm.register_client(cs);
       }
@@ -262,5 +260,74 @@ TEST_CASE("StateManager client expiry", "[state_manager]") {
     auto clients = sm.get_clients();
     REQUIRE(clients.size() == 1);
     REQUIRE(clients[0]->ip_address == asio::ip::make_address("10.0.0.2"));
+  }
+}
+
+TEST_CASE("StateManager per-client OWD (protocol v2 broadcaster surface)", "[state_manager][owd]") {
+  StateManager sm;
+  ClientStatus::board_id_t bid{};
+  bid[0] = 'X';
+  auto cs = std::make_shared<ClientStatus>(bid, asio::ip::make_address("10.0.0.42"));
+  cs->last_status_time = Clock::wall_time_us_64();
+  sm.register_client(cs);
+
+  SECTION("default OWD is zero — broadcaster falls back to no compensation") {
+    REQUIRE(cs->owd_us == 0);
+  }
+
+  SECTION("first sample sets the value verbatim") {
+    sm.update_client_owd(asio::ip::make_address("10.0.0.42"), 8000);
+    REQUIRE(cs->owd_us == 8000);
+  }
+
+  SECTION("subsequent samples are smoothed (EWMA, alpha=1/4)") {
+    sm.update_client_owd(asio::ip::make_address("10.0.0.42"), 8000);
+    REQUIRE(cs->owd_us == 8000);
+
+    // (8000*3 + 12000) / 4 == 9000
+    sm.update_client_owd(asio::ip::make_address("10.0.0.42"), 12000);
+    REQUIRE(cs->owd_us == 9000);
+
+    // A wild spike contributes only 25%, damping jitter.
+    // (9000*3 + 50000) / 4 == 19250
+    sm.update_client_owd(asio::ip::make_address("10.0.0.42"), 50000);
+    REQUIRE(cs->owd_us == 19250);
+  }
+
+  SECTION("samples for unknown IPs are dropped silently") {
+    sm.update_client_owd(asio::ip::make_address("10.99.99.99"), 5000);
+    REQUIRE(cs->owd_us == 0);
+  }
+}
+
+TEST_CASE("StateManager program-change callback fires only on actual change",
+          "[state_manager][program_callback]") {
+  StateManager sm;
+
+  int call_count = 0;
+  uint16_t last_pid = 0;
+  sm.register_program_change_cb([&](uint16_t pid) {
+    call_count++;
+    last_pid = pid;
+  });
+
+  SECTION("changing the program fires the callback once") {
+    sm.update_program_id(3);
+    REQUIRE(call_count == 1);
+    REQUIRE(last_pid == 3);
+  }
+
+  SECTION("setting the same value twice does not double-fire") {
+    sm.update_program_id(3);
+    sm.update_program_id(3);
+    REQUIRE(call_count == 1);
+  }
+
+  SECTION("alternating values fire on every change") {
+    sm.update_program_id(3);
+    sm.update_program_id(4);
+    sm.update_program_id(3);
+    REQUIRE(call_count == 3);
+    REQUIRE(last_pid == 3);
   }
 }

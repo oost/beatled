@@ -4,7 +4,9 @@
 #include <chrono>
 #include <deque>
 #include <mutex>
+#include <optional>
 #include <restinio/core.hpp>
+#include <string_view>
 
 #include "./response_handler.hpp"
 #include "beat_detector/beat_detector.hpp"
@@ -41,14 +43,21 @@ public:
   bool check_auth(const req_handle_t &req) const;
   bool check_rate_limit();
 
+  /// Pure helper extracted from `check_auth` so the gating logic is
+  /// directly unit-testable without faking a restinio request object.
+  /// Returns true iff the request should be allowed through: an empty
+  /// `api_token` disables auth entirely; otherwise the Authorization
+  /// header must be exactly `Bearer <token>`.
+  static bool authorize_request(const std::optional<std::string> &authorization_header,
+                                std::string_view api_token);
+
 private:
   template <typename RESP> RESP init_resp(RESP resp) {
     auto r = ResponseHandler::init_resp<RESP>(std::forward<RESP>(resp))
                  .append_header(restinio::http_field::content_type, "text/json; charset=utf-8");
     if (!cors_origin_.empty()) {
       r.append_header(restinio::http_field::access_control_allow_origin, cors_origin_)
-          .append_header(restinio::http_field::access_control_allow_methods,
-                         "GET, POST, OPTIONS")
+          .append_header(restinio::http_field::access_control_allow_methods, "GET, POST, OPTIONS")
           .append_header(restinio::http_field::access_control_allow_headers,
                          "Origin, X-Requested-With, Content-Type, Accept, Authorization");
     }

@@ -19,11 +19,26 @@ APIHandler::APIHandler(ServiceManagerInterface &service_manager, Logger &logger,
     : service_manager_{service_manager}, logger_{logger}, cors_origin_{cors_origin},
       api_token_{api_token} {}
 
-bool APIHandler::check_auth(const req_handle_t &req) const {
-  if (api_token_.empty())
+bool APIHandler::authorize_request(const std::optional<std::string> &authorization_header,
+                                   std::string_view api_token) {
+  if (api_token.empty()) {
     return true;
-  auto auth = req->header().opt_value_of(restinio::http_field::authorization);
-  return auth && *auth == "Bearer " + api_token_;
+  }
+  if (!authorization_header.has_value()) {
+    return false;
+  }
+  // Constant-string comparison; no time-safety needed here since the token
+  // is sent in cleartext over the (assumed-TLS) header anyway.
+  return *authorization_header == std::string{"Bearer "} + std::string{api_token};
+}
+
+bool APIHandler::check_auth(const req_handle_t &req) const {
+  auto auth_opt = req->header().opt_value_of(restinio::http_field::authorization);
+  std::optional<std::string> auth_header;
+  if (auth_opt.has_value()) {
+    auth_header = std::string{*auth_opt};
+  }
+  return authorize_request(auth_header, api_token_);
 }
 
 bool APIHandler::check_rate_limit() {
