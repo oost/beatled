@@ -26,6 +26,10 @@ A single script handles building and running all components locally:
 scripts/beatled.sh <command> [options]
 ```
 
+Every level supports `-h` / `--help`. The full reference (every
+subcommand, every flag, common workflows) lives at
+[oost.github.io/beatled/cli.html](https://oost.github.io/beatled/cli.html).
+
 One-time hook install (clang-format + shellcheck pre-commit):
 
 ```sh

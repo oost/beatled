@@ -26,7 +26,11 @@ in-tree; resist adding new submodules.
 
 ## Build / test / lint
 
-A single script wraps the cross-component flows:
+A single script wraps the cross-component flows. Every level supports
+`-h`/`--help`, and the canonical reference (every flag, every env var,
+common workflows) lives at
+[`docs/cli.markdown`](docs/cli.markdown) — published at
+<https://oost.github.io/beatled/cli.html>.
 
 ```sh
 scripts/beatled.sh server build       # cmake + ninja under server/build/

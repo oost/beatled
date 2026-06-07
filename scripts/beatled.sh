@@ -45,31 +45,57 @@ Utilities:
   test [component]    Run tests (server, client, pico, or all)
   build [component]   Build without running (server, client, pico, pico-freertos, rpi, or all)
   clean [component]   Clean build artifacts (server, client, pico, pico-freertos, esp32, or all)
-  docs                Start the Jekyll docs site locally
-  certs [domain ...]  Generate locally-trusted development certificates
+  docs                Start the Jekyll docs site locally on http://127.0.0.1:4000
+  certs [domain ...]  Generate locally-trusted development certificates (uses mkcert)
+  help                Show this message; '-h' / '--help' work too at every level
 
 Examples:
-  $(basename "$0") client react dev
-  $(basename "$0") client ios sim
-  $(basename "$0") controller posix build
-  $(basename "$0") controller esp32-freertos flash
-  $(basename "$0") server start --start-http --start-udp
-  $(basename "$0") server deploy pi beatled.local
+  $(basename "$0") client react dev                       # Vite dev server (proxies /api to 127.0.0.1:8443)
+  $(basename "$0") client ios sim                         # build + boot the iOS Simulator
+  $(basename "$0") controller posix build                 # firmware POSIX simulator (no hardware)
+  $(basename "$0") controller pico flash                  # cross-build + copy .uf2 to a BOOTSEL Pico W
+  $(basename "$0") controller esp32-freertos flash        # esptool flash + idf.py monitor
+  $(basename "$0") server start --start-http --start-udp --start-broadcast
+  $(basename "$0") server deploy pi beatled.local         # tarball + scp + systemd reload on the Pi
+
+Environment variables (all optional, sensible defaults shown):
+  VCPKG_DIR              ~/coding/external/vcpkg   vcpkg checkout used by the server build
+  PICO_DIR               <repo>/controller         firmware tree (set only to point at a sibling clone)
+  WIFI_SSID              (none — required for hw)  baked into the firmware .uf2 at build time
+  WIFI_PASSWORD          (none — required for hw)  baked into the firmware .uf2 at build time
+  BEATLED_SERVER_NAME    (none — required for hw)  hostname or IP the controllers connect to
+  NUM_PIXELS             (none — required)         LEDs on the strip
+  WS2812_PIN             0                         GPIO data pin for the WS2812 strip
+  ESP32_TARGET           esp32s3                   idf.py set-target value
+  ESP32_PORT             /dev/cu.usbmodem*         serial device for esptool / monitor
+  BEATLED_API_TOKEN      (none)                    fallback API token for 'server start --api-token'
+
+Most of those live in $PICO_DIR/.env.pico or .env.esp32. Copy the
+.template alongside, fill in your values, and the relevant subcommand
+sources it automatically.
+
+Full reference: https://oost.github.io/beatled/cli.html
 EOF
   exit 1
 }
 
 usage_client() {
   cat <<EOF
-Usage: $(basename "$0") client <subcommand> [action]
+Usage: $(basename "$0") client <surface> <action>
 
-Subcommands:
-  react   build    Build the React frontend for production
-  react   dev      Start the Vite dev server
-  ios     build    Build the iOS app (simulator)
-  ios     sim      Build and run in iOS Simulator
-  macos   build    Build the macOS app
+Surfaces & actions:
+  react   build    Production build of the React frontend (output: client/dist/)
+  react   dev      Vite dev server with HMR; proxies /api to https://127.0.0.1:8443
+  ios     build    xcodebuild iOS Simulator binary
+  ios     sim      Build + boot the iOS Simulator and launch the app
+  macos   build    xcodebuild Beatled.app for macOS
   macos   start    Build and launch the macOS app
+
+Notes:
+  - The iOS / macOS targets share a single Xcode project at ios/Beatled.xcodeproj
+    and use the same Swift sources (the ios/ folder name is historical).
+  - 'react dev' requires the server to be running locally; start it with
+    '$(basename "$0") server start --start-http'.
 EOF
   exit 1
 }
@@ -109,22 +135,30 @@ EOF
 
 usage_controller() {
   cat <<EOF
-Usage: $(basename "$0") controller <subcommand> [action]
+Usage: $(basename "$0") controller <port> <action>
 
-Subcommands:
-  pico            build    Build Pico W firmware (bare-metal, outputs .uf2)
-  pico            flash    Build and copy .uf2 to a BOOTSEL-mounted Pico
-  pico-freertos   build    Build Pico W firmware (FreeRTOS SMP, outputs .uf2)
-  pico-freertos   flash    Build and copy .uf2 to a BOOTSEL-mounted Pico
-  posix           build    Build and run POSIX simulator (Metal LED renderer)
-  freertos-sim    build    Build and run FreeRTOS POSIX simulator
-  esp32-freertos  build    Build ESP32 firmware
-  esp32-freertos  flash    Build, flash, and monitor ESP32
-  esp32-freertos  monitor  Open ESP32 serial monitor
+Ports & actions:
+  pico            build    Cross-build Pico W bare-metal .uf2
+  pico            flash    Build + copy .uf2 to a BOOTSEL-mounted Pico W
+  pico-freertos   build    Cross-build Pico W FreeRTOS SMP .uf2
+  pico-freertos   flash    Build + copy .uf2 to a BOOTSEL-mounted Pico W
+  posix           build    Native simulator (Metal LED renderer on macOS)
+  freertos-sim    build    Native simulator + FreeRTOS POSIX kernel
+  esp32-freertos  build    Cross-build ESP32 firmware (ESP-IDF)
+  esp32-freertos  flash    Build + esptool flash + idf.py monitor
+  esp32-freertos  monitor  Open the ESP32 serial monitor without re-flashing
 
-Pico flashing: hold BOOTSEL while plugging the Pico in so it mounts as /Volumes/RPI-RP2/
-ESP32 config:    copy $PICO_DIR/.env.esp32.template to .env.esp32 and fill in values
-Pico config:     copy $PICO_DIR/.env.pico.template to .env.pico and fill in values
+Flashing notes:
+  Pico W:  hold the BOOTSEL button while plugging the USB cable in so the
+           board mounts as /Volumes/RPI-RP2/ before running 'pico flash'.
+  ESP32:   the board must already be in download mode and ESP32_PORT must
+           point at the serial device (usually /dev/cu.usbmodem*).
+
+Config:
+  Copy $PICO_DIR/.env.pico.template     to .env.pico    (Pico W / POSIX)
+  Copy $PICO_DIR/.env.esp32.template    to .env.esp32   (ESP32)
+  Fill in WIFI_SSID / WIFI_PASSWORD / BEATLED_SERVER_NAME / NUM_PIXELS /
+  WS2812_PIN. These values are baked into the firmware at build time.
 EOF
   exit 1
 }
@@ -134,18 +168,42 @@ usage_server() {
 Usage: $(basename "$0") server <subcommand> [options]
 
 Subcommands:
-  build                      Build the beat server
-  start [options]            Build (if needed) and start the beat server
-  deploy <user> <host>       Deploy the RPi build via SSH
+  build                      Build the beat server (cmake + ninja, vcpkg toolchain)
+  start [options]            Build (if needed) and start the beat server in the foreground
+  deploy <user> <host>       Build, tarball, scp, and systemd-reload the RPi build via SSH
 
-Server options (passed to beat_server):
-  --start-http        Start the HTTP/S server
-  --start-udp         Start the UDP server
-  --start-broadcast   Start the UDP broadcaster
-  --cors-origin URL   Set CORS allowed origin
-  --api-token TOKEN   Set Bearer token for API auth
-  --http-port PORT    HTTP port (default: 8443)
-  -a ADDRESS          Listen address (default: localhost)
+Service flags (which sub-services to start — none default on):
+  --start-http         HTTPS API + static client serving on --http-port (default 8443)
+  --start-udp          UDP server on --udp-port (default 9090) for HELLO / TIME / TEMPO
+  --start-broadcast    Per-beat tempo dispatcher + PROGRAM push (see --broadcast-mode)
+
+Server config:
+  -a ADDRESS                Listen address (default: localhost — script overrides to 0.0.0.0)
+  -p, --http-port PORT      HTTP listening port (default: 8443)
+  -u, --udp-port PORT       UDP listening port (default: 9090)
+  -n, --thread-pool-size N  asio worker threads (default: 2)
+  -r, --root-dir PATH       Static-file root (default: client/dist)
+  --certs-dir PATH          TLS cert / key / DH parameter directory
+  --no-tls                  Serve plain HTTP (development only — logs a WARN)
+  --cors-origin URL         Allow CORS from a single origin (default: disabled)
+  --api-token TOKEN         Require 'Authorization: Bearer <token>' on every state-changing call
+  --verbose                 Enable DEBUG-level logging (per-beat lines etc.)
+
+Broadcaster config (only relevant when --start-broadcast is on):
+  --broadcast-mode MODE     unicast (default) | subnet | limited
+  -c, --m_broadcasting-address ADDR   destination for subnet/limited mode
+  -b, --broadcasting-port PORT        UDP destination port (default 8765)
+
+  unicast (default): one packet per registered client, with per-client OWD
+                     compensation. Best on Wi-Fi for <=10 controllers.
+  subnet:            broadcast to --m_broadcasting-address (e.g. 192.168.1.255).
+  limited:           broadcast to 255.255.255.255 (often dropped by Wi-Fi APs).
+
+Examples:
+  $(basename "$0") server start --start-http --start-udp --start-broadcast
+  $(basename "$0") server start --start-http --api-token "\$BEATLED_API_TOKEN"
+  $(basename "$0") server start --start-http --no-tls --cors-origin "https://localhost:5173"
+  $(basename "$0") server deploy pi beatled.local
 EOF
   exit 1
 }
@@ -714,10 +772,24 @@ cmd_controller_esp32_monitor() {
 
 # --- Utility commands ---
 
+usage_test() {
+  cat <<EOF
+Usage: $(basename "$0") test [component]
+
+Components:
+  server   Catch2 unit + integration tests against the C++ beat server
+  client   Vitest run for the React client (lib + view tests)
+  pico     POSIX-port firmware tests (build + ctest)
+  all      All of the above (default if omitted)
+EOF
+  exit 1
+}
+
 cmd_test() {
   local component="${1:-all}"
 
   case "$component" in
+    help|-h|--help) usage_test ;;
     server)
       build_server
       info "Running server tests..."
@@ -727,6 +799,7 @@ cmd_test() {
       "$SERVER_BUILD_DIR/tests/udp/test_udp_protocol"
       "$SERVER_BUILD_DIR/tests/udp/test_udp_request_handler"
       "$SERVER_BUILD_DIR/tests/http/test_mime_types"
+      "$SERVER_BUILD_DIR/tests/http/test_api_gates"
       ;;
     client)
       info "Running client tests..."
@@ -753,10 +826,28 @@ cmd_test() {
   ok "Tests passed ($component)"
 }
 
+usage_build() {
+  cat <<EOF
+Usage: $(basename "$0") build [component]
+
+Builds the named component(s) without running anything. Tests are not run.
+
+Components:
+  server          C++ beat_server (cmake + ninja, vcpkg toolchain)
+  client          React frontend (Vite production build → client/dist/)
+  pico            Pico W firmware POSIX simulator
+  pico-freertos   Pico W firmware POSIX-FreeRTOS simulator
+  rpi             Cross-compiled aarch64 server tarball under out/ (Docker)
+  all             server + client + pico + pico-freertos (default)
+EOF
+  exit 1
+}
+
 cmd_build() {
   local component="${1:-all}"
 
   case "$component" in
+    help|-h|--help) usage_build ;;
     server)         build_server ;;
     client)         build_client ;;
     pico)           build_pico ;;
@@ -775,10 +866,28 @@ cmd_build() {
   esac
 }
 
+usage_clean() {
+  cat <<EOF
+Usage: $(basename "$0") clean [component]
+
+Removes the named component's build artifacts.
+
+Components:
+  server          Wipes server/build/
+  client          Wipes client/dist/ and client/node_modules/.vite
+  pico            Wipes controller/build/ (POSIX sim) and controller/build-pico/ (uf2)
+  pico-freertos   Wipes controller/build_posix_freertos/ and controller/build-pico-freertos/
+  esp32           Wipes controller/esp32/build/
+  all             All of the above (default)
+EOF
+  exit 1
+}
+
 cmd_clean() {
   local component="${1:-all}"
 
   case "$component" in
+    help|-h|--help) usage_clean ;;
     server)         clean_server ;;
     client)         clean_client ;;
     pico)           clean_pico ;;
@@ -799,14 +908,47 @@ cmd_clean() {
   esac
 }
 
+usage_docs() {
+  cat <<EOF
+Usage: $(basename "$0") docs [-- <jekyll options>]
+
+Builds and serves the Jekyll docs site (theme: just-the-docs) at
+http://127.0.0.1:4000/beatled/. Any options after '--' are passed
+through to 'bundle exec jekyll serve' (e.g. --livereload, --port).
+EOF
+  exit 1
+}
+
 cmd_docs() {
+  if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ] || [ "${1:-}" = "help" ]; then
+    usage_docs
+  fi
   local DOCS_DIR="$PROJECT_DIR/docs"
   info "Starting Jekyll docs site..."
   info "Serving at http://127.0.0.1:4000/beatled/"
   (cd "$DOCS_DIR" && bundle exec jekyll serve "$@")
 }
 
+usage_certs() {
+  cat <<EOF
+Usage: $(basename "$0") certs [domain ...]
+
+Generates locally-trusted TLS certificates with mkcert and writes them
+to server/certs/ (cert.pem, key.pem, dh_param.pem). The certs are
+copied to the Pi by 'server deploy' on first deploy.
+
+Examples:
+  $(basename "$0") certs                                 # default: beatled.test
+  $(basename "$0") certs beatled.local
+  $(basename "$0") certs beatled.local 192.168.1.100
+EOF
+  exit 1
+}
+
 cmd_certs() {
+  if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ] || [ "${1:-}" = "help" ]; then
+    usage_certs
+  fi
   local certs_dir="$SERVER_DIR/certs"
   local domains=("${@:-beatled.test}")
   info "Generating certificates for '${domains[*]}' in $certs_dir"
@@ -825,65 +967,76 @@ case "$CMD1" in
     case "$CMD2" in
       react)
         case "$CMD3" in
-          build)   cmd_client_react_build ;;
-          dev)     cmd_client_react_dev ;;
-          *)       usage_client_react ;;
+          build)              cmd_client_react_build ;;
+          dev)                cmd_client_react_dev ;;
+          help|-h|--help|"")  usage_client_react ;;
+          *)                  usage_client_react ;;
         esac ;;
       ios)
         case "$CMD3" in
-          build)   cmd_client_ios_build ;;
-          sim)     cmd_client_ios_sim ;;
-          *)       usage_client_ios ;;
+          build)              cmd_client_ios_build ;;
+          sim)                cmd_client_ios_sim ;;
+          help|-h|--help|"")  usage_client_ios ;;
+          *)                  usage_client_ios ;;
         esac ;;
       macos)
         case "$CMD3" in
-          build)   cmd_client_macos_build ;;
-          start)   cmd_client_macos_start ;;
-          *)       usage_client_macos ;;
+          build)              cmd_client_macos_build ;;
+          start)              cmd_client_macos_start ;;
+          help|-h|--help|"")  usage_client_macos ;;
+          *)                  usage_client_macos ;;
         esac ;;
-      *)           usage_client ;;
+      help|-h|--help|"")      usage_client ;;
+      *)                      usage_client ;;
     esac ;;
 
   controller)
     case "$CMD2" in
       pico)
         case "$CMD3" in
-          build)   cmd_controller_pico_build ;;
-          flash)   cmd_controller_pico_flash ;;
-          *)       usage_controller ;;
+          build)              cmd_controller_pico_build ;;
+          flash)              cmd_controller_pico_flash ;;
+          help|-h|--help|"")  usage_controller ;;
+          *)                  usage_controller ;;
         esac ;;
       pico-freertos)
         case "$CMD3" in
-          build)   cmd_controller_pico_freertos_build ;;
-          flash)   cmd_controller_pico_freertos_flash ;;
-          *)       usage_controller ;;
+          build)              cmd_controller_pico_freertos_build ;;
+          flash)              cmd_controller_pico_freertos_flash ;;
+          help|-h|--help|"")  usage_controller ;;
+          *)                  usage_controller ;;
         esac ;;
       posix)
         case "$CMD3" in
-          build)   cmd_controller_posix_build ;;
-          *)       usage_controller ;;
+          build)              cmd_controller_posix_build ;;
+          help|-h|--help|"")  usage_controller ;;
+          *)                  usage_controller ;;
         esac ;;
       freertos-sim)
         case "$CMD3" in
-          build)   cmd_controller_freertos_sim_build ;;
-          *)       usage_controller ;;
+          build)              cmd_controller_freertos_sim_build ;;
+          help|-h|--help|"")  usage_controller ;;
+          *)                  usage_controller ;;
         esac ;;
       esp32-freertos)
         case "$CMD3" in
-          build)   cmd_controller_esp32_build ;;
-          flash)   cmd_controller_esp32_flash ;;
-          monitor) cmd_controller_esp32_monitor ;;
-          *)       usage_controller ;;
+          build)              cmd_controller_esp32_build ;;
+          flash)              cmd_controller_esp32_flash ;;
+          monitor)            cmd_controller_esp32_monitor ;;
+          help|-h|--help|"")  usage_controller ;;
+          *)                  usage_controller ;;
         esac ;;
-      *)           usage_controller ;;
+      help|-h|--help|"")      usage_controller ;;
+      *)                      usage_controller ;;
     esac ;;
 
   server)
     case "$CMD2" in
-      build)   cmd_server_build ;;
-      start)   shift 2; cmd_server_start "$@" ;;
-      deploy)  shift 2; cmd_server_deploy "$@" ;;
-      *)       usage_server ;;
+      build)              cmd_server_build ;;
+      start)              shift 2; cmd_server_start "$@" ;;
+      deploy)             shift 2; cmd_server_deploy "$@" ;;
+      help|-h|--help|"")  usage_server ;;
+      *)                  usage_server ;;
     esac ;;
 
   test)   shift; cmd_test "$@" ;;
