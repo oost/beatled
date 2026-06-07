@@ -1,0 +1,7 @@
+#ifndef STATE_MANAGER__STATES__TIME_SYNCED__TIME_SYNCED_H
+#define STATE_MANAGER__STATES__TIME_SYNCED__TIME_SYNCED_H
+
+int enter_time_synced_state();
+int exit_time_synced_state();
+
+#endif // STATE_MANAGER__STATES__TIME_SYNCED__TIME_SYNCED_H

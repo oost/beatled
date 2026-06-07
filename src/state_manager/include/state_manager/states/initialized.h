@@ -1,0 +1,7 @@
+#ifndef STATE_MANAGER__STATES__INITIALIZED__INITIALIZED_H
+#define STATE_MANAGER__STATES__INITIALIZED__INITIALIZED_H
+
+int enter_initialized_state();
+int exit_initialized_state();
+
+#endif // STATE_MANAGER__STATES__INITIALIZED__INITIALIZED_H

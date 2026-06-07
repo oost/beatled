@@ -1,0 +1,105 @@
+{
+  "version": 2,
+  "configurePresets": [
+    {
+      "name": "default",
+      "hidden": true,
+      "displayName": "Default preset values",
+      "description": "Sets Ninja generator, build and install directory",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}"
+      },
+      "environment": {}
+    },
+    {
+      "name": "ARM-GCC",
+      "displayName": "GCC 10 arm-none-eabi",
+      "description": "Using compilers: C = /Applications/ArmGNUToolchain/12.2.rel1/arm-none-eabi/bin/arm-none-eabi-gcc , CXX = /Applications/ArmGNUToolchain/12.2.rel1/arm-none-eabi/bin/arm-none-eabi-g++",
+      "inherits": ["default"],
+      "cacheVariables": {
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
+        "CMAKE_C_COMPILER": "arm-none-eabi-gcc",
+        "CMAKE_CXX_COMPILER": "arm-none-eabi-g++",
+        "CMAKE_BUILD_TYPE": "Debug",
+        "PORT": "pico"
+      },
+      "environment": {
+        "PICO_SDK_PATH": "../pico-sdk",
+        "PICO_BOARD": "pico_w"
+      }
+    },
+    {
+      "name": "Apple",
+      "displayName": "Clang 14.0.0 x86_64-apple-darwin21.6.0",
+      "description": "Using compilers: C = /usr/bin/clang, CXX = /usr/bin/clang++",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "inherits": ["default"],
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "/usr/bin/clang",
+        "CMAKE_CXX_COMPILER": "/usr/bin/clang++",
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_TOOLCHAIN_FILE": {
+          "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+          "type": "FILEPATH"
+        },
+        "PORT": "posix"
+      },
+      "environment": {}
+    },
+    {
+      "name": "GCC_12",
+      "displayName": "GCC 12.2.0 x86_64-apple-darwin21",
+      "description": "Using compilers: C = /usr/local/bin/gcc-12, CXX = /usr/local/bin/g++-12",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "inherits": ["default"],
+      "cacheVariables": {
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
+        "CMAKE_C_COMPILER": "/usr/local/bin/gcc-12",
+        "CMAKE_CXX_COMPILER": "/usr/local/bin/g++-12",
+        "CMAKE_BUILD_TYPE": "Debug",
+        "VCPKG_TARGET_TRIPLET": "x64-osx",
+        "CMAKE_TOOLCHAIN_FILE": {
+          "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+          "type": "FILEPATH"
+        },
+        "PORT": "posix"
+      },
+      "environment": {}
+    },
+    {
+      "name": "ARM GCC 10.3",
+      "displayName": "GCC 10.3.1 arm-none-eabi",
+      "inherits": ["default"],
+      "description": "Using compilers: C = /usr/local/bin/arm-none-eabi-gcc, CXX = /usr/local/bin/arm-none-eabi-g++",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_C_COMPILER": "/usr/local/bin/arm-none-eabi-gcc",
+        "CMAKE_CXX_COMPILER": "/usr/local/bin/arm-none-eabi-g++",
+        "PORT": "pico"
+      },
+      "environment": {
+        "PICO_SDK_PATH": "../pico-sdk",
+        "PICO_BOARD": "pico_w"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "ARM",
+      "description": "",
+      "displayName": "",
+      "configurePreset": "ARM"
+    },
+    {
+      "name": "Apple",
+      "description": "",
+      "displayName": "",
+      "configurePreset": "Apple"
+    }
+  ]
+}

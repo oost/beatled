@@ -1,0 +1,7 @@
+build/
+build-*/
+build_*/
+.env.esp32
+esp32/managed_components/
+esp32/dependencies.lock
+.env.pico
