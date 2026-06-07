@@ -33,17 +33,17 @@ common workflows) lives at
 <https://oost.github.io/beatled/cli.html>.
 
 ```sh
-scripts/beatled.sh server build       # cmake + ninja under server/build/
-scripts/beatled.sh server start --start-http --start-udp --start-broadcast
-scripts/beatled.sh client             # vite dev server with /api proxy
-scripts/beatled.sh controller pico build       # uf2 for Pico W bare-metal
-scripts/beatled.sh controller pico-freertos build
-scripts/beatled.sh controller pico flash       # build + copy to /Volumes/RPI-RP2
-scripts/beatled.sh controller posix build      # native simulator (POSIX port)
-scripts/beatled.sh test server                 # catch2 server tests
-scripts/beatled.sh test pico                   # catch2 firmware tests (POSIX)
-scripts/beatled.sh test all
-scripts/beatled.sh clean all
+./beatled.sh server build       # cmake + ninja under server/build/
+./beatled.sh server start --start-http --start-udp --start-broadcast
+./beatled.sh client             # vite dev server with /api proxy
+./beatled.sh controller pico build       # uf2 for Pico W bare-metal
+./beatled.sh controller pico-freertos build
+./beatled.sh controller pico flash       # build + copy to /Volumes/RPI-RP2
+./beatled.sh controller posix build      # native simulator (POSIX port)
+./beatled.sh test server                 # catch2 server tests
+./beatled.sh test pico                   # catch2 firmware tests (POSIX)
+./beatled.sh test all
+./beatled.sh clean all
 ```
 
 Tests live next to the code they exercise:
@@ -161,5 +161,5 @@ A few things that have repeatedly bitten us:
   task's scope (build artefacts, `.DS_Store`, etc.); these are caught
   by `.gitignore` if it's complete, but spot-check anyway.
 - POSIX integration tests are the fast feedback loop for firmware
-  changes. Run them (`scripts/beatled.sh test pico`) before declaring
+  changes. Run them (`./beatled.sh test pico`) before declaring
   a firmware change done — the per-Pico-W flash cycle is much slower.

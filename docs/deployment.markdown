@@ -26,13 +26,13 @@ On the **Raspberry Pi**:
 
 ```bash
 # 1. Generate TLS certificates for the Pi's hostname
-scripts/beatled.sh certs <pi-hostname>
+./beatled.sh certs <pi-hostname>
 
 # 2. Cross-compile the server binary for ARM64
-scripts/beatled.sh build rpi
+./beatled.sh build rpi
 
 # 3. Deploy to the Pi
-scripts/beatled.sh server deploy <username> <pi-hostname>
+./beatled.sh server deploy <username> <pi-hostname>
 ```
 
 The deploy command packages the server binary, web client, and deploy scripts into a tarball, copies it to the Pi, extracts it, and starts (or restarts) the systemd service.
@@ -45,10 +45,10 @@ Certificates are generated on your dev machine using mkcert, then copied to the 
 
 ```bash
 # For a hostname
-scripts/beatled.sh certs beatled.local
+./beatled.sh certs beatled.local
 
 # For multiple names
-scripts/beatled.sh certs beatled.local 192.168.1.100
+./beatled.sh certs beatled.local 192.168.1.100
 ```
 
 This creates `cert.pem`, `key.pem`, and `dh_param.pem` in `server/certs/`. The deploy command copies these to `~/certs/` on the Pi if they don't already exist there.
@@ -65,7 +65,7 @@ Build the ARM64 server binary using Docker:
 git submodule update --init --recursive
 
 # Build
-scripts/beatled.sh build rpi
+./beatled.sh build rpi
 ```
 
 This builds a Docker image with the ARM64 cross-compilation toolchain and compiles the server. The output is written to `./out/` and includes:
@@ -77,7 +77,7 @@ This builds a Docker image with the ARM64 cross-compilation toolchain and compil
 ### 3. Deploy
 
 ```bash
-scripts/beatled.sh deploy <username> <host>
+./beatled.sh server deploy <username> <host>
 ```
 
 The deploy command:
@@ -131,7 +131,7 @@ The service runs as the deploy user (not root) with these security restrictions:
 
 Per-beat tempo broadcasts to the Pico / ESP32 controllers are an *optional*
 service. They're disabled by default — the systemd unit (and the
-`scripts/beatled.sh server start` shorthand for local development) need
+`./beatled.sh server start` shorthand for local development) need
 the `--start-broadcast` flag for the broadcaster to come up:
 
 ```sh
@@ -162,7 +162,7 @@ To start the server directly (useful for debugging):
 ## Troubleshooting
 
 **Deploy fails with "No certificates found locally"**
-: Run `scripts/beatled.sh certs <hostname>` on your dev machine first.
+: Run `./beatled.sh certs <hostname>` on your dev machine first.
 
 **Service fails to start -- permission denied**
 : The service runs as your deploy user. Ensure the user has read access to `~/certs/` and read/write access to `~/beat-server/`.

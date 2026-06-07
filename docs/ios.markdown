@@ -77,16 +77,16 @@ xcodegen generate --spec ios/project.yml --project ios/
 
 ```bash
 # Build iOS (simulator)
-scripts/beatled.sh client ios build
+./beatled.sh client ios build
 
 # Build and run in iOS Simulator
-scripts/beatled.sh client ios sim
+./beatled.sh client ios sim
 
 # Build macOS app
-scripts/beatled.sh client macos build
+./beatled.sh client macos build
 
 # Build and run macOS app
-scripts/beatled.sh client macos start
+./beatled.sh client macos start
 ```
 
 ### Self-Signed Certificates

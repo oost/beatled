@@ -26,24 +26,24 @@ The beat server is a C++ application that captures audio, detects beats in real 
 
 ```bash
 # Build and start the HTTPS server with the web client
-scripts/beatled.sh server start --start-http
+./beatled.sh server start --start-http
 
 # With UDP server for LED controllers
-scripts/beatled.sh server start --start-http --start-udp
+./beatled.sh server start --start-http --start-udp
 
 # With the per-beat tempo dispatcher running (default mode: unicast,
 # with per-client one-way-delay compensation). See Deployment for
 # --broadcast-mode={unicast,subnet,limited}.
-scripts/beatled.sh server start --start-http --start-udp --start-broadcast
+./beatled.sh server start --start-http --start-udp --start-broadcast
 
 # With CORS for the Vite dev server
-scripts/beatled.sh server start --start-http --cors-origin "https://localhost:5173"
+./beatled.sh server start --start-http --cors-origin "https://localhost:5173"
 
 # With Bearer token authentication
-scripts/beatled.sh server start --start-http --api-token "secret"
+./beatled.sh server start --start-http --api-token "secret"
 
 # Run server tests
-scripts/beatled.sh test server
+./beatled.sh test server
 ```
 
 The server is built with CMake and uses vcpkg for dependency management. The first build will configure CMake and install dependencies automatically.
@@ -83,10 +83,10 @@ The server requires TLS certificates for HTTPS. Generate self-signed certificate
 
 ```bash
 # Default domain (beatled.test)
-scripts/beatled.sh certs
+./beatled.sh certs
 
 # Or specify one or more domains
-scripts/beatled.sh certs beatled.test localhost 127.0.0.1
+./beatled.sh certs beatled.test localhost 127.0.0.1
 ```
 
 This creates certificates in `server/certs/` using [mkcert](https://github.com/FiloSotto/mkcert). The server expects `cert.pem`, `key.pem`, and `dh_param.pem`.
@@ -111,8 +111,8 @@ Cross-compile for Raspberry Pi (ARM64) using Docker:
 
 ```bash
 git submodule update --init --recursive   # first time only
-scripts/beatled.sh build rpi
-scripts/beatled.sh server deploy <username> <host>
+./beatled.sh build rpi
+./beatled.sh server deploy <username> <host>
 ```
 
 See the [Deployment](deployment.html) page for the full guide covering certificates, service management, and troubleshooting.

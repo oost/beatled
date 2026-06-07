@@ -4,7 +4,7 @@ layout: default
 nav_order: 4
 ---
 
-# `scripts/beatled.sh` — CLI Reference
+# `./beatled.sh` — CLI Reference
 
 `beatled.sh` is the single entry point for building, running, testing,
 flashing, and deploying every piece of the system. It wraps cmake,
@@ -13,11 +13,11 @@ behind a small group/subcommand grammar so day-to-day work doesn't need
 a cheat sheet for each underlying tool.
 
 ```sh
-scripts/beatled.sh <group> <subcommand> [action] [options]
+./beatled.sh <group> <subcommand> [action] [options]
 ```
 
 Every command level accepts `-h` / `--help` (or `help`). Run e.g.
-`scripts/beatled.sh server -h` to see the same content as below
+`./beatled.sh server -h` to see the same content as below
 without leaving the terminal.
 
 ## Quick orientation
@@ -36,7 +36,7 @@ without leaving the terminal.
 ## `client`
 
 ```sh
-scripts/beatled.sh client <surface> <action>
+./beatled.sh client <surface> <action>
 ```
 
 | Surface | Action  | Behaviour |
@@ -56,7 +56,7 @@ start it with `server start --start-http` in another terminal.
 ## `controller`
 
 ```sh
-scripts/beatled.sh controller <port> <action>
+./beatled.sh controller <port> <action>
 ```
 
 | Port             | Actions                          | Output                                |
@@ -90,7 +90,7 @@ The relevant subcommand sources the file automatically. Both
 ## `server`
 
 ```sh
-scripts/beatled.sh server <subcommand> [options]
+./beatled.sh server <subcommand> [options]
 ```
 
 ### Subcommands
@@ -152,9 +152,9 @@ it restores the previous backup. See the
 ## `test`, `build`, `clean`
 
 ```sh
-scripts/beatled.sh test  [server|client|pico|all]
-scripts/beatled.sh build [server|client|pico|pico-freertos|rpi|all]
-scripts/beatled.sh clean [server|client|pico|pico-freertos|esp32|all]
+./beatled.sh test  [server|client|pico|all]
+./beatled.sh build [server|client|pico|pico-freertos|rpi|all]
+./beatled.sh clean [server|client|pico|pico-freertos|esp32|all]
 ```
 
 - `test all` is the default; it runs the server's Catch2 binaries
@@ -171,7 +171,7 @@ scripts/beatled.sh clean [server|client|pico|pico-freertos|esp32|all]
 ## `docs`
 
 ```sh
-scripts/beatled.sh docs [-- jekyll options]
+./beatled.sh docs [-- jekyll options]
 ```
 
 Serves the Jekyll site at <http://127.0.0.1:4000/beatled/>. Any
@@ -181,7 +181,7 @@ common examples: `--livereload`, `--port 4001`.
 ## `certs`
 
 ```sh
-scripts/beatled.sh certs [domain ...]
+./beatled.sh certs [domain ...]
 ```
 
 Generates a locally-trusted TLS cert (cert + key + DH parameters)
@@ -192,9 +192,9 @@ mkcert root CA, which the server iOS + Mac clients also need installed
 Examples:
 
 ```sh
-scripts/beatled.sh certs                              # default: beatled.test
-scripts/beatled.sh certs beatled.local
-scripts/beatled.sh certs beatled.local 192.168.1.100  # multi-SAN
+./beatled.sh certs                              # default: beatled.test
+./beatled.sh certs beatled.local
+./beatled.sh certs beatled.local 192.168.1.100  # multi-SAN
 ```
 
 ## Environment variables
@@ -230,10 +230,10 @@ git clone https://github.com/oost/beatled.git
 cd beatled
 git submodule update --init --recursive
 scripts/git-hooks/install.sh              # pre-commit hooks (clang-format, shellcheck)
-scripts/beatled.sh certs                  # local TLS for beatled.test / mkcert root
-scripts/beatled.sh server start --start-http --start-udp --start-broadcast
+./beatled.sh certs                  # local TLS for beatled.test / mkcert root
+./beatled.sh server start --start-http --start-udp --start-broadcast
 # in another terminal:
-scripts/beatled.sh client react dev
+./beatled.sh client react dev
 ```
 
 ### Iterate on the firmware (POSIX simulator, no hardware)
@@ -241,8 +241,8 @@ scripts/beatled.sh client react dev
 ```sh
 cp controller/.env.pico.template controller/.env.pico
 $EDITOR controller/.env.pico                # WIFI_SSID, BEATLED_SERVER_NAME, NUM_PIXELS
-scripts/beatled.sh controller posix build   # builds + execs the simulator
-scripts/beatled.sh test pico                # POSIX-port unit + integration tests
+./beatled.sh controller posix build   # builds + execs the simulator
+./beatled.sh test pico                # POSIX-port unit + integration tests
 ```
 
 ### Flash a real Pico W
@@ -250,17 +250,17 @@ scripts/beatled.sh test pico                # POSIX-port unit + integration test
 ```sh
 # Once: fill .env.pico (WIFI_SSID / WIFI_PASSWORD / BEATLED_SERVER_NAME)
 # Hold BOOTSEL while plugging USB so /Volumes/RPI-RP2/ mounts.
-scripts/beatled.sh controller pico flash
+./beatled.sh controller pico flash
 # or the FreeRTOS port:
-scripts/beatled.sh controller pico-freertos flash
+./beatled.sh controller pico-freertos flash
 ```
 
 ### Deploy to a Raspberry Pi
 
 ```sh
-scripts/beatled.sh certs beatled.local           # first time only
-scripts/beatled.sh build rpi                     # Docker cross-compile to out/
-scripts/beatled.sh server deploy pi beatled.local
+./beatled.sh certs beatled.local           # first time only
+./beatled.sh build rpi                     # Docker cross-compile to out/
+./beatled.sh server deploy pi beatled.local
 ```
 
 The deploy script copies certs to the Pi, scps the tarball, installs
@@ -271,8 +271,8 @@ it restores the previous backup. See
 ### Cut a release commit
 
 ```sh
-scripts/beatled.sh test all                      # server + client + firmware POSIX
-scripts/beatled.sh build all                     # check every component still links
+./beatled.sh test all                      # server + client + firmware POSIX
+./beatled.sh build all                     # check every component still links
 git status                                       # spot-check
 git commit …
 ```
@@ -282,7 +282,7 @@ git commit …
 - **Skip the pre-commit hooks for a single commit**:
   `BEATLED_SKIP_HOOKS=1 git commit …`. Don't make a habit of it.
 - **Point at a sibling firmware checkout**:
-  `PICO_DIR=/path/to/other/firmware scripts/beatled.sh controller posix build`.
+  `PICO_DIR=/path/to/other/firmware ./beatled.sh controller posix build`.
 - **Pass through to the underlying Jekyll server**: anything after `--`
-  reaches `jekyll serve` directly, e.g. `scripts/beatled.sh docs --
+  reaches `jekyll serve` directly, e.g. `./beatled.sh docs --
   --livereload --port 4001`.

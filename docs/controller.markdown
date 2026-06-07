@@ -50,7 +50,7 @@ cd beatled
 git submodule update --init --recursive
 ```
 
-All firmware sources are at `controller/`. `scripts/beatled.sh` defaults
+All firmware sources are at `controller/`. `./beatled.sh` defaults
 `PICO_DIR` to that path; override it only if you're working on a parallel
 firmware tree.
 
@@ -160,7 +160,7 @@ cp .env.esp32.template .env.esp32
 Then build and flash using the project script from the `beatled` repo:
 
 ```bash
-scripts/beatled.sh controller esp32-freertos flash
+./beatled.sh controller esp32-freertos flash
 ```
 
 Or manually:
@@ -251,8 +251,8 @@ cmake --build build_posix_freertos
 Or using the project utility script from the `beatled` repo (reads `.env.pico` automatically):
 
 ```bash
-scripts/beatled.sh controller posix build       # posix port
-scripts/beatled.sh controller freertos-sim build # posix_freertos port
+./beatled.sh controller posix build       # posix port
+./beatled.sh controller freertos-sim build # posix_freertos port
 ```
 
 By default, the POSIX port connects to `localhost`. Set `BEATLED_SERVER_NAME` in `.env.pico` to override.

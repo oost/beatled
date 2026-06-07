@@ -44,7 +44,7 @@ See [Beatled Server — Custom Test Domain](server.html#custom-test-domain) for 
 Build and start the beat server with the HTTP API and UDP server for controllers:
 
 ```bash
-scripts/beatled.sh server start --start-http --start-udp --no-tls
+./beatled.sh server start --start-http --start-udp --no-tls
 ```
 
 The server listens on `localhost:8443` (HTTP) and `localhost:9090` (UDP). Add `--start-broadcast` to also drive per-beat tempo dispatch to registered controllers — see [Deployment → Broadcasting Tempo to Controllers](deployment.html#broadcasting-tempo-to-controllers) for the modes.
@@ -54,7 +54,7 @@ The server listens on `localhost:8443` (HTTP) and `localhost:9090` (UDP). Add `-
 In a second terminal, start the Vite dev server:
 
 ```bash
-scripts/beatled.sh client react dev
+./beatled.sh client react dev
 ```
 
 Open [https://localhost:5173](https://localhost:5173) in your browser. The dev server proxies API requests to the beat server.
@@ -64,7 +64,7 @@ Open [https://localhost:5173](https://localhost:5173) in your browser. The dev s
 In a third terminal, build and run the POSIX port with the Metal LED visualizer:
 
 ```bash
-scripts/beatled.sh controller posix build
+./beatled.sh controller posix build
 ```
 
 A window opens rendering a 3D LED ring. The simulator connects to `localhost`, registers with the server, and starts receiving beat timing.
@@ -73,12 +73,12 @@ A window opens rendering a 3D LED ring. The simulator connects to `localhost`, r
 
 ```bash
 # All tests
-scripts/beatled.sh test all
+./beatled.sh test all
 
 # Individual components
-scripts/beatled.sh test server
-scripts/beatled.sh test client
-scripts/beatled.sh test pico
+./beatled.sh test server
+./beatled.sh test client
+./beatled.sh test pico
 ```
 
 ## Next Steps

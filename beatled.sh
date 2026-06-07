@@ -2,8 +2,11 @@
 
 set -euo pipefail
 
-readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-readonly PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+# The script now lives at the repo root; PROJECT_DIR resolves to the
+# directory the script file itself sits in. SCRIPTS_DIR is the
+# now-helper-only scripts/ directory (deploy/, git-hooks/, …).
+readonly PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPTS_DIR="$PROJECT_DIR/scripts"
 
 readonly VCPKG_DIR="${VCPKG_DIR:-$HOME/coding/external/vcpkg}"
 readonly SERVER_DIR="$PROJECT_DIR/server"
@@ -952,7 +955,7 @@ cmd_certs() {
   local certs_dir="$SERVER_DIR/certs"
   local domains=("${@:-beatled.test}")
   info "Generating certificates for '${domains[*]}' in $certs_dir"
-  "$SCRIPT_DIR/deploy/create-certs.sh" --output "$certs_dir" "${domains[@]}"
+  "$SCRIPTS_DIR/deploy/create-certs.sh" --output "$certs_dir" "${domains[@]}"
   ok "Certificates created in $certs_dir"
 }
 

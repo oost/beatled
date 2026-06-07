@@ -23,7 +23,7 @@ Full documentation: [oost.github.io/beatled](https://oost.github.io/beatled/)
 A single script handles building and running all components locally:
 
 ```
-scripts/beatled.sh <command> [options]
+./beatled.sh <command> [options]
 ```
 
 Every level supports `-h` / `--help`. The full reference (every
@@ -60,10 +60,10 @@ For local development with hot-reload, run the server and client in separate ter
 
 ```
 # Terminal 1 - beat server
-scripts/beatled.sh server --start-http --cors-origin "https://localhost:5173"
+./beatled.sh server --start-http --cors-origin "https://localhost:5173"
 
 # Terminal 2 - Vite dev server with HMR
-scripts/beatled.sh client
+./beatled.sh client
 ```
 
 ## Cross Compilation
@@ -79,13 +79,13 @@ In this step, we cross-compile the server for the Raspberry Pi and build the Rea
 2. Build the Docker builder image and the ARM64 server executable:
 
    ```
-   scripts/beatled.sh build rpi
+   ./beatled.sh build rpi
    ```
 
 3. Deploy to the Raspberry Pi:
 
    ```
-   scripts/beatled.sh deploy ${RPI_USERNAME} ${RPI_HOST}
+   ./beatled.sh deploy ${RPI_USERNAME} ${RPI_HOST}
    ```
 
 ## Requirements

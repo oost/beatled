@@ -65,13 +65,13 @@ else
     echo "[pre-commit] clang-format not on PATH — skipping C / C++ format check"
 fi
 
-# --- shellcheck on scripts/ ------------------------------------------------
+# --- shellcheck on scripts/ + the root-level CLI -------------------------
 
 if command -v shellcheck >/dev/null 2>&1; then
     sh_targets=()
     for f in "${staged[@]}"; do
         case "$f" in
-            scripts/*.sh|scripts/*/*.sh)
+            beatled.sh|scripts/*.sh|scripts/*/*.sh)
                 if [ -f "$f" ]; then
                     sh_targets+=("$f")
                 fi

@@ -37,10 +37,10 @@ A React single-page application for monitoring and controlling the Beatled syste
 
 ```bash
 # Start the Vite dev server with hot module replacement
-scripts/beatled.sh client react dev
+./beatled.sh client react dev
 
 # Production build
-scripts/beatled.sh client react build
+./beatled.sh client react build
 
 # Run tests
 cd client && npm test

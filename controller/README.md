@@ -60,8 +60,8 @@ cp build-pico/src/pico_w_beatled.uf2 /Volumes/RPI-RP2/
 ### ESP32
 
 ```bash
-# uses scripts/beatled.sh from the beatled repo (reads .env.esp32)
-scripts/beatled.sh flash-esp32
+# uses ./beatled.sh from the beatled repo (reads .env.esp32)
+./beatled.sh flash-esp32
 
 # or manually:
 source .env.esp32
