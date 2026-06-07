@@ -4,9 +4,9 @@
 #include "command/next_beat.h"
 #include "command/qos.h"
 #include "command/time.h"
-#include "beatled/network.h"
 #include "beatled/protocol.h"
 #include "clock/clock.h"
+#include "hal/network.h"
 #include "hal/time.h"
 
 // Cumulative count of failed intercore_command_queue add attempts. The

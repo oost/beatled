@@ -1,10 +1,10 @@
 #include <stdio.h>
 
-#include "beatled/network.h"
 #include "beatled/protocol.h"
 #include "command/qos.h"
 #include "command/status.h"
 #include "command/utils.h"
+#include "hal/network.h"
 #include "hal/udp.h"
 
 // The UDP-send plumbing's prepare_payload callback doesn't carry user
