@@ -40,7 +40,9 @@ Config::Config(int argc, const char *argv[]) {
       lyra::opt(m_log_level, "trace|debug|info|warn|err|critical|off")["--log-level"](
           fmt::format("spdlog level (default: {}; also: BEATLED_LOG_LEVEL env var)", m_log_level)) |
       lyra::opt(m_program_refresh_ms, "ms")["--program-refresh-ms"](fmt::format(
-          "PROGRAM background refresh period in ms (default: {})", m_program_refresh_ms));
+          "PROGRAM background refresh period in ms (default: {})", m_program_refresh_ms)) |
+      lyra::opt(m_status_probe_ms, "ms")["--status-probe-ms"](
+          fmt::format("STATUS probe period in ms; 0 disables (default: {})", m_status_probe_ms));
 
   auto parser_result = cli.parse(lyra::args(argc, argv));
   if (!parser_result) {
@@ -85,6 +87,9 @@ void Config::log_config() const {
   SPDLOG_INFO("  API token:          {}", m_api_token.empty() ? "disabled" : "set");
   SPDLOG_INFO("  Log level:          {}", m_log_level);
   SPDLOG_INFO("  PROGRAM refresh:    {} ms", m_program_refresh_ms);
+  SPDLOG_INFO("  STATUS probe:       {}", m_status_probe_ms == 0
+                                              ? std::string("off")
+                                              : fmt::format("{} ms", m_status_probe_ms));
 }
 
 beatled::server::Server::parameters_t Config::server_parameters() const {
@@ -120,6 +125,7 @@ beatled::server::Server::parameters_t Config::server_parameters() const {
       .logger = {20, m_log_level},
       .thread_pool_size = m_pool_size,
       .program_refresh_ms = m_program_refresh_ms,
+      .status_probe_ms = m_status_probe_ms,
   };
 
   return server_parameters;

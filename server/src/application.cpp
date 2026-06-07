@@ -39,6 +39,7 @@ Application::Application(const Config &beatled_config)
       std::make_unique<server::TempoBroadcaster>(
           TEMPO_BROADCASTER_ID, io_context_,
           std::chrono::milliseconds(server_parameters_.program_refresh_ms),
+          std::chrono::milliseconds(server_parameters_.status_probe_ms),
           server_parameters_.broadcasting, state_manager_);
 
   registerController(std::make_unique<beatled::detector::BeatDetector>(

@@ -17,6 +17,7 @@ add_executable(test_integration
     ${CMAKE_SOURCE_DIR}/src/command/time/time.c
     ${CMAKE_SOURCE_DIR}/src/command/tempo/tempo.c
     ${CMAKE_SOURCE_DIR}/src/command/next_beat/next_beat.c
+    ${CMAKE_SOURCE_DIR}/src/command/status/status.c
     # Real clock and event queue
     ${CMAKE_SOURCE_DIR}/src/clock/clock.c
     ${CMAKE_SOURCE_DIR}/src/event/event_queue.c

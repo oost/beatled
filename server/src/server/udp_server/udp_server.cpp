@@ -49,15 +49,22 @@ void UDPServer::do_receive() {
 
           DataBuffer::Ptr response_buffer_ptr = requestHandler.response();
 
-          SPDLOG_INFO("Sending response: {::x} to {}", *response_buffer_ptr,
-                      fmt::streamed(request_buffer_ptr->remote_endpoint()));
+          if (response_buffer_ptr) {
+            SPDLOG_INFO("Sending response: {::x} to {}", *response_buffer_ptr,
+                        fmt::streamed(request_buffer_ptr->remote_endpoint()));
 
-          // Capture response_buffer_ptr to keep it alive until send completes.
-          socket_.async_send_to(
-              asio::buffer(response_buffer_ptr->data(), response_buffer_ptr->size()),
-              request_buffer_ptr->remote_endpoint(),
-              [resp = std::move(response_buffer_ptr)](std::error_code /*ec*/,
-                                                      std::size_t /*bytes_sent*/) {});
+            // Capture response_buffer_ptr to keep it alive until send completes.
+            socket_.async_send_to(
+                asio::buffer(response_buffer_ptr->data(), response_buffer_ptr->size()),
+                request_buffer_ptr->remote_endpoint(),
+                [resp = std::move(response_buffer_ptr)](std::error_code /*ec*/,
+                                                        std::size_t /*bytes_sent*/) {});
+          } else {
+            // Some message types (e.g. STATUS_RESPONSE — controller's reply to
+            // the server's STATUS probe) are terminal and need no reply.
+            SPDLOG_DEBUG("No response to send for request from {}",
+                         fmt::streamed(request_buffer_ptr->remote_endpoint()));
+          }
         }
 
         if (ec) {

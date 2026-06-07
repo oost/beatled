@@ -64,6 +64,32 @@ export async function getDevices(): Promise<DevicesResponse> {
   }
 }
 
+// Fleet-wide QoS aggregates returned by /api/qos. Optional fields are
+// null when no device has reported a QoS snapshot yet.
+export interface FleetQos {
+  device_count: number;
+  reporting_count: number;
+  min_offset_us: number | null;
+  max_offset_us: number | null;
+  fleet_skew_us: number | null;
+  mean_rtt_us: number | null;
+  min_rtt_us: number | null;
+  max_rtt_us: number | null;
+  slowest_device_board_id: string;
+  total_next_beat_gap: number;
+  total_intercore_drops: number;
+  total_time_sync_outliers: number;
+}
+
+export async function getQos(): Promise<FleetQos | null> {
+  try {
+    const res = await getEndpoint("/api/qos");
+    return res.json();
+  } catch {
+    return null;
+  }
+}
+
 export async function serviceControl(serviceId: string, status: boolean): Promise<StatusResponse> {
   try {
     const res = await postEndpoint("/api/service/control", {

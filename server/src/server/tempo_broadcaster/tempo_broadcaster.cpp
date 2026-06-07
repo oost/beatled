@@ -2,6 +2,7 @@
 #include <fmt/ostream.h>
 #include <spdlog/spdlog.h>
 
+#include "core/clock.hpp"
 #include "core/state_manager.hpp"
 #include "tempo_broadcaster/tempo_broadcaster.hpp"
 #include "udp/udp_buffer.hpp"
@@ -14,11 +15,14 @@ using beatled::core::tempo_ref_t;
 
 TempoBroadcaster::TempoBroadcaster(const std::string &id, asio::io_context &io_context,
                                    std::chrono::nanoseconds program_refresh_period,
+                                   std::chrono::nanoseconds status_probe_period,
                                    const parameters_t &broadcasting_server_parameters,
                                    StateManager &state_manager)
     : ServiceControllerInterface{id}, state_manager_{state_manager}, io_context_(io_context),
       program_refresh_timer_(asio::high_resolution_timer(io_context_, program_refresh_period)),
       program_refresh_period_(program_refresh_period),
+      status_probe_timer_(asio::high_resolution_timer(io_context_)),
+      status_probe_period_(status_probe_period),
       socket_(std::make_shared<asio::ip::udp::socket>(io_context)),
       broadcast_endpoint_{
           udp::endpoint(asio::ip::make_address_v4(broadcasting_server_parameters.address),
@@ -200,11 +204,54 @@ void TempoBroadcaster::send_to_endpoint(std::shared_ptr<DataBuffer> buffer,
 
 void TempoBroadcaster::start_sync() {
   schedule_program_refresh();
+  if (status_probe_period_.count() > 0) {
+    schedule_status_probe();
+  } else {
+    SPDLOG_INFO("{} status probe disabled (--status-probe-ms=0)", name());
+  }
 }
 
 void TempoBroadcaster::stop_sync() {
   program_refresh_timer_.cancel();
+  status_probe_timer_.cancel();
   socket_->cancel();
+}
+
+void TempoBroadcaster::schedule_status_probe() {
+  status_probe_timer_.expires_after(status_probe_period_);
+  status_probe_timer_.async_wait(
+      asio::bind_executor(strand_, [this](const asio::error_code &error) {
+        if (error == asio::error::operation_aborted) {
+          return;
+        }
+        if (error) {
+          SPDLOG_ERROR("Status probe timer error: {}", error.message());
+          return;
+        }
+        send_status_probes();
+        if (is_running()) {
+          schedule_status_probe();
+        }
+      }));
+}
+
+void TempoBroadcaster::send_status_probes() {
+  // Probe every registered client whose endpoint we've observed. Snapshot
+  // the client list first to keep the strand's lock window short — the
+  // actual sends are queued via send_to_endpoint, which already runs on
+  // this strand.
+  auto clients = state_manager_.get_clients();
+  if (clients.empty()) {
+    return;
+  }
+  const uint64_t send_time_us = beatled::core::Clock::wall_time_us_64();
+  for (const auto &cs : clients) {
+    if (cs->endpoint.port() == 0) {
+      continue; // no observed endpoint yet
+    }
+    auto buf = std::shared_ptr<DataBuffer>(new StatusRequestBuffer(send_time_us));
+    send_to_endpoint(std::move(buf), cs->endpoint);
+  }
 }
 
 } // namespace beatled::server

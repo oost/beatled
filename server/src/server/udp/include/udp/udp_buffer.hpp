@@ -87,6 +87,15 @@ public:
   ProgramPushBuffer(uint16_t program_id, uint16_t seq);
 };
 
+// Server-initiated STATUS probe. The 8-byte `server_send_time_us` is
+// echoed verbatim on the controller's STATUS_RESPONSE so the server
+// can compute a fresh RTT independent of the controller's own time
+// sync state.
+class StatusRequestBuffer : public ResponseBuffer<beatled_message_status_request_t> {
+public:
+  explicit StatusRequestBuffer(uint64_t server_send_time_us);
+};
+
 class UDPRequestBuffer : public DataBuffer {
 public:
   using Ptr = std::unique_ptr<UDPRequestBuffer>;

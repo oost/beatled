@@ -36,6 +36,7 @@ public:
   req_status_t on_post_program(const req_handle_t &req, route_params_t params);
   req_status_t on_get_log(const req_handle_t &req, route_params_t params);
   req_status_t on_get_devices(const req_handle_t &req, route_params_t params);
+  req_status_t on_get_qos(const req_handle_t &req, route_params_t params);
 
   req_status_t on_get_health(const req_handle_t &req, route_params_t params);
   req_status_t on_preflight(const req_handle_t &req, route_params_t params);

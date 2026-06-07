@@ -160,6 +160,43 @@ TEST_CASE("UDPRequestHandler tempo request", "[udp][handler]") {
     REQUIRE(ntohs(msg->program_id) == 5);
   }
 
+  SECTION("v4 status response decodes qos + rtt onto ClientStatus") {
+    ClientStatus::board_id_t bid{};
+    bid[0] = 'R';
+    auto cs = std::make_shared<ClientStatus>(bid, asio::ip::make_address("10.0.0.1"));
+    cs->last_status_time = 1;
+    sm.register_client(cs);
+
+    beatled_message_status_response_t resp{};
+    resp.base.type = BEATLED_MESSAGE_STATUS_RESPONSE;
+    // Pick a send time slightly in the past so RTT > 0 after the
+    // handler stamps now.
+    const uint64_t kSendTime = 1;
+    resp.echo_server_send_time_us = htonll(kSendTime);
+    resp.qos.median_rtt_us = htonl(7777);
+    resp.qos.next_beat_gap_total = htonl(9);
+    resp.qos.intercore_drop_total = htonl(3);
+    resp.qos.time_sync_outlier_total = htonl(13);
+    resp.qos.valid_sample_count = htons(6);
+    resp.qos.last_applied_program_seq = htons(99);
+
+    auto buf = make_request(&resp, sizeof(resp));
+    UDPRequestHandler handler(&buf, sm);
+    auto reply = handler.response();
+    REQUIRE(reply == nullptr); // STATUS_RESPONSE is terminal — no reply
+
+    auto stored = sm.client_status(asio::ip::make_address("10.0.0.1"));
+    REQUIRE(stored != nullptr);
+    REQUIRE(stored->latest_qos.valid);
+    REQUIRE(stored->latest_qos.median_rtt_us == 7777u);
+    REQUIRE(stored->latest_qos.next_beat_gap_total == 9u);
+    REQUIRE(stored->latest_qos.intercore_drop_total == 3u);
+    REQUIRE(stored->latest_qos.time_sync_outlier_total == 13u);
+    REQUIRE(stored->latest_qos.valid_sample_count == 6u);
+    REQUIRE(stored->latest_qos.last_applied_program_seq == 99u);
+    REQUIRE(stored->latest_qos.last_rtt_us > 0u);
+  }
+
   SECTION("v4 qos block decodes onto ClientStatus") {
     // Register a client at the request's source IP so the handler can
     // attach the QoS snapshot to it.

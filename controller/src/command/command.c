@@ -5,6 +5,7 @@
 #include "command/command.h"
 #include "command/next_beat.h"
 #include "command/qos.h"
+#include "command/status.h"
 #include "command/tempo.h"
 #include "command/time.h"
 #include "command/utils.h"
@@ -101,6 +102,10 @@ int validate_server_message(void *event_data, size_t data_length) {
     err = !(sizeof(beatled_message_next_beat_t) == data_length);
     break;
 
+  case BEATLED_MESSAGE_STATUS_REQUEST:
+    err = !(sizeof(beatled_message_status_request_t) == data_length);
+    break;
+
   case BEATLED_MESSAGE_ERROR:
     err = !(sizeof(beatled_message_error_t) == data_length);
     break;
@@ -149,6 +154,10 @@ int handle_server_message(void *event_data, size_t data_length, uint64_t dest_ti
 
   case BEATLED_MESSAGE_NEXT_BEAT:
     err = process_next_beat_msg(server_msg, data_length);
+    break;
+
+  case BEATLED_MESSAGE_STATUS_REQUEST:
+    err = process_status_request(server_msg, data_length);
     break;
 
   case BEATLED_MESSAGE_ERROR:

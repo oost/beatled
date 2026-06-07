@@ -74,4 +74,12 @@ ProgramPushBuffer::ProgramPushBuffer(uint16_t program_id, uint16_t seq) {
   set_data(msg);
 }
 
+StatusRequestBuffer::StatusRequestBuffer(uint64_t server_send_time_us) {
+  beatled_message_status_request_t msg;
+  msg.base.type = BEATLED_MESSAGE_STATUS_REQUEST;
+  msg.server_send_time_us = htonll(server_send_time_us);
+
+  set_data(msg);
+}
+
 } // namespace beatled::server

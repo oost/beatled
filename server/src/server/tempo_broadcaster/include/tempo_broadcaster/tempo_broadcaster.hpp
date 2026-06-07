@@ -33,8 +33,8 @@ public:
 
   TempoBroadcaster(const std::string &id, asio::io_context &io_context,
                    std::chrono::nanoseconds program_refresh_period,
-                   const parameters_t &broadcasting_server_parameters,
-                   StateManager &state_manager);
+                   std::chrono::nanoseconds status_probe_period,
+                   const parameters_t &broadcasting_server_parameters, StateManager &state_manager);
 
   ~TempoBroadcaster();
 
@@ -62,11 +62,21 @@ private:
 
   void schedule_program_refresh();
 
+  // Server-initiated STATUS probe (protocol v4). Fires a unicast
+  // STATUS_REQUEST to every registered client every `status_probe_period`;
+  // controllers reply with STATUS_RESPONSE which the request handler
+  // decodes back onto ClientStatus::latest_qos. status_probe_period == 0
+  // disables the probe entirely.
+  void schedule_status_probe();
+  void send_status_probes();
+
   StateManager &state_manager_;
   asio::io_context &io_context_;
 
   asio::high_resolution_timer program_refresh_timer_;
   std::chrono::nanoseconds program_refresh_period_;
+  asio::high_resolution_timer status_probe_timer_;
+  std::chrono::nanoseconds status_probe_period_;
 
   std::shared_ptr<asio::ip::udp::socket> socket_;
   asio::ip::udp::endpoint broadcast_endpoint_;

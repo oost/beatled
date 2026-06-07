@@ -43,6 +43,8 @@ public:
     // Background PROGRAM refresh period in ms; surfaced as
     // --program-refresh-ms on the CLI.
     std::uint32_t program_refresh_ms = 200;
+    // Active STATUS probe period in ms (--status-probe-ms; 0 = off).
+    std::uint32_t status_probe_ms = 5000;
   };
 
   /// Construct the server to listen on the specified TCP address and port, and

@@ -48,6 +48,11 @@ private:
   // the on-change push catch up faster; the cost is one 5-byte UDP
   // packet per registered client per refresh tick.
   std::uint32_t m_program_refresh_ms{200};
+  // Active STATUS probe period (protocol v4). The broadcaster fires a
+  // STATUS_REQUEST at every registered client every N ms; controllers
+  // reply with STATUS_RESPONSE which the server folds into
+  // ClientStatus::latest_qos. 0 disables the probe entirely.
+  std::uint32_t m_status_probe_ms{5000};
 };
 
 } // namespace beatled::core

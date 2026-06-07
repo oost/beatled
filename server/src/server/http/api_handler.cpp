@@ -1,7 +1,10 @@
+#include <iomanip>
 #include <limits>
 #include <nlohmann/json.hpp>
+#include <sstream>
 
 #include "./api_handler.hpp"
+#include "beatled/protocol.h"
 
 using json = nlohmann::json;
 using beatled::core::tempo_ref_t;
@@ -295,6 +298,87 @@ APIHandler::req_status_t APIHandler::on_get_devices(const req_handle_t &req,
   return init_resp(req->create_response(restinio::status_ok()))
       .set_body(response_body.dump())
       .done();
+}
+
+APIHandler::req_status_t APIHandler::on_get_qos(const req_handle_t &req, route_params_t params) {
+  if (!check_auth(req)) {
+    return init_resp(req->create_response(restinio::status_unauthorized()))
+        .set_body(R"({"error":"Unauthorized"})")
+        .done();
+  }
+
+  // Snapshot the client list once and compute fleet-wide aggregates over
+  // the current ClientStatus::latest_qos values. Devices that haven't
+  // reported a QoS snapshot yet are skipped from the sync/skew math but
+  // still counted toward `device_count` / `reporting_count`.
+  auto clients = service_manager_.state_manager().get_clients();
+  size_t reporting = 0;
+  int64_t min_offset_us = std::numeric_limits<int64_t>::max();
+  int64_t max_offset_us = std::numeric_limits<int64_t>::min();
+  uint64_t min_rtt_us = std::numeric_limits<uint64_t>::max();
+  uint64_t max_rtt_us = 0;
+  uint64_t sum_rtt_us = 0;
+  uint64_t total_next_beat_gap = 0;
+  uint64_t total_intercore_drops = 0;
+  uint64_t total_time_sync_outliers = 0;
+  std::string slowest_id;
+  for (const auto &cs : clients) {
+    if (!cs->latest_qos.valid) {
+      continue;
+    }
+    ++reporting;
+    const auto &qos = cs->latest_qos;
+    if (qos.current_offset_us < min_offset_us)
+      min_offset_us = qos.current_offset_us;
+    if (qos.current_offset_us > max_offset_us)
+      max_offset_us = qos.current_offset_us;
+    if (qos.median_rtt_us > 0) {
+      if (qos.median_rtt_us < min_rtt_us)
+        min_rtt_us = qos.median_rtt_us;
+      if (qos.median_rtt_us > max_rtt_us) {
+        max_rtt_us = qos.median_rtt_us;
+        // Best-effort identifier for the operator: prefer board_id over
+        // raw client_id since the React Devices table renders board_id.
+        std::ostringstream oss;
+        oss << std::hex << std::setfill('0');
+        for (size_t i = 0; i < PICO_UNIQUE_BOARD_ID_SIZE_BYTES; ++i) {
+          oss << std::setw(2)
+              << static_cast<unsigned int>(static_cast<unsigned char>(cs->board_id[i]));
+        }
+        slowest_id = oss.str();
+      }
+      sum_rtt_us += qos.median_rtt_us;
+    }
+    total_next_beat_gap += qos.next_beat_gap_total;
+    total_intercore_drops += qos.intercore_drop_total;
+    total_time_sync_outliers += qos.time_sync_outlier_total;
+  }
+
+  json response;
+  response["device_count"] = clients.size();
+  response["reporting_count"] = reporting;
+  if (reporting > 0) {
+    response["min_offset_us"] = min_offset_us;
+    response["max_offset_us"] = max_offset_us;
+    response["fleet_skew_us"] = max_offset_us - min_offset_us;
+    response["mean_rtt_us"] = sum_rtt_us / reporting;
+    response["min_rtt_us"] = min_rtt_us == std::numeric_limits<uint64_t>::max() ? 0 : min_rtt_us;
+    response["max_rtt_us"] = max_rtt_us;
+    response["slowest_device_board_id"] = slowest_id;
+  } else {
+    response["min_offset_us"] = nullptr;
+    response["max_offset_us"] = nullptr;
+    response["fleet_skew_us"] = nullptr;
+    response["mean_rtt_us"] = nullptr;
+    response["min_rtt_us"] = nullptr;
+    response["max_rtt_us"] = nullptr;
+    response["slowest_device_board_id"] = "";
+  }
+  response["total_next_beat_gap"] = total_next_beat_gap;
+  response["total_intercore_drops"] = total_intercore_drops;
+  response["total_time_sync_outliers"] = total_time_sync_outliers;
+
+  return init_resp(req->create_response(restinio::status_ok())).set_body(response.dump()).done();
 }
 
 APIHandler::req_status_t APIHandler::on_get_health(const req_handle_t &req, route_params_t params) {

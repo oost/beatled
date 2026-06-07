@@ -1,7 +1,7 @@
 import { useFetcher } from "react-router-dom";
 import { useEffect } from "react";
 import { useInterval } from "../hooks/interval";
-import { getStatus, getDevices, serviceControl, type Device } from "../lib/status";
+import { getStatus, getDevices, getQos, serviceControl, type Device, type FleetQos } from "../lib/status";
 import PageHeader from "../components/page-header";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -33,7 +33,11 @@ const MAX_HISTORY = 30;
 
 export async function loader() {
   console.log("Loading status");
-  const [status, devicesResponse] = await Promise.all([getStatus(), getDevices()]);
+  const [status, devicesResponse, qos] = await Promise.all([
+    getStatus(),
+    getDevices(),
+    getQos(),
+  ]);
   const last: TempoHistoryEntry = { x: new Date(), y: status.tempo || NaN, ...status };
   tempoHistory.push(last);
   if (tempoHistory.length > MAX_HISTORY) {
@@ -43,6 +47,7 @@ export async function loader() {
     last,
     history: tempoHistory,
     devices: devicesResponse.devices,
+    qos,
   };
 }
 
@@ -96,6 +101,105 @@ function formatLoss(device: Device): string {
   return `${gaps}`;
 }
 
+function usToMs(value: number | null | undefined): string {
+  if (value === null || value === undefined) return "—";
+  return `${(value / 1000).toFixed(1)} ms`;
+}
+
+interface FleetQosCardProps {
+  qos: FleetQos | null;
+}
+
+// Compact fleet-wide QoS card rendered next to the Devices table. Reads
+// /api/qos; renders aggregates that the per-row Devices columns can't
+// express on their own (fleet skew, mean RTT, slowest device).
+function FleetQosCard({ qos }: FleetQosCardProps) {
+  // Health pip: green when both skew and total drops are nominal,
+  // amber when one is elevated, red when either is clearly broken.
+  // Thresholds are deliberately conservative defaults; commit #3
+  // turns these into CLI flags on the server.
+  const skewMs =
+    qos && qos.fleet_skew_us !== null ? Math.abs(qos.fleet_skew_us) / 1000 : null;
+  const drops = qos ? qos.total_intercore_drops + qos.total_time_sync_outliers : 0;
+  let pip = "bg-muted";
+  let label = "—";
+  if (qos && qos.reporting_count > 0) {
+    if ((skewMs !== null && skewMs >= 20) || drops > 0) {
+      pip = "bg-red-500";
+      label = "Degraded";
+    } else if (skewMs !== null && skewMs >= 5) {
+      pip = "bg-amber-500";
+      label = "Marginal";
+    } else {
+      pip = "bg-green-500";
+      label = "Healthy";
+    }
+  } else if (qos) {
+    label = "No QoS samples yet";
+  }
+  return (
+    <Card className="h-full">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+        <CardTitle className="text-base">Fleet QoS</CardTitle>
+        <span className="flex items-center gap-2 text-xs text-muted-foreground">
+          <span className={`inline-block h-2 w-2 rounded-full ${pip}`} aria-hidden />
+          {label}
+        </span>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableBody>
+            <TableRow>
+              <TableCell className="font-medium">Reporting</TableCell>
+              <TableCell className="text-right font-mono text-xs">
+                {qos ? `${qos.reporting_count} / ${qos.device_count}` : "—"}
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-medium">Fleet skew</TableCell>
+              <TableCell className="text-right font-mono text-xs">
+                {usToMs(qos?.fleet_skew_us ?? null)}
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-medium">Mean RTT</TableCell>
+              <TableCell className="text-right font-mono text-xs">
+                {usToMs(qos?.mean_rtt_us ?? null)}
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-medium">Slowest device</TableCell>
+              <TableCell className="text-right font-mono text-xs">
+                {qos && qos.slowest_device_board_id
+                  ? `${qos.slowest_device_board_id} (${usToMs(qos.max_rtt_us)})`
+                  : "—"}
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-medium">NEXT_BEAT gaps</TableCell>
+              <TableCell className="text-right font-mono text-xs">
+                {qos ? qos.total_next_beat_gap : "—"}
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-medium">Intercore drops</TableCell>
+              <TableCell className="text-right font-mono text-xs">
+                {qos ? qos.total_intercore_drops : "—"}
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-medium">TIME outliers</TableCell>
+              <TableCell className="text-right font-mono text-xs">
+                {qos ? qos.total_time_sync_outliers : "—"}
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function StatusPage() {
   const fetcher = useFetcher();
 
@@ -117,11 +221,17 @@ export default function StatusPage() {
   }, [fetcher]);
 
   const fetcherData = fetcher.data as
-    | { last: TempoHistoryEntry; history: TempoHistoryEntry[]; devices: Device[] }
+    | {
+        last: TempoHistoryEntry;
+        history: TempoHistoryEntry[];
+        devices: Device[];
+        qos: FleetQos | null;
+      }
     | undefined;
   const data = fetcherData?.last || ({} as Partial<TempoHistoryEntry>);
   const historyData = fetcherData?.history || [];
   const devices = fetcherData?.devices || [];
+  const qos = fetcherData?.qos ?? null;
 
   return (
     <>
@@ -215,6 +325,8 @@ export default function StatusPage() {
             </p>
           </CardFooter>
         </Card>
+
+        <FleetQosCard qos={qos} />
 
         <Card className="md:col-span-2">
           <CardHeader className="pb-3">

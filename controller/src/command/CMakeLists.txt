@@ -8,6 +8,7 @@ target_sources(
     time/time.c
     tempo/tempo.c
     next_beat/next_beat.c
+    status/status.c
 )
 target_link_libraries(beatled_commands INTERFACE
   beatled_hal

@@ -53,6 +53,8 @@ std::unique_ptr<router_t> HTTPServer::server_handler(const std::string &root_dir
 
   router->http_get("/api/devices", by_api_handler(&APIHandler::on_get_devices));
 
+  router->http_get("/api/qos", by_api_handler(&APIHandler::on_get_qos));
+
   // GET request to homepage.
   router->http_get(R"(/:path(.*)\.:ext(.*))", restinio::path2regex::options_t{}.strict(true),
                    by_file_handler(&FileHandler::on_file_request));
@@ -100,12 +102,11 @@ HTTPServer::HTTPServer(const std::string &id, const parameters_t &http_server_pa
     // that the API is serving cleartext. Tokens, board IDs, and admin
     // controls all ride this connection; TLS is the right default in any
     // deployment a real device can reach.
-    SPDLOG_WARN(
-        "{}: --no-tls is enabled. The API is serving plain HTTP — any API "
-        "tokens, controller payloads, and service-control writes will be "
-        "visible to anything on the network path. Do not use this outside a "
-        "trusted local-only environment.",
-        name());
+    SPDLOG_WARN("{}: --no-tls is enabled. The API is serving plain HTTP — any API "
+                "tokens, controller payloads, and service-control writes will be "
+                "visible to anything on the network path. Do not use this outside a "
+                "trusted local-only environment.",
+                name());
     SPDLOG_INFO("{}: listening on {}:{} (plain HTTP)", name(), http_server_parameters.address,
                 http_server_parameters.port);
     server_ = std::make_unique<plain_server_t>(restinio::external_io_context(io_context),

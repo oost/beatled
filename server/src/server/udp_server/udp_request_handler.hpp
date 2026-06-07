@@ -20,6 +20,7 @@ private:
   DataBuffer::Ptr process_tempo_request();
   DataBuffer::Ptr process_time_request();
   DataBuffer::Ptr process_hello_request();
+  DataBuffer::Ptr process_status_response();
   DataBuffer::Ptr error_response(uint8_t error_code);
 
   UDPRequestBuffer *request_buffer_ptr_;
