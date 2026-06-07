@@ -5,7 +5,13 @@ import PageHeader from "../components/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { getAPIHost, setAPIHost, getAPIToken, setAPIToken } from "../lib/api";
+import {
+  getAPIHost,
+  setAPIHost,
+  getAPIToken,
+  setAPIToken,
+  pingHealth,
+} from "../lib/api";
 import { useInterval } from "../hooks/interval";
 
 export async function loader() {
@@ -56,32 +62,33 @@ function useHealthChecks() {
     Object.fromEntries(API_HOSTS.map((h) => [h.value, "unknown"])),
   );
 
-  const checkAll = useCallback(() => {
-    for (const host of API_HOSTS) {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 3000);
+  // A single AbortController per mounted hook instance so unmounting
+  // immediately aborts every in-flight probe. Previously each call
+  // spawned its own controller with no shared cleanup — a fast tab
+  // switch could leave several open sockets per host until they timed
+  // out.
+  const abortRef = useRef<AbortController | null>(null);
 
-      fetch(new URL("/api/health", host.value), {
-        signal: controller.signal,
-        mode: "cors",
-        cache: "no-cache",
-      })
-        .then((res) => {
-          clearTimeout(timeout);
+  const checkAll = useCallback(() => {
+    abortRef.current?.abort();
+    abortRef.current = new AbortController();
+    const signal = abortRef.current.signal;
+
+    for (const host of API_HOSTS) {
+      pingHealth(host.value, { signal })
+        .then((ok) => {
+          if (signal.aborted) return;
           setStatuses((prev) => ({
             ...prev,
-            [host.value]: res.ok ? "ok" : "error",
+            [host.value]: ok ? "ok" : "error",
           }));
-        })
-        .catch(() => {
-          clearTimeout(timeout);
-          setStatuses((prev) => ({ ...prev, [host.value]: "error" }));
         });
     }
   }, []);
 
   useEffect(() => {
     checkAll();
+    return () => abortRef.current?.abort();
   }, [checkAll]);
 
   useInterval(checkAll, 5000);

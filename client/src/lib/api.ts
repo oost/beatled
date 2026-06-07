@@ -72,3 +72,42 @@ export function getEndpoint(endpoint: string): Promise<Response> {
 export function postEndpoint(endpoint: string, body?: unknown): Promise<Response> {
   return executeFetch(endpoint, "POST", body);
 }
+
+/**
+ * Health-probe an arbitrary host (used by the Config view's discovery
+ * scan, which is independent of the currently-configured API_HOST).
+ *
+ * Returns true on a 2xx, false on anything else (including network
+ * error, non-2xx status, abort, or timeout). Never throws — callers
+ * just want a status pill, not an exception chain.
+ *
+ * - `timeoutMs` defaults to 3000 to match the prior behaviour in
+ *   views/config.tsx that this function replaces.
+ * - `signal` lets the caller integrate with a shared cancellation
+ *   token (e.g. for unmount cleanup). Internal timeout is wired
+ *   through a child controller so both sources can cancel the request.
+ */
+export async function pingHealth(
+  hostBaseUrl: string,
+  options: { timeoutMs?: number; signal?: AbortSignal } = {},
+): Promise<boolean> {
+  const { timeoutMs = 3000, signal } = options;
+  const internal = new AbortController();
+  const timer = setTimeout(() => internal.abort(), timeoutMs);
+  const onParentAbort = () => internal.abort();
+  signal?.addEventListener("abort", onParentAbort);
+
+  try {
+    const res = await fetch(new URL("/api/health", hostBaseUrl), {
+      signal: internal.signal,
+      mode: "cors",
+      cache: "no-cache",
+    });
+    return res.ok;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timer);
+    signal?.removeEventListener("abort", onParentAbort);
+  }
+}
