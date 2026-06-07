@@ -38,7 +38,7 @@ The firmware targets a bare-metal microcontroller with 264 KB of RAM. C keeps th
 
 ### How do devices stay in sync if the tempo changes?
 
-When the beat detector identifies a tempo change, the server updates its internal tempo state and sends a new NEXT_BEAT message to every registered device with the updated `tempo_period_us` and `next_beat_time_ref`. Devices on the Pico re-enter the TEMPO_SYNCED state (a self-transition) and immediately adjust their LED timing. Because the NEXT_BEAT message includes the absolute time reference for the next beat (in server time, converted via the clock offset), all devices converge on the same beat instant regardless of when they received the update.
+When the beat detector identifies a tempo change, the server updates its internal tempo state. The new tempo period reaches devices via the next TEMPO_RESPONSE (a ~10 s poll) and the absolute beat reference reaches them on the very next NEXT_BEAT — in protocol v2 NEXT_BEAT only carries `next_beat_time_ref`, `beat_count`, and `seq`, so the tempo period rides the dedicated TEMPO_RESPONSE channel. Devices on the Pico stay in the TEMPO_SYNCED state and pull the new phase / period through their registry on the next beat. Because the NEXT_BEAT message carries the absolute time reference for the next beat (in server time, converted via each device's measured clock offset, and adjusted server-side per-client by the device's one-way-delay estimate), all devices converge on the same beat instant regardless of when they received the update.
 
 ### Why use HTTPS for the web client instead of plain HTTP?
 
@@ -46,8 +46,8 @@ Modern browsers restrict several PWA features (service workers, `Add to Home Scr
 
 ### Can I add my own LED patterns?
 
-Yes. Patterns are simple C functions in `src/ws2812/programs/` in the [beatled-pico](https://github.com/oost/beatled-pico) repo. Each pattern receives the current beat position (0-255, representing progress through the current beat) and a beat counter. You write pixel colors into a buffer, and the framework handles timing and WS2812 output. See the existing patterns (snakes, sparkles, fade) for examples. After adding a new pattern, assign it an ID in the program table and it becomes selectable from the web dashboard.
+Yes. Patterns are simple C functions in `controller/src/ws2812/programs/` (in this repo — the firmware was absorbed in-tree from the historical `beatled-pico` repository). Each pattern receives the current beat position (0-255, representing progress through the current beat) and a beat counter. You write pixel colors into a buffer, and the framework handles timing and WS2812 output. See the existing patterns (snakes, sparkles, fade) for examples. After adding a new pattern, assign it an ID in the program table and it becomes selectable from the web dashboard.
 
 ### How many devices can run simultaneously?
 
-The system has been tested with up to a dozen Pico W devices on a single WiFi network. The limiting factor is WiFi bandwidth and airtime: each NEXT_BEAT message is 19 bytes sent via unicast, so even at 180 BPM (3 beats/second) the traffic per device is negligible. The practical limit is more about WiFi congestion in crowded environments. The server tracks connected devices and automatically expires any that stop responding within 30 seconds.
+The system has been tested with up to a dozen Pico W devices on a single WiFi network. The limiting factor is WiFi bandwidth and airtime: each NEXT_BEAT message is 15 bytes (protocol v2) sent via unicast — so even at 180 BPM (3 beats/second) the traffic per device is negligible. The practical limit is more about WiFi congestion in crowded environments. The server tracks connected devices and automatically expires any that stop responding within 30 seconds.

@@ -19,7 +19,7 @@ The beat server is a C++ application that captures audio, detects beats in real 
 | `core` | State management, configuration, client registry |
 | `server/http` | HTTPS REST API (RESTinio + OpenSSL) and static file serving |
 | `server/udp_server` | UDP request handler for device registration and time sync |
-| `server/tempo_broadcaster` | Periodic UDP broadcast of beat timing to registered devices |
+| `server/tempo_broadcaster` | Per-beat tempo dispatch + on-change PROGRAM push (unicast by default, see `--broadcast-mode`) |
 | `server/logger` | Ring-buffer logger exposed via the `/api/log` endpoint |
 
 ## Local Development
@@ -30,6 +30,11 @@ scripts/beatled.sh server start --start-http
 
 # With UDP server for LED controllers
 scripts/beatled.sh server start --start-http --start-udp
+
+# With the per-beat tempo dispatcher running (default mode: unicast,
+# with per-client one-way-delay compensation). See Deployment for
+# --broadcast-mode={unicast,subnet,limited}.
+scripts/beatled.sh server start --start-http --start-udp --start-broadcast
 
 # With CORS for the Vite dev server
 scripts/beatled.sh server start --start-http --cors-origin "https://localhost:5173"

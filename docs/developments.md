@@ -17,7 +17,7 @@ The current control panel is a React web app served over HTTPS. While this works
 - **Better offline support** -- native networking with Bonjour/mDNS for automatic server discovery on the local network
 - **AirPlay / Spotify integration** -- sync to audio playback metadata instead of (or in addition to) microphone input
 
-The server already exposes a REST API over HTTPS, so the first step would be a thin SwiftUI client that replaces the web dashboard. Beat detection on-device would be a larger effort, likely using the Accelerate framework for FFT and a Core ML port of the BTrack onset detection model.
+The SwiftUI client (at [`ios/`](https://github.com/oost/beatled/tree/master/ios)) is already a thin replacement for the web dashboard on iOS and macOS — it talks to the same REST API and uses a Keychain-backed bearer token. The bigger remaining work is on-device beat detection (likely Accelerate-framework FFT plus a Core ML port of the BTrack onset detection model) and the Bluetooth provisioning / Bonjour discovery flows above.
 
 ---
 

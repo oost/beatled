@@ -45,7 +45,7 @@ The central server running on a Raspberry Pi. Responsibilities:
 - **Audio capture** via PortAudio from a USB microphone
 - **Beat detection** using the BTrack algorithm (onset detection + tempo estimation)
 - **HTTPS API** (RESTinio + OpenSSL) for the web dashboard
-- **UDP broadcast** of tempo and beat timing to all controllers
+- **Per-beat tempo dispatch** (unicast by default, with optional subnet- or limited-broadcast modes; see [Deployment](deployment.html))
 - **UDP server** for controller registration and time synchronization
 
 | Component           | Description                                                         |

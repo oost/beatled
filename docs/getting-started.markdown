@@ -47,7 +47,7 @@ Build and start the beat server with the HTTP API and UDP server for controllers
 scripts/beatled.sh server start --start-http --start-udp --no-tls
 ```
 
-The server listens on `localhost:8443` (HTTP) and `localhost:9090` (UDP). Add `--start-broadcast` to also broadcast beat timing.
+The server listens on `localhost:8443` (HTTP) and `localhost:9090` (UDP). Add `--start-broadcast` to also drive per-beat tempo dispatch to registered controllers — see [Deployment → Broadcasting Tempo to Controllers](deployment.html#broadcasting-tempo-to-controllers) for the modes.
 
 ## 2. Start the Web Client
 

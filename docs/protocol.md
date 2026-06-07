@@ -13,11 +13,17 @@ Binary UDP protocol for communication between the server (Raspberry Pi 4) and LE
 
 | Channel | Port | Direction | Description |
 |---------|------|-----------|-------------|
-| UDP Unicast | 9090 | Bidirectional | Device ↔ Server commands |
-| UDP Broadcast | 8765 | Server → Devices | Beat notifications |
+| UDP | 9090 | Device → Server | HELLO / TIME / TEMPO requests |
+| UDP | 8765 | Server → Devices | NEXT_BEAT / BEAT / PROGRAM / responses |
 | HTTPS | 8443 | Client → Server | Web client REST API |
 
 All multi-byte fields are in **network byte order** (big-endian). All structs are packed (`__attribute__((__packed__))`).
+
+Server-side delivery for the per-beat and PROGRAM messages is configurable via `--broadcast-mode={unicast,subnet,limited}`. The default is **unicast** — the server sends one packet per registered client, with NEXT_BEAT timestamps adjusted per-client by that client's measured one-way delay (reported in TEMPO_REQUEST). See [`docs/deployment.markdown`](deployment.html) for when to pick each mode.
+
+## Protocol version
+
+This page documents **protocol v2**. Server and firmware build against a single shared header (`controller/lib/beatled_protocol/include/beatled/protocol.h`); upgrading one without the other is not supported.
 
 ## Message Format
 
@@ -95,15 +101,16 @@ Sent by the server to acknowledge registration and assign a client ID.
 
 ### TEMPO_REQUEST (3)
 
-Sent by a device to request the current tempo state. Uses the base message header only (optionally includes stale beat reference and period, but these are ignored by the server).
+Sent by a device every ~10 s to refresh the tempo state and report its current one-way-delay estimate.
 
 | Offset | Field | Type | Description |
 |--------|-------|------|-------------|
 | 0 | type | uint8_t | `3` |
-| 1 | beat_time_ref | uint64_t | (unused, may be zero) |
-| 9 | tempo_period_us | uint32_t | (unused, may be zero) |
+| 1 | owd_us_estimate | uint32_t | Controller's most recent median(RTT)/2 in microseconds; `0` = no sample yet, do not compensate |
 
-**Size**: 13 bytes
+**Size**: 5 bytes (was 13 in protocol v1 — the unused beat_time_ref / tempo_period_us echoes were dropped; the OWD field is new)
+
+The server uses `owd_us_estimate` to compensate NEXT_BEAT timestamps per-client. See [Controller Sync](controller-sync.html) for the full round-trip.
 
 ---
 
@@ -167,46 +174,45 @@ The offset is added to device local timestamps to convert them to server time. M
 
 ### PROGRAM (7)
 
-Sent by the server to change the active LED program on a device.
+Sent by the server to change the active LED program on a device. In protocol v2 the server pushes a PROGRAM on every state change *and* a low-rate (~1 Hz) refresh, so late joiners and packet loss don't strand controllers on a wrong pattern. The `seq` field lets controllers ignore stale duplicates and out-of-order pushes.
 
 | Offset | Field | Type | Description |
 |--------|-------|------|-------------|
 | 0 | type | uint8_t | `7` |
 | 1 | program_id | uint16_t | New LED program ID |
+| 3 | seq | uint16_t | Monotonically-increasing sequence number (wraps at 65535) |
 
-**Size**: 3 bytes
+**Size**: 5 bytes (was 3 in protocol v1 — `seq` was added)
 
 ---
 
 ### NEXT_BEAT (8)
 
-Sent by the server (unicast) to each registered device before each beat. Devices use `next_beat_time_ref` to schedule LED updates at the precise moment.
+Sent by the server to each registered device before each beat (unicast by default). Devices use `next_beat_time_ref` to schedule LED updates at the precise moment, and `seq` to detect packet loss.
 
 | Offset | Field | Type | Description |
 |--------|-------|------|-------------|
 | 0 | type | uint8_t | `8` |
-| 1 | next_beat_time_ref | uint64_t | Predicted time of next beat (microseconds, server clock) |
-| 9 | tempo_period_us | uint32_t | Current beat period in microseconds |
-| 13 | beat_count | uint32_t | Running beat counter |
-| 17 | program_id | uint16_t | Active LED program ID |
+| 1 | next_beat_time_ref | uint64_t | Predicted time of next beat (microseconds, server clock). In unicast mode this value is per-client: the server subtracts the client's `owd_us_estimate` so the embedded time equals the *intended hit instant* on the client's clock when the packet arrives. |
+| 9 | beat_count | uint32_t | Running beat counter |
+| 13 | seq | uint16_t | Monotonically-increasing sequence number (wraps at 65535); controllers detect loss via gaps and ignore stale duplicates |
 
-**Size**: 19 bytes
+**Size**: 15 bytes (was 19 in protocol v1 — `tempo_period_us` and `program_id` were dropped from the per-beat path, and `seq` was added; period now comes only from TEMPO_RESPONSE, program only from PROGRAM)
 
 ---
 
 ### BEAT (9)
 
-Broadcast to all devices when a beat is detected. Informational — devices primarily use NEXT_BEAT for timing.
+Defined for parity with the beat-detector callback; not currently emitted by the live server. Same shape as NEXT_BEAT.
 
 | Offset | Field | Type | Description |
 |--------|-------|------|-------------|
 | 0 | type | uint8_t | `9` |
 | 1 | beat_time_ref | uint64_t | Time of detected beat (microseconds, server clock) |
-| 9 | tempo_period_us | uint32_t | Current beat period in microseconds |
-| 13 | beat_count | uint32_t | Running beat counter |
-| 17 | program_id | uint16_t | Active LED program ID |
+| 9 | beat_count | uint32_t | Running beat counter |
+| 13 | seq | uint16_t | Monotonically-increasing sequence number |
 
-**Size**: 19 bytes
+**Size**: 15 bytes
 
 ---
 

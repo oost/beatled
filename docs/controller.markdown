@@ -271,7 +271,7 @@ cmake --build build
 
 The project ships with a ready-to-use VS Code debug configuration for the POSIX port.
 
-1. Open the `beatled-pico` folder in VS Code
+1. Open the `controller/` folder in VS Code (or open the `beatled` repo root and point the CMake extension at `controller/CMakeLists.txt`)
 2. Make sure `.vscode/settings.json` has the POSIX port selected (this is the default):
 
    ```json

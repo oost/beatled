@@ -32,7 +32,7 @@ scripts/beatled.sh certs <pi-hostname>
 scripts/beatled.sh build rpi
 
 # 3. Deploy to the Pi
-scripts/beatled.sh deploy <username> <pi-hostname>
+scripts/beatled.sh server deploy <username> <pi-hostname>
 ```
 
 The deploy command packages the server binary, web client, and deploy scripts into a tarball, copies it to the Pi, extracts it, and starts (or restarts) the systemd service.
