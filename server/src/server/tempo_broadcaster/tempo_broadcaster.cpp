@@ -37,11 +37,11 @@ TempoBroadcaster::TempoBroadcaster(const std::string &id, asio::io_context &io_c
     socket_->set_option(asio::socket_base::broadcast(true));
   }
 
-  const char *mode_name = broadcasting_server_parameters_.mode == BroadcastMode::Unicast
-                              ? "unicast"
-                              : (broadcasting_server_parameters_.mode == BroadcastMode::Subnet
-                                     ? "subnet-broadcast"
-                                     : "limited-broadcast");
+  const char *mode_name =
+      broadcasting_server_parameters_.mode == BroadcastMode::Unicast
+          ? "unicast"
+          : (broadcasting_server_parameters_.mode == BroadcastMode::Subnet ? "subnet-broadcast"
+                                                                           : "limited-broadcast");
   SPDLOG_INFO("{} mode={} bind={} dst={}", name(), mode_name,
               fmt::streamed(socket_->local_endpoint()), fmt::streamed(broadcast_endpoint_));
 
@@ -90,9 +90,28 @@ void TempoBroadcaster::push_program_now() {
   asio::post(strand_, [this]() {
     uint16_t pid = state_manager_.get_program_id();
     uint16_t seq = program_seq_.fetch_add(1, std::memory_order_relaxed);
-    auto buffer = std::make_unique<ProgramPushBuffer>(pid, seq);
     SPDLOG_INFO("{} program push seq={} pid={}", name(), seq, pid);
-    dispatch(std::move(buffer), /*compensate_owd=*/false, 0);
+
+    // Immediate send.
+    dispatch(std::make_unique<ProgramPushBuffer>(pid, seq),
+             /*compensate_owd=*/false, 0);
+
+    // Retry 50 ms later with the same seq so controllers that already
+    // applied the first packet treat the retry as an idempotent no-op
+    // (command.c drops `delta < 0` and skips the intercore notification
+    // when `registry.program_id` is unchanged). One extra 5-byte UDP
+    // packet per registered client per program change — cheap insurance
+    // against Wi-Fi loss bursts that flatten the on-change push.
+    auto retry =
+        std::make_shared<asio::high_resolution_timer>(strand_, std::chrono::milliseconds(50));
+    retry->async_wait(
+        asio::bind_executor(strand_, [this, pid, seq, retry](const asio::error_code &ec) {
+          if (ec || !is_running()) {
+            return;
+          }
+          dispatch(std::make_unique<ProgramPushBuffer>(pid, seq),
+                   /*compensate_owd=*/false, 0);
+        }));
   });
 }
 
@@ -133,8 +152,7 @@ void TempoBroadcaster::dispatch(DataBuffer::Ptr response_buffer, bool compensate
 
   uint8_t type = response_buffer->type();
   bool can_compensate =
-      compensate_owd &&
-      (type == BEATLED_MESSAGE_NEXT_BEAT || type == BEATLED_MESSAGE_BEAT);
+      compensate_owd && (type == BEATLED_MESSAGE_NEXT_BEAT || type == BEATLED_MESSAGE_BEAT);
 
   for (const auto &cs : clients) {
     if (cs->endpoint.port() == 0) {
@@ -151,20 +169,18 @@ void TempoBroadcaster::dispatch(DataBuffer::Ptr response_buffer, bool compensate
     // Build a per-client copy with the time field shifted back by OWD so
     // when the packet *arrives* at the controller, the embedded
     // next_beat_time_ref equals the server's intended hit time.
-    uint64_t adjusted = base_time_for_compensation > cs->owd_us
-                            ? base_time_for_compensation - cs->owd_us
-                            : 0;
+    uint64_t adjusted =
+        base_time_for_compensation > cs->owd_us ? base_time_for_compensation - cs->owd_us : 0;
     DataBuffer::Ptr per_client;
     if (type == BEATLED_MESSAGE_NEXT_BEAT) {
-      const auto *src = reinterpret_cast<const beatled_message_next_beat_t *>(
-          response_buffer->data().data());
-      per_client = std::make_unique<NextBeatBuffer>(adjusted, ntohl(src->beat_count),
-                                                    ntohs(src->seq));
+      const auto *src =
+          reinterpret_cast<const beatled_message_next_beat_t *>(response_buffer->data().data());
+      per_client =
+          std::make_unique<NextBeatBuffer>(adjusted, ntohl(src->beat_count), ntohs(src->seq));
     } else {
       const auto *src =
           reinterpret_cast<const beatled_message_beat_t *>(response_buffer->data().data());
-      per_client = std::make_unique<BeatBuffer>(adjusted, ntohl(src->beat_count),
-                                                ntohs(src->seq));
+      per_client = std::make_unique<BeatBuffer>(adjusted, ntohl(src->beat_count), ntohs(src->seq));
     }
     auto shared = std::shared_ptr<DataBuffer>(std::move(per_client));
     send_to_endpoint(std::move(shared), cs->endpoint);

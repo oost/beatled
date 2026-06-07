@@ -205,6 +205,12 @@ Broadcaster config (only relevant when --start-broadcast is on):
   --broadcast-mode MODE     unicast (default) | subnet | limited
   -c, --m_broadcasting-address ADDR   destination for subnet/limited mode
   -b, --broadcasting-port PORT        UDP destination port (default 8765)
+  --program-refresh-ms MS   PROGRAM background refresh period in ms
+                            (default 200). On-change pushes are also
+                            sent twice ~50 ms apart for Wi-Fi loss
+                            insurance; lower this if you want even
+                            faster catch-up for controllers that
+                            missed both copies.
 
   unicast (default): one packet per registered client, with per-client OWD
                      compensation. Best on Wi-Fi for <=10 controllers.

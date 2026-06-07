@@ -27,17 +27,19 @@ Application::~Application() {
 }
 
 Application::Application(const Config &beatled_config)
-    : server_parameters_{beatled_config.server_parameters()},
-      logger_{server_parameters_.logger}, signals_{io_context_} {
+    : server_parameters_{beatled_config.server_parameters()}, logger_{server_parameters_.logger},
+      signals_{io_context_} {
 
-  // Program-state refresh: re-push the current program every second so a
-  // controller that misses the on-change push (or boots mid-set) converges
-  // within ~1s. The broadcaster also pushes immediately on state changes
-  // via the StateManager callback it registers in its ctor.
+  // Program-state refresh: re-push the current program at a low-rate
+  // (default 200 ms; tunable via --program-refresh-ms) so a controller
+  // that missed the on-change push (or booted mid-set) converges within
+  // a couple of ticks. The broadcaster also pushes immediately on state
+  // changes via the StateManager callback it registers in its ctor.
   std::unique_ptr<server::TempoBroadcaster> tempo_broadcaster =
-      std::make_unique<server::TempoBroadcaster>(TEMPO_BROADCASTER_ID, io_context_,
-                                                 std::chrono::seconds(1),
-                                                 server_parameters_.broadcasting, state_manager_);
+      std::make_unique<server::TempoBroadcaster>(
+          TEMPO_BROADCASTER_ID, io_context_,
+          std::chrono::milliseconds(server_parameters_.program_refresh_ms),
+          server_parameters_.broadcasting, state_manager_);
 
   registerController(std::make_unique<beatled::detector::BeatDetector>(
       BEAT_DETECTOR_ID, 44100, beatled::constants::audio_buffer_size,
@@ -49,7 +51,8 @@ Application::Application(const Config &beatled_config)
         // tempo, so DEBUG keeps it accessible with --verbose without
         // burying the INFO log under noise the rest of the time.
         SPDLOG_DEBUG("Beat {}, {} vs. prediction {}", beat_time_ref, tempo,
-                     static_cast<int64_t>(beat_time_ref) - static_cast<int64_t>(next_beat_time_ref));
+                     static_cast<int64_t>(beat_time_ref) -
+                         static_cast<int64_t>(next_beat_time_ref));
       },
       [&, tp = tempo_broadcaster.get()](uint64_t next_beat_time_ref, double tempo,
                                         double estimated_tempo, uint32_t beat_count) {

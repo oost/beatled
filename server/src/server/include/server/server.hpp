@@ -40,6 +40,9 @@ public:
     TempoBroadcaster::parameters_t broadcasting;
     Logger::parameters_t logger;
     std::size_t thread_pool_size;
+    // Background PROGRAM refresh period in ms; surfaced as
+    // --program-refresh-ms on the CLI.
+    std::uint32_t program_refresh_ms = 200;
   };
 
   /// Construct the server to listen on the specified TCP address and port, and

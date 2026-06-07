@@ -38,7 +38,9 @@ Config::Config(int argc, const char *argv[]) {
       lyra::opt(m_api_token, "api token")["--api-token"](
           "Bearer token for API authentication (default: disabled)") |
       lyra::opt(m_log_level, "trace|debug|info|warn|err|critical|off")["--log-level"](
-          fmt::format("spdlog level (default: {}; also: BEATLED_LOG_LEVEL env var)", m_log_level));
+          fmt::format("spdlog level (default: {}; also: BEATLED_LOG_LEVEL env var)", m_log_level)) |
+      lyra::opt(m_program_refresh_ms, "ms")["--program-refresh-ms"](fmt::format(
+          "PROGRAM background refresh period in ms (default: {})", m_program_refresh_ms));
 
   auto parser_result = cli.parse(lyra::args(argc, argv));
   if (!parser_result) {
@@ -82,6 +84,7 @@ void Config::log_config() const {
   SPDLOG_INFO("  CORS origin:        {}", m_cors_origin.empty() ? "disabled" : m_cors_origin);
   SPDLOG_INFO("  API token:          {}", m_api_token.empty() ? "disabled" : "set");
   SPDLOG_INFO("  Log level:          {}", m_log_level);
+  SPDLOG_INFO("  PROGRAM refresh:    {} ms", m_program_refresh_ms);
 }
 
 beatled::server::Server::parameters_t Config::server_parameters() const {
@@ -116,6 +119,7 @@ beatled::server::Server::parameters_t Config::server_parameters() const {
       .broadcasting = {m_broadcasting_address, m_broadcasting_port, mode},
       .logger = {20, m_log_level},
       .thread_pool_size = m_pool_size,
+      .program_refresh_ms = m_program_refresh_ms,
   };
 
   return server_parameters;

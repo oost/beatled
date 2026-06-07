@@ -44,6 +44,10 @@ private:
   // Resolved from --log-level (highest priority) → BEATLED_LOG_LEVEL env
   // → built-in default "info".
   std::string m_log_level{"info"};
+  // Background PROGRAM refresh period. Lower = controllers that missed
+  // the on-change push catch up faster; the cost is one 5-byte UDP
+  // packet per registered client per refresh tick.
+  std::uint32_t m_program_refresh_ms{200};
 };
 
 } // namespace beatled::core

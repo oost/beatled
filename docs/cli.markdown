@@ -144,6 +144,7 @@ Service flags pick which sub-services the binary brings up.
 | `--broadcast-mode {unicast,subnet,limited}` | `unicast`  | See below |
 | `-c, --m_broadcasting-address ADDR`   | `255.255.255.255`| Destination for `subnet` / `limited` modes |
 | `-b, --broadcasting-port PORT`        | `8765`           | UDP destination port |
+| `--program-refresh-ms MS`             | `200`            | PROGRAM background refresh period in ms. On-change pushes are also sent twice ~50 ms apart for Wi-Fi loss insurance; lower this if controllers that miss both copies need to catch up faster. |
 
 | Mode      | Destination                              | Notes |
 | --------- | ---------------------------------------- | ----- |
