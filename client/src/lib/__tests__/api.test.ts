@@ -6,6 +6,7 @@ import {
   setAPIHost,
   getAPIToken,
   setAPIToken,
+  pingHealth,
 } from "../api";
 
 function createStorageMock() {
@@ -159,5 +160,64 @@ describe("postEndpoint", () => {
     expect(url.toString()).toBe("https://localhost:8080/api/program");
     expect(options.method).toBe("POST");
     expect(options.body).toBe(JSON.stringify({ programId: 3 }));
+  });
+});
+
+describe("pingHealth", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("hits /api/health on the given host", async () => {
+    const mockResponse = { ok: true } as Response;
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(mockResponse);
+
+    const ok = await pingHealth("https://beatled.local:8443");
+
+    expect(ok).toBe(true);
+    const [url] = (fetch as Mock).mock.calls[0];
+    expect(url.toString()).toBe("https://beatled.local:8443/api/health");
+  });
+
+  it("returns false on a non-2xx response", async () => {
+    const mockResponse = { ok: false } as Response;
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(mockResponse);
+
+    expect(await pingHealth("https://beatled.local:8443")).toBe(false);
+  });
+
+  it("returns false on a network error (never throws)", async () => {
+    vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("ENETUNREACH"));
+
+    expect(await pingHealth("https://beatled.local:8443")).toBe(false);
+  });
+
+  it("returns false when the internal timeout fires", async () => {
+    // Resolve the fetch with an AbortError shaped like one the runtime would
+    // throw if the controller's signal had aborted. We rely on the catch path
+    // returning false rather than propagating.
+    vi.spyOn(globalThis, "fetch").mockImplementation((_input, init) => {
+      return new Promise((_resolve, reject) => {
+        const signal = (init as RequestInit | undefined)?.signal;
+        signal?.addEventListener("abort", () => reject(new Error("aborted")));
+      });
+    });
+
+    expect(await pingHealth("https://beatled.local:8443", { timeoutMs: 5 })).toBe(false);
+  });
+
+  it("respects a caller-supplied abort signal", async () => {
+    const controller = new AbortController();
+    vi.spyOn(globalThis, "fetch").mockImplementation((_input, init) => {
+      return new Promise((_resolve, reject) => {
+        (init as RequestInit | undefined)?.signal?.addEventListener("abort", () =>
+          reject(new Error("aborted")),
+        );
+      });
+    });
+
+    const pending = pingHealth("https://beatled.local:8443", { signal: controller.signal });
+    controller.abort();
+    expect(await pending).toBe(false);
   });
 });
