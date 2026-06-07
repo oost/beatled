@@ -41,9 +41,12 @@ jobs:
         working-directory: client
 
       - name: Audit dependencies
+        # High and critical vulnerabilities fail the build. Run `npm audit
+        # fix` locally and commit the lockfile bump to clear them — the
+        # bypass that used to live here (`continue-on-error: true`) was
+        # the silent reason 24 high/critical CVEs accumulated.
         run: npm audit --audit-level=high
         working-directory: client
-        continue-on-error: true
 
       - name: Build
         run: npm run build
