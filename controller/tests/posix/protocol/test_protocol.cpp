@@ -41,9 +41,24 @@ TEST_CASE("Protocol struct sizes match wire format", "[protocol]") {
     REQUIRE(sizeof(beatled_message_time_response_t) == 25);
   }
 
-  SECTION("Tempo request is 5 bytes (v2)") {
-    // 1 byte type + 4 bytes owd_us_estimate
-    REQUIRE(sizeof(beatled_message_tempo_request_t) == 5);
+  SECTION("QoS block is 36 bytes (v4)") {
+    // int64 offset (8) + uint64 uptime (8) + 4 * uint32 (16) + 2 * uint16 (4)
+    REQUIRE(sizeof(beatled_qos_block_t) == 36);
+  }
+
+  SECTION("Tempo request is 41 bytes (v4)") {
+    // 1 byte type + 4 bytes owd_us_estimate + 36 byte qos block
+    REQUIRE(sizeof(beatled_message_tempo_request_t) == 41);
+  }
+
+  SECTION("Status request is 9 bytes (v4)") {
+    // 1 byte type + 8 bytes server_send_time_us
+    REQUIRE(sizeof(beatled_message_status_request_t) == 9);
+  }
+
+  SECTION("Status response is 45 bytes (v4)") {
+    // 1 byte type + 8 echo + 36 qos block
+    REQUIRE(sizeof(beatled_message_status_response_t) == 45);
   }
 
   SECTION("Tempo response is 15 bytes") {
@@ -67,6 +82,7 @@ TEST_CASE("Protocol struct sizes match wire format", "[protocol]") {
   }
 
   SECTION("Message type enum has expected count") {
-    REQUIRE(BEATLED_MESSAGE_LAST_VALUE == 10);
+    // v4 added STATUS_REQUEST + STATUS_RESPONSE
+    REQUIRE(BEATLED_MESSAGE_LAST_VALUE == 12);
   }
 }

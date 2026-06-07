@@ -69,6 +69,33 @@ function formatFirmware(device: Device): string {
   return parts.length === 0 ? "—" : parts.join(" · ");
 }
 
+// Controller clock offset relative to the server, in milliseconds. The
+// server stores it microseconds and we want a one-decimal display.
+function formatOffset(device: Device): string {
+  const us = device.qos?.current_offset_us;
+  if (us === undefined || us === null) return "—";
+  const ms = us / 1000;
+  const sign = ms > 0 ? "+" : "";
+  return `${sign}${ms.toFixed(1)} ms`;
+}
+
+// Median round-trip time as reported by the controller's sliding-window
+// time-sync filter.
+function formatRtt(device: Device): string {
+  const us = device.qos?.median_rtt_us;
+  if (us === undefined || us === null || us === 0) return "—";
+  return `${(us / 1000).toFixed(1)} ms`;
+}
+
+// Cumulative NEXT_BEAT seq gap count since boot. The controller doesn't
+// know the total broadcasts sent so we show the raw count — operators
+// looking for a "rate" can compare against uptime.
+function formatLoss(device: Device): string {
+  const gaps = device.qos?.next_beat_gap_total;
+  if (gaps === undefined || gaps === null) return "—";
+  return `${gaps}`;
+}
+
 export default function StatusPage() {
   const fetcher = useFetcher();
 
@@ -203,6 +230,9 @@ export default function StatusPage() {
                     <TableHead>Board ID</TableHead>
                     <TableHead>IP Address</TableHead>
                     <TableHead>Firmware</TableHead>
+                    <TableHead className="text-right">Offset</TableHead>
+                    <TableHead className="text-right">RTT</TableHead>
+                    <TableHead className="text-right">NB gaps</TableHead>
                     <TableHead className="text-right">Last Seen</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -213,6 +243,15 @@ export default function StatusPage() {
                       <TableCell>{device.ip_address}</TableCell>
                       <TableCell className="font-mono text-xs">
                         {formatFirmware(device)}
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-xs">
+                        {formatOffset(device)}
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-xs">
+                        {formatRtt(device)}
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-xs">
+                        {formatLoss(device)}
                       </TableCell>
                       <TableCell className="text-right">
                         {formatLastSeen(device.last_status_time)}

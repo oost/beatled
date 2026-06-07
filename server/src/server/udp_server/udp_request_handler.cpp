@@ -121,6 +121,22 @@ DataBuffer::Ptr UDPRequestHandler::process_tempo_request() {
     // Track the latest endpoint too (the ephemeral source port can shift on
     // FreeRTOS sockets across reboots).
     cs->endpoint = remote;
+    // Protocol v4: stash the trailing diagnostic block. Decoding is a
+    // straight ntohl / ntohll sweep; we keep a copy on ClientStatus and
+    // expose it via /api/devices.
+    const auto &qos_in = tempo_req->qos;
+    ClientStatus::QosSnapshot &qos = cs->latest_qos;
+    qos.valid = true;
+    qos.server_received_at_us = Clock::wall_time_us_64();
+    uint64_t offset_bits = ntohll(static_cast<uint64_t>(qos_in.current_offset_us));
+    std::memcpy(&qos.current_offset_us, &offset_bits, sizeof(qos.current_offset_us));
+    qos.uptime_us = ntohll(qos_in.uptime_us);
+    qos.median_rtt_us = ntohl(qos_in.median_rtt_us);
+    qos.next_beat_gap_total = ntohl(qos_in.next_beat_gap_total);
+    qos.intercore_drop_total = ntohl(qos_in.intercore_drop_total);
+    qos.time_sync_outlier_total = ntohl(qos_in.time_sync_outlier_total);
+    qos.valid_sample_count = ntohs(qos_in.valid_sample_count);
+    qos.last_applied_program_seq = ntohs(qos_in.last_applied_program_seq);
   }
   if (owd_us > 0) {
     state_manager_.update_client_owd(remote.address(), owd_us);

@@ -5,6 +5,7 @@
 #include "config/constants.h"
 #include "clock/clock.h"
 #include "command/next_beat.h"
+#include "command/qos.h"
 #include "command/utils.h"
 #include "hal/network.h"
 #include "hal/registry.h"
@@ -17,7 +18,9 @@ static uint16_t last_next_beat_seq = 0;
 static bool have_seen_next_beat = false;
 static uint32_t next_beat_gap_total = 0;
 
-uint32_t next_beat_get_gap_total(void) { return next_beat_gap_total; }
+uint32_t next_beat_get_gap_total(void) {
+  return next_beat_gap_total;
+}
 
 int process_next_beat_msg(beatled_message_t *server_msg, size_t data_length) {
 
@@ -26,13 +29,11 @@ int process_next_beat_msg(beatled_message_t *server_msg, size_t data_length) {
   }
 
   int current_state = state_manager_get_state();
-  if (current_state != STATE_TIME_SYNCED &&
-      current_state != STATE_TEMPO_SYNCED) {
+  if (current_state != STATE_TIME_SYNCED && current_state != STATE_TEMPO_SYNCED) {
     return 0;
   }
 
-  beatled_message_next_beat_t *next_beat_msg =
-      (beatled_message_next_beat_t *)server_msg;
+  beatled_message_next_beat_t *next_beat_msg = (beatled_message_next_beat_t *)server_msg;
 
   uint64_t next_beat_time_ref =
       server_time_to_local_time(ntohll(next_beat_msg->next_beat_time_ref));
@@ -45,8 +46,7 @@ int process_next_beat_msg(beatled_message_t *server_msg, size_t data_length) {
     if (delta <= 0) {
       // Stale or duplicate (older or same seq) — drop without applying.
 #if BEATLED_VERBOSE_LOG
-      printf("[CMD] Stale NEXT_BEAT seq=%u (last=%u), dropping\n", seq,
-             last_next_beat_seq);
+      printf("[CMD] Stale NEXT_BEAT seq=%u (last=%u), dropping\n", seq, last_next_beat_seq);
 #endif
       return 0;
     }
@@ -54,8 +54,8 @@ int process_next_beat_msg(beatled_message_t *server_msg, size_t data_length) {
       uint32_t lost = (uint32_t)delta - 1;
       next_beat_gap_total += lost;
 #if BEATLED_VERBOSE_LOG
-      printf("[CMD] NEXT_BEAT gap: %u missed (seq %u -> %u, total=%" PRIu32 ")\n",
-             lost, last_next_beat_seq, seq, next_beat_gap_total);
+      printf("[CMD] NEXT_BEAT gap: %u missed (seq %u -> %u, total=%" PRIu32 ")\n", lost,
+             last_next_beat_seq, seq, next_beat_gap_total);
 #endif
     }
   }
@@ -63,9 +63,8 @@ int process_next_beat_msg(beatled_message_t *server_msg, size_t data_length) {
   have_seen_next_beat = true;
 
 #if BEATLED_VERBOSE_LOG
-  printf("[CMD] Next beat: seq=%u ref=%llu (in %lld us) beat=%" PRIu32 "\n",
-         seq, next_beat_time_ref,
-         (long long)((int64_t)next_beat_time_ref - (int64_t)time_us_64()),
+  printf("[CMD] Next beat: seq=%u ref=%llu (in %lld us) beat=%" PRIu32 "\n", seq,
+         next_beat_time_ref, (long long)((int64_t)next_beat_time_ref - (int64_t)time_us_64()),
          beat_count);
 #endif
 
@@ -87,6 +86,7 @@ int process_next_beat_msg(beatled_message_t *server_msg, size_t data_length) {
   intercore_message_t msg = {.message_type = 0x01 << intercore_time_ref_update};
 
   if (!hal_queue_add_message(intercore_command_queue, &msg)) {
+    qos_intercore_drop_bump();
     puts("[ERR] Intercore queue full, skipping notification");
   }
 

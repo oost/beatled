@@ -58,6 +58,27 @@ public:
   std::string port_name;
   std::string git_sha;
   uint64_t build_time_us = 0;
+
+  // Latest QoS snapshot received from the controller (protocol v4 — sent
+  // piggy-back on every TEMPO_REQUEST and on STATUS_RESPONSE). All
+  // controller-supplied values are already decoded into host byte order.
+  // `valid` is false until the first qos block arrives; the React UI
+  // renders "—" for the new columns in that case.
+  struct QosSnapshot {
+    bool valid = false;
+    int64_t current_offset_us = 0;
+    uint64_t uptime_us = 0;
+    uint32_t median_rtt_us = 0;
+    uint32_t next_beat_gap_total = 0;
+    uint32_t intercore_drop_total = 0;
+    uint32_t time_sync_outlier_total = 0;
+    uint16_t valid_sample_count = 0;
+    uint16_t last_applied_program_seq = 0;
+    // Server-side bookkeeping not carried on the wire.
+    uint64_t server_received_at_us = 0;
+    uint32_t last_rtt_us = 0; // populated from STATUS_RESPONSE
+  };
+  QosSnapshot latest_qos;
 };
 
 // Manually define to_json for ClientStatus to have full control over board_id serialization
@@ -75,7 +96,24 @@ inline void to_json(json &j, const ClientStatus &cs) {
 
   j = json{{"client_id", cs.client_id},    {"last_status_time", cs.last_status_time},
            {"board_id", hex_stream.str()}, {"port_name", cs.port_name},
-           {"git_sha", cs.git_sha},        {"build_time_us", cs.build_time_us}};
+           {"git_sha", cs.git_sha},        {"build_time_us", cs.build_time_us},
+           {"owd_us", cs.owd_us}};
+  if (cs.latest_qos.valid) {
+    j["qos"] = json{
+        {"current_offset_us", cs.latest_qos.current_offset_us},
+        {"uptime_us", cs.latest_qos.uptime_us},
+        {"median_rtt_us", cs.latest_qos.median_rtt_us},
+        {"next_beat_gap_total", cs.latest_qos.next_beat_gap_total},
+        {"intercore_drop_total", cs.latest_qos.intercore_drop_total},
+        {"time_sync_outlier_total", cs.latest_qos.time_sync_outlier_total},
+        {"valid_sample_count", cs.latest_qos.valid_sample_count},
+        {"last_applied_program_seq", cs.latest_qos.last_applied_program_seq},
+        {"server_received_at_us", cs.latest_qos.server_received_at_us},
+        {"last_rtt_us", cs.latest_qos.last_rtt_us},
+    };
+  } else {
+    j["qos"] = nullptr;
+  }
 }
 
 } // namespace beatled::core

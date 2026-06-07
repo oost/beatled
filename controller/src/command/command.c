@@ -4,6 +4,7 @@
 #include "beatled/protocol.h"
 #include "command/command.h"
 #include "command/next_beat.h"
+#include "command/qos.h"
 #include "command/tempo.h"
 #include "command/time.h"
 #include "command/utils.h"
@@ -23,8 +24,7 @@ int command_program(beatled_message_t *server_msg, size_t data_length) {
   if (!check_size(data_length, sizeof(beatled_message_program_t))) {
     return 1;
   }
-  beatled_message_program_t *program_msg =
-      (beatled_message_program_t *)server_msg;
+  beatled_message_program_t *program_msg = (beatled_message_program_t *)server_msg;
 
   uint16_t program_id = ntohs(program_msg->program_id);
   uint16_t seq = ntohs(program_msg->seq);
@@ -52,10 +52,15 @@ int command_program(beatled_message_t *server_msg, size_t data_length) {
 
   intercore_message_t msg = {.message_type = 0x01 << intercore_program_update};
   if (!hal_queue_add_message(intercore_command_queue, &msg)) {
+    qos_intercore_drop_bump();
     puts("[ERR] Intercore queue full, skipping notification");
   }
 
   return 0;
+}
+
+uint16_t program_get_last_applied_seq(void) {
+  return have_seen_program ? last_program_seq : 0;
 }
 
 int command_error(beatled_message_t *server_msg, size_t data_length) {
@@ -109,8 +114,7 @@ int validate_server_message(void *event_data, size_t data_length) {
   return err;
 }
 
-int handle_server_message(void *event_data, size_t data_length,
-                          uint64_t dest_time) {
+int handle_server_message(void *event_data, size_t data_length, uint64_t dest_time) {
   if (!event_data || sizeof(beatled_message_t) > data_length) {
     return 1;
   }
@@ -174,8 +178,7 @@ int handle_event(event_t *event) {
     if (err) {
       // Malformed or unsolicited packet — drop without dispatching to the
       // message handlers, which assume exact-size payloads.
-      printf("[ERR] Dropping invalid server message (len=%zu)\n",
-             event->data_length);
+      printf("[ERR] Dropping invalid server message (len=%zu)\n", event->data_length);
       break;
     }
     err = handle_server_message(event->data, event->data_length, event->time);

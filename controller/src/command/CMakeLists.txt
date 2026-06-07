@@ -1,8 +1,9 @@
 add_library(beatled_commands INTERFACE)
 
 target_sources(
-  beatled_commands INTERFACE 
+  beatled_commands INTERFACE
     command.c
+    diagnostics/qos.c
     hello/hello.c
     time/time.c
     tempo/tempo.c

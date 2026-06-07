@@ -25,6 +25,9 @@ typedef enum {
   BEATLED_MESSAGE_PROGRAM,
   BEATLED_MESSAGE_NEXT_BEAT,
   BEATLED_MESSAGE_BEAT,
+  // Protocol v4: server-initiated diagnostic probe + response.
+  BEATLED_MESSAGE_STATUS_REQUEST,
+  BEATLED_MESSAGE_STATUS_RESPONSE,
   BEATLED_MESSAGE_LAST_VALUE
 } beatled_message_type_t;
 
@@ -44,17 +47,35 @@ typedef struct {
   uint8_t error_code;
 } __attribute__((__packed__)) beatled_message_error_t;
 
+// Diagnostic / QoS snapshot block carried piggy-back on TEMPO_REQUEST and
+// in STATUS_RESPONSE. The controller fills it in one place via
+// `qos_block_fill()` (see controller/src/command/diagnostics/qos.c) so
+// the wire layout is computed once. All multi-byte fields are network
+// byte order; the controller htonl/htonll-encodes them at fill time.
+//
+// Sized to 32 B so the extended TEMPO_REQUEST stays well under any
+// realistic UDP MTU on Wi-Fi.
+typedef struct {
+  int64_t current_offset_us;        // controller's view of server-time-offset
+  uint64_t uptime_us;               // time_us_64() since boot
+  uint32_t median_rtt_us;           // sliding-window median delay (RTT)
+  uint32_t next_beat_gap_total;     // cumulative NEXT_BEAT seq gaps observed
+  uint32_t intercore_drop_total;    // cumulative intercore-queue drops
+  uint32_t time_sync_outlier_total; // cumulative TIME samples rejected by filter
+  uint16_t valid_sample_count;      // current depth of the time-sync ring
+  uint16_t last_applied_program_seq;
+} __attribute__((__packed__)) beatled_qos_block_t;
+
 // Tempo message. eCommandType = BEATLED_MESSAGE_TEMPO_REQUEST
 //
-// Protocol v2: dropped the redundant beat_time_ref/tempo_period echo (the
-// server never read them) and added the controller's most recent measured
-// one-way delay estimate. The server uses it to compensate NEXT_BEAT
-// timestamps per-client so heterogeneous Wi-Fi paths still align.
-//
-// owd_us_estimate = 0 means "no sample yet, no compensation please".
+// Protocol v4: trails the existing owd_us_estimate with the full
+// `beatled_qos_block_t` so every 10 s heartbeat doubles as a passive
+// metrics report. The server stores the latest snapshot on
+// ClientStatus and surfaces it via /api/devices.
 typedef struct {
   beatled_message_t base;
   uint32_t owd_us_estimate;
+  beatled_qos_block_t qos;
 } __attribute__((__packed__)) beatled_message_tempo_request_t;
 
 // Tempo message. eCommandType = BEATLED_MESSAGE_TEMPO_RESPONSE
@@ -144,6 +165,28 @@ typedef struct {
   uint32_t beat_count;
   uint16_t seq;
 } __attribute__((__packed__)) beatled_message_beat_t;
+
+// eCommandType = BEATLED_MESSAGE_STATUS_REQUEST
+//
+// Protocol v4: server-initiated probe. The controller echoes
+// `server_send_time_us` verbatim on the STATUS_RESPONSE so the server
+// can compute a fresh RTT independent of the controller's own time
+// sync.
+typedef struct {
+  beatled_message_t base;
+  uint64_t server_send_time_us;
+} __attribute__((__packed__)) beatled_message_status_request_t;
+
+// eCommandType = BEATLED_MESSAGE_STATUS_RESPONSE
+//
+// Protocol v4: controller's reply to a STATUS_REQUEST. Echoes the
+// server's send-time for RTT calculation and carries the same
+// diagnostic snapshot as the trailing block on TEMPO_REQUEST.
+typedef struct {
+  beatled_message_t base;
+  uint64_t echo_server_send_time_us;
+  beatled_qos_block_t qos;
+} __attribute__((__packed__)) beatled_message_status_response_t;
 
 #ifdef __cplusplus
 } /*extern "C" */

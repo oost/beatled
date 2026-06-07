@@ -159,4 +159,50 @@ TEST_CASE("UDPRequestHandler tempo request", "[udp][handler]") {
     REQUIRE(ntohl(msg->tempo_period_us) == 500000); // 60M / 120
     REQUIRE(ntohs(msg->program_id) == 5);
   }
+
+  SECTION("v4 qos block decodes onto ClientStatus") {
+    // Register a client at the request's source IP so the handler can
+    // attach the QoS snapshot to it.
+    ClientStatus::board_id_t bid{};
+    bid[0] = 'Q';
+    auto cs = std::make_shared<ClientStatus>(bid, asio::ip::make_address("10.0.0.1"));
+    cs->last_status_time = 1;
+    sm.register_client(cs);
+
+    beatled_message_tempo_request_t tempo_req{};
+    tempo_req.base.type = BEATLED_MESSAGE_TEMPO_REQUEST;
+    tempo_req.owd_us_estimate = htonl(2500);
+
+    const int64_t kOffsetUs = -12345;
+    const uint64_t kUptimeUs = 12'345'678ULL;
+    uint64_t off_bits;
+    std::memcpy(&off_bits, &kOffsetUs, sizeof(off_bits));
+    tempo_req.qos.current_offset_us = static_cast<int64_t>(htonll(off_bits));
+    tempo_req.qos.uptime_us = htonll(kUptimeUs);
+    tempo_req.qos.median_rtt_us = htonl(4321);
+    tempo_req.qos.next_beat_gap_total = htonl(7);
+    tempo_req.qos.intercore_drop_total = htonl(2);
+    tempo_req.qos.time_sync_outlier_total = htonl(11);
+    tempo_req.qos.valid_sample_count = htons(8);
+    tempo_req.qos.last_applied_program_seq = htons(42);
+
+    auto buf = make_request(&tempo_req, sizeof(tempo_req));
+    UDPRequestHandler handler(&buf, sm);
+    auto resp = handler.response();
+    REQUIRE(resp->type() == BEATLED_MESSAGE_TEMPO_RESPONSE);
+
+    auto stored = sm.client_status(asio::ip::make_address("10.0.0.1"));
+    REQUIRE(stored != nullptr);
+    const auto &qos = stored->latest_qos;
+    REQUIRE(qos.valid);
+    REQUIRE(qos.current_offset_us == kOffsetUs);
+    REQUIRE(qos.uptime_us == kUptimeUs);
+    REQUIRE(qos.median_rtt_us == 4321u);
+    REQUIRE(qos.next_beat_gap_total == 7u);
+    REQUIRE(qos.intercore_drop_total == 2u);
+    REQUIRE(qos.time_sync_outlier_total == 11u);
+    REQUIRE(qos.valid_sample_count == 8u);
+    REQUIRE(qos.last_applied_program_seq == 42u);
+    REQUIRE(qos.server_received_at_us > 0u);
+  }
 }

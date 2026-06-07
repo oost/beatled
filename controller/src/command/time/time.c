@@ -34,6 +34,11 @@ static time_sample_t samples[TIME_SYNC_SAMPLES];
 static size_t sample_write_idx = 0;
 static size_t valid_sample_count = 0;
 
+// Cumulative TIME_RESPONSE samples discarded as outliers by the median
+// filter (delay > 2 * median(delay)). Saturates at UINT32_MAX; QoS
+// snapshot ships this as a single uint32_t.
+static uint32_t time_sync_outlier_total_ = 0;
+
 // Most-recently-sent orig_time. The response must echo this exact value or
 // we treat it as a stale duplicate from a prior request and drop it.
 static uint64_t outstanding_orig_time = 0;
@@ -74,6 +79,20 @@ void time_sync_reset_for_testing(void) {
   valid_sample_count = 0;
   outstanding_orig_time = 0;
   have_outstanding_request = false;
+  time_sync_outlier_total_ = 0;
+}
+
+uint32_t time_sync_median_rtt_us(void) {
+  uint64_t med = median_delay();
+  return med > UINT32_MAX ? UINT32_MAX : (uint32_t)med;
+}
+
+uint32_t time_sync_outlier_total(void) {
+  return time_sync_outlier_total_;
+}
+
+uint32_t time_sync_valid_sample_count(void) {
+  return (uint32_t)valid_sample_count;
 }
 
 void time_sync_seed_outstanding_for_testing(uint64_t orig_time) {
@@ -92,10 +111,23 @@ uint32_t time_sync_owd_estimate_us(void) {
 static int64_t median_offset_excluding_outliers(uint64_t delay_threshold) {
   int64_t offsets[TIME_SYNC_SAMPLES];
   size_t n = 0;
+  size_t rejected = 0;
   for (size_t i = 0; i < TIME_SYNC_SAMPLES; i++) {
-    if (samples[i].valid && samples[i].delay_us <= delay_threshold) {
-      offsets[n++] = samples[i].offset_us;
+    if (!samples[i].valid) {
+      continue;
     }
+    if (samples[i].delay_us <= delay_threshold) {
+      offsets[n++] = samples[i].offset_us;
+    } else {
+      rejected++;
+    }
+  }
+  // Saturating bump — the wire field is uint32_t so wrapping at UINT32_MAX
+  // is preferable to a UB increment past the max.
+  if (rejected > 0 && time_sync_outlier_total_ + rejected >= time_sync_outlier_total_) {
+    time_sync_outlier_total_ += (uint32_t)rejected;
+  } else {
+    time_sync_outlier_total_ = UINT32_MAX;
   }
   if (n == 0) {
     return 0;
@@ -128,25 +160,21 @@ int prepare_time_request(void *buffer_payload, size_t buf_len) {
 }
 
 int send_time_request() {
-  return send_udp_request(sizeof(beatled_message_time_request_t),
-                          &prepare_time_request);
+  return send_udp_request(sizeof(beatled_message_time_request_t), &prepare_time_request);
 }
 
-int validate_time_msg(beatled_message_t *server_msg, size_t data_length,
-                      uint64_t dest_time) {
+int validate_time_msg(beatled_message_t *server_msg, size_t data_length, uint64_t dest_time) {
   if (!check_size(data_length, sizeof(beatled_message_time_response_t))) {
     return 1;
   }
   return 0;
 }
 
-int process_time_msg(beatled_message_t *server_msg, size_t data_length,
-                     uint64_t dest_time) {
+int process_time_msg(beatled_message_t *server_msg, size_t data_length, uint64_t dest_time) {
   if (!check_size(data_length, sizeof(beatled_message_time_response_t))) {
     return 1;
   }
-  beatled_message_time_response_t *time_resp_msg =
-      (beatled_message_time_response_t *)server_msg;
+  beatled_message_time_response_t *time_resp_msg = (beatled_message_time_response_t *)server_msg;
 
   uint64_t orig_time = ntohll(time_resp_msg->orig_time);
   uint64_t recv_time = ntohll(time_resp_msg->recv_time);

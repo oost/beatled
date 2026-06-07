@@ -84,6 +84,49 @@ TEST_CASE("ClientStatus JSON serialization", "[client_status][json]") {
     REQUIRE(j["build_time_us"] == 0);
   }
 
+  SECTION("Pre-v4 client (no QoS yet) serialises qos as null") {
+    ClientStatus::board_id_t board_id{};
+    asio::ip::address ip_addr = asio::ip::make_address("127.0.0.1");
+    auto cs = std::make_shared<ClientStatus>(board_id, ip_addr);
+
+    json j = *cs;
+    REQUIRE(j.contains("qos"));
+    REQUIRE(j["qos"].is_null());
+    REQUIRE(j["owd_us"] == 0u);
+  }
+
+  SECTION("v4 QoS snapshot round-trips through JSON") {
+    ClientStatus::board_id_t board_id{};
+    asio::ip::address ip_addr = asio::ip::make_address("127.0.0.1");
+    auto cs = std::make_shared<ClientStatus>(board_id, ip_addr);
+    cs->owd_us = 1500;
+
+    cs->latest_qos.valid = true;
+    cs->latest_qos.current_offset_us = -42;
+    cs->latest_qos.uptime_us = 9999;
+    cs->latest_qos.median_rtt_us = 1234;
+    cs->latest_qos.next_beat_gap_total = 3;
+    cs->latest_qos.intercore_drop_total = 1;
+    cs->latest_qos.time_sync_outlier_total = 5;
+    cs->latest_qos.valid_sample_count = 8;
+    cs->latest_qos.last_applied_program_seq = 7;
+    cs->latest_qos.server_received_at_us = 1700000000000000ULL;
+    cs->latest_qos.last_rtt_us = 555;
+
+    json j = *cs;
+    REQUIRE(j["owd_us"] == 1500u);
+    REQUIRE(j["qos"]["current_offset_us"] == -42);
+    REQUIRE(j["qos"]["uptime_us"] == 9999u);
+    REQUIRE(j["qos"]["median_rtt_us"] == 1234u);
+    REQUIRE(j["qos"]["next_beat_gap_total"] == 3u);
+    REQUIRE(j["qos"]["intercore_drop_total"] == 1u);
+    REQUIRE(j["qos"]["time_sync_outlier_total"] == 5u);
+    REQUIRE(j["qos"]["valid_sample_count"] == 8u);
+    REQUIRE(j["qos"]["last_applied_program_seq"] == 7u);
+    REQUIRE(j["qos"]["server_received_at_us"] == 1700000000000000ULL);
+    REQUIRE(j["qos"]["last_rtt_us"] == 555u);
+  }
+
   SECTION("board_id_t direct serialization should produce string") {
     ClientStatus::board_id_t board_id;
     board_id[0] = 'T';

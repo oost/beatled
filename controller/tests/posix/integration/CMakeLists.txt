@@ -12,6 +12,7 @@ add_executable(test_integration
     ${CMAKE_SOURCE_DIR}/src/state_manager/states/tempo_synced/tempo_synced.c
     # Real command handlers
     ${CMAKE_SOURCE_DIR}/src/command/command.c
+    ${CMAKE_SOURCE_DIR}/src/command/diagnostics/qos.c
     ${CMAKE_SOURCE_DIR}/src/command/hello/hello.c
     ${CMAKE_SOURCE_DIR}/src/command/time/time.c
     ${CMAKE_SOURCE_DIR}/src/command/tempo/tempo.c
