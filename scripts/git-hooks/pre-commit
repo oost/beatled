@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+#
+# Beatled pre-commit hook.
+#
+# Wired by running `./scripts/git-hooks/install.sh` once per checkout
+# (sets git config core.hooksPath to this directory). Skipped if the
+# environment variable BEATLED_SKIP_HOOKS is set, so emergencies don't
+# get stuck.
+#
+# Checks (only against the files actually staged for commit):
+#   - clang-format on C / C++ sources in server/ and controller/
+#   - shellcheck on scripts/ if shellcheck is on $PATH
+# Each check is best-effort: missing tools print a one-line skip notice
+# instead of failing, so the hook never blocks a contributor whose
+# toolchain isn't fully set up.
+
+set -euo pipefail
+
+if [ "${BEATLED_SKIP_HOOKS:-}" = "1" ]; then
+    echo "[pre-commit] BEATLED_SKIP_HOOKS=1 — skipping all checks"
+    exit 0
+fi
+
+# Collect names of files staged (Added, Copied, Modified, Renamed) by the
+# user's about-to-be-made commit. `--diff-filter=ACMR` excludes deletions
+# (no file to lint) and unmerged paths.
+#
+# Using a NUL-delimited read loop instead of bash 4's `mapfile` so the
+# hook works on the bash 3.2 that macOS still ships with.
+staged=()
+while IFS= read -r -d '' f; do
+    staged+=("$f")
+done < <(git diff --cached --diff-filter=ACMR --name-only -z)
+if [ ${#staged[@]} -eq 0 ]; then
+    exit 0
+fi
+
+fail=0
+
+# --- clang-format on C / C++ -----------------------------------------------
+
+if command -v clang-format >/dev/null 2>&1; then
+    cxx_targets=()
+    for f in "${staged[@]}"; do
+        case "$f" in
+            server/src/*.cpp|server/src/*.hpp|server/src/*.h\
+            |server/tests/*.cpp|server/tests/*.hpp\
+            |controller/src/*.c|controller/src/*.cpp|controller/src/*.h|controller/src/*.hpp\
+            |controller/tests/*.cpp|controller/tests/*.hpp|controller/tests/*.c|controller/tests/*.h)
+                if [ -f "$f" ]; then
+                    cxx_targets+=("$f")
+                fi
+                ;;
+        esac
+    done
+
+    if [ ${#cxx_targets[@]} -gt 0 ]; then
+        if ! clang-format --dry-run --Werror "${cxx_targets[@]}"; then
+            echo "[pre-commit] clang-format would reformat the staged files above."
+            echo "[pre-commit] Run: clang-format -i ${cxx_targets[*]}"
+            fail=1
+        fi
+    fi
+else
+    echo "[pre-commit] clang-format not on PATH — skipping C / C++ format check"
+fi
+
+# --- shellcheck on scripts/ ------------------------------------------------
+
+if command -v shellcheck >/dev/null 2>&1; then
+    sh_targets=()
+    for f in "${staged[@]}"; do
+        case "$f" in
+            scripts/*.sh|scripts/*/*.sh)
+                if [ -f "$f" ]; then
+                    sh_targets+=("$f")
+                fi
+                ;;
+        esac
+    done
+
+    if [ ${#sh_targets[@]} -gt 0 ]; then
+        # Only fail the commit on errors (severity >= warning). Style and
+        # informational findings still print but don't block.
+        if ! shellcheck --severity=warning "${sh_targets[@]}"; then
+            echo "[pre-commit] shellcheck reported warnings above."
+            fail=1
+        fi
+    fi
+else
+    echo "[pre-commit] shellcheck not on PATH — skipping shell-script lint"
+fi
+
+if [ "$fail" -ne 0 ]; then
+    echo
+    echo "[pre-commit] Fix the issues above and re-stage, or rerun with"
+    echo "             BEATLED_SKIP_HOOKS=1 git commit … to bypass."
+    exit 1
+fi
+
+exit 0

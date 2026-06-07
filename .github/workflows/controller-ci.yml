@@ -1,0 +1,126 @@
+name: Controller CI
+
+on:
+  push:
+    branches: [master, "feature/*"]
+    paths:
+      - "controller/**"
+      - ".github/workflows/controller-ci.yml"
+  pull_request:
+    paths:
+      - "controller/**"
+
+jobs:
+  posix:
+    name: POSIX simulator (${{ matrix.port }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - port: posix
+            build_dir: controller/build
+            cmake_port: posix
+          - port: posix_freertos
+            build_dir: controller/build_posix_freertos
+            cmake_port: posix_freertos
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          submodules: recursive
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build cmake pkg-config
+
+      # The POSIX ports do not need the firmware Metal renderer or audio
+      # backend; they just need a working toolchain and Catch2. Catch2 is
+      # vendored via the firmware tree's vcpkg manifest at controller/.
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@7d259227a1fb6471a0253dd5ab7419835228f7d7 # v11
+        with:
+          vcpkgGitCommitId: "66c0373dc7fca549e5803087b9487edfe3aca0a1"
+
+      # Synthetic env values — the build expects WIFI_SSID / WIFI_PASSWORD /
+      # BEATLED_SERVER_NAME as defines on every port. POSIX sim ignores them
+      # at runtime so any non-empty string works.
+      - name: Configure CMake
+        run: |
+          cmake -S controller -B ${{ matrix.build_dir }} \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DPORT=${{ matrix.cmake_port }} \
+            -DNUM_PIXELS=30 \
+            -DWS2812_PIN=0 \
+            -DWIFI_SSID="ci-test" \
+            -DWIFI_PASSWORD="ci-test" \
+            -DBEATLED_SERVER_NAME="localhost"
+
+      - name: Build
+        run: cmake --build ${{ matrix.build_dir }} --target pico_w_beatled tests
+
+      - name: Run unit tests
+        # The catch2 binaries are not registered with ctest (see
+        # tests/posix/*/CMakeLists.txt); invoke each one directly so a
+        # crash in any single binary fails the job.
+        run: |
+          set -e
+          for t in ${{ matrix.build_dir }}/tests/posix/*/test_*; do
+            if [ -x "$t" ]; then
+              echo "::group::$(basename "$t")"
+              "$t" --reporter compact
+              echo "::endgroup::"
+            fi
+          done
+
+  pico-cross-build:
+    name: Build pico .uf2 (${{ matrix.port }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - port: pico
+            build_dir: controller/build-pico
+          - port: pico_freertos
+            build_dir: controller/build-pico-freertos
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          submodules: recursive
+
+      - name: Install ARM cross toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake ninja-build pkg-config \
+            gcc-arm-none-eabi libnewlib-arm-none-eabi \
+            libstdc++-arm-none-eabi-newlib
+
+      - name: Configure CMake
+        run: |
+          cmake -S controller -B ${{ matrix.build_dir }} \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DPORT=${{ matrix.port }} \
+            -DPICO_BOARD=pico_w \
+            -DPICO_SDK_PATH=controller/lib/pico-sdk \
+            -DNUM_PIXELS=30 \
+            -DWS2812_PIN=0 \
+            -DWIFI_SSID="ci-test" \
+            -DWIFI_PASSWORD="ci-test" \
+            -DBEATLED_SERVER_NAME="localhost"
+
+      - name: Build .uf2
+        run: cmake --build ${{ matrix.build_dir }} --target pico_w_beatled
+
+      - name: Upload artefacts on failure
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: controller-${{ matrix.port }}-logs
+          path: ${{ matrix.build_dir }}/**/*.log
+          retention-days: 7

@@ -2,8 +2,15 @@ name: CI
 
 on:
   push:
-    branches: ["main"]
+    branches: [master, "feature/*"]
+    paths:
+      - "docs/**"
+      - "Gemfile*"
+      - ".github/workflows/ci.yml"
   pull_request:
+    paths:
+      - "docs/**"
+      - "Gemfile*"
 
 jobs:
   # Build job

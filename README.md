@@ -26,6 +26,12 @@ A single script handles building and running all components locally:
 scripts/beatled.sh <command> [options]
 ```
 
+One-time hook install (clang-format + shellcheck pre-commit):
+
+```sh
+scripts/git-hooks/install.sh
+```
+
 | Command | Description |
 |---------|-------------|
 | `beatled.sh server --start-http` | Build and start the HTTPS server with the built client |

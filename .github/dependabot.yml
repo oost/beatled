@@ -1,8 +1,31 @@
 version: 2
 updates:
+  # Jekyll docs site
   - package-ecosystem: bundler
     directory: /
     schedule:
       interval: daily
     allow:
       - dependency-type: direct
+
+  # React client. npm-audit-driven security PRs land grouped so the
+  # client-ci audit gate doesn't fire one PR per transitive bump.
+  - package-ecosystem: npm
+    directory: /client
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 5
+    allow:
+      - dependency-type: direct
+      - dependency-type: indirect
+    groups:
+      security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+
+  # GitHub Actions used by every workflow under .github/workflows/.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
