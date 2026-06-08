@@ -70,6 +70,16 @@ int command_error(beatled_message_t *server_msg, size_t data_length) {
   }
   beatled_message_error_t *error_msg = (beatled_message_error_t *)server_msg;
 
+  if (error_msg->error_code == BEATLED_ERROR_VERSION_MISMATCH) {
+    // The server speaks a different protocol major version. Retrying won't
+    // help — this firmware must be rebuilt/reflashed against the server's
+    // protocol header. Make that unmistakable in the logs.
+    printf("[CMD] Server rejected HELLO: protocol major version mismatch. "
+           "This firmware is protocol v%d.%d — reflash to match the server.\n",
+           BEATLED_PROTOCOL_VERSION_MAJOR, BEATLED_PROTOCOL_VERSION_MINOR);
+    return 0;
+  }
+
   printf("[CMD] Server error: code=%u\n", error_msg->error_code);
   return 0;
 }

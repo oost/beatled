@@ -1,4 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
+#include <cstddef> // offsetof
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,10 +21,18 @@ TEST_CASE("Protocol struct sizes match wire format", "[protocol]") {
     REQUIRE(sizeof(beatled_message_error_t) == 2);
   }
 
-  SECTION("Hello request includes board_id + firmware self-description (v3)") {
-    // 1 byte type + 17 bytes board_id (2 * 8 + 1) + 16 port_name +
-    // 16 git_sha + 8 build_time_us = 58 bytes total.
-    REQUIRE(sizeof(beatled_message_hello_request_t) == 58);
+  SECTION("Hello request: version handshake + board_id + firmware self-description") {
+    // 1 type + 2 version (major,minor) + 17 board_id (2*8+1) + 16 port_name
+    // + 16 git_sha + 8 build_time_us = 60 bytes total.
+    REQUIRE(sizeof(beatled_message_hello_request_t) == 60);
+  }
+
+  SECTION("Protocol version constants are defined") {
+    REQUIRE(BEATLED_PROTOCOL_VERSION_MAJOR >= 1);
+    // version_major / version_minor lead the payload at fixed offsets so
+    // any server can read a peer's major version.
+    REQUIRE(offsetof(beatled_message_hello_request_t, version_major) == 1);
+    REQUIRE(offsetof(beatled_message_hello_request_t, version_minor) == 2);
   }
 
   SECTION("Hello response is 3 bytes") {

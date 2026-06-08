@@ -59,6 +59,13 @@ public:
   std::string git_sha;
   uint64_t build_time_us = 0;
 
+  // Protocol version reported on HELLO_REQUEST. The server only registers
+  // clients whose major matches its own, so for any registered client
+  // `protocol_version_major == BEATLED_PROTOCOL_VERSION_MAJOR`; the pair is
+  // still surfaced for display / debugging.
+  uint8_t protocol_version_major = 0;
+  uint8_t protocol_version_minor = 0;
+
   // Latest QoS snapshot received from the controller (protocol v4 — sent
   // piggy-back on every TEMPO_REQUEST and on STATUS_RESPONSE). All
   // controller-supplied values are already decoded into host byte order.
@@ -94,9 +101,14 @@ inline void to_json(json &j, const ClientStatus &cs) {
                << static_cast<unsigned int>(static_cast<unsigned char>(cs.board_id[i]));
   }
 
-  j = json{{"client_id", cs.client_id},    {"last_status_time", cs.last_status_time},
-           {"board_id", hex_stream.str()}, {"port_name", cs.port_name},
-           {"git_sha", cs.git_sha},        {"build_time_us", cs.build_time_us},
+  j = json{{"client_id", cs.client_id},
+           {"last_status_time", cs.last_status_time},
+           {"board_id", hex_stream.str()},
+           {"port_name", cs.port_name},
+           {"git_sha", cs.git_sha},
+           {"build_time_us", cs.build_time_us},
+           {"protocol_version_major", cs.protocol_version_major},
+           {"protocol_version_minor", cs.protocol_version_minor},
            {"owd_us", cs.owd_us}};
   if (cs.latest_qos.valid) {
     j["qos"] = json{

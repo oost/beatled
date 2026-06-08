@@ -29,6 +29,11 @@ int prepare_hello_request(void *buffer_payload, size_t buf_len) {
   beatled_message_hello_request_t *msg = (beatled_message_hello_request_t *)buffer_payload;
   msg->base.type = BEATLED_MESSAGE_HELLO_REQUEST;
 
+  // Protocol-version handshake. Single bytes, no byte-order concern. The
+  // server rejects the HELLO if version_major doesn't match its own.
+  msg->version_major = BEATLED_PROTOCOL_VERSION_MAJOR;
+  msg->version_minor = BEATLED_PROTOCOL_VERSION_MINOR;
+
   get_unique_board_id(msg->board_id);
 
   // Firmware self-description for /api/devices. All three are stamped at

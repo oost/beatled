@@ -74,19 +74,34 @@ DataBuffer::Ptr UDPRequestHandler::process_hello_request() {
   SPDLOG_INFO("Hello request");
 
   if (request_buffer_ptr_->size() < sizeof(beatled_message_hello_request_t)) {
-    SPDLOG_ERROR("Hello request too small: {} bytes (expected {} for v3)",
-                 request_buffer_ptr_->size(), sizeof(beatled_message_hello_request_t));
+    SPDLOG_ERROR("Hello request too small: {} bytes (expected {})", request_buffer_ptr_->size(),
+                 sizeof(beatled_message_hello_request_t));
     return error_response(BEATLED_ERROR_NO_DATA);
   }
 
   const auto *hello_req =
       reinterpret_cast<const beatled_message_hello_request_t *>(&(request_buffer_ptr_->data()));
 
+  // Protocol-version gate. The major version must match exactly; a
+  // mismatch means the firmware was built against an incompatible wire
+  // format, so we reject the registration outright rather than risk
+  // misinterpreting later messages.
+  if (hello_req->version_major != BEATLED_PROTOCOL_VERSION_MAJOR) {
+    SPDLOG_WARN("Rejecting HELLO from {}: protocol major v{}.{} != server v{}.{}",
+                request_buffer_ptr_->remote_endpoint().address().to_string(),
+                hello_req->version_major, hello_req->version_minor, BEATLED_PROTOCOL_VERSION_MAJOR,
+                BEATLED_PROTOCOL_VERSION_MINOR);
+    return error_response(BEATLED_ERROR_VERSION_MISMATCH);
+  }
+
   ClientStatus::Ptr cs = std::make_shared<ClientStatus>(
       hello_req->board_id, request_buffer_ptr_->remote_endpoint().address());
   cs->last_status_time = Clock::wall_time_us_64();
   // Remember the full endpoint (incl. ephemeral port) for unicast delivery.
   cs->endpoint = request_buffer_ptr_->remote_endpoint();
+
+  cs->protocol_version_major = hello_req->version_major;
+  cs->protocol_version_minor = hello_req->version_minor;
 
   // Pull the firmware self-description carried since protocol v3. The
   // wire fields are fixed-size, null-terminated strings; build_time_us
@@ -95,8 +110,9 @@ DataBuffer::Ptr UDPRequestHandler::process_hello_request() {
       std::string(hello_req->port_name, strnlen(hello_req->port_name, BEATLED_PORT_NAME_LEN));
   cs->git_sha = std::string(hello_req->git_sha, strnlen(hello_req->git_sha, BEATLED_GIT_HASH_LEN));
   cs->build_time_us = ntohll(hello_req->build_time_us);
-  SPDLOG_INFO("Client hello: board_id={} port={} sha={} built_us={}", hello_req->board_id,
-              cs->port_name, cs->git_sha, cs->build_time_us);
+  SPDLOG_INFO("Client hello: board_id={} v{}.{} port={} sha={} built_us={}", hello_req->board_id,
+              cs->protocol_version_major, cs->protocol_version_minor, cs->port_name, cs->git_sha,
+              cs->build_time_us);
 
   state_manager_.register_client(cs);
   return std::make_unique<HelloResponseBuffer>(cs->client_id);

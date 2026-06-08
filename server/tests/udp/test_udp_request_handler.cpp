@@ -60,6 +60,8 @@ TEST_CASE("UDPRequestHandler hello request", "[udp][handler]") {
   SECTION("Valid hello request registers client and returns response") {
     beatled_message_hello_request_t hello_req{};
     hello_req.base.type = BEATLED_MESSAGE_HELLO_REQUEST;
+    hello_req.version_major = BEATLED_PROTOCOL_VERSION_MAJOR;
+    hello_req.version_minor = BEATLED_PROTOCOL_VERSION_MINOR;
     std::memcpy(hello_req.board_id, "ABCD1234ABCD1234", sizeof(hello_req.board_id));
     std::memcpy(hello_req.port_name, "pico-freertos", sizeof("pico-freertos"));
     std::memcpy(hello_req.git_sha, "abcd123-dirty", sizeof("abcd123-dirty"));
@@ -73,12 +75,48 @@ TEST_CASE("UDPRequestHandler hello request", "[udp][handler]") {
     REQUIRE(resp->type() == BEATLED_MESSAGE_HELLO_RESPONSE);
     REQUIRE(resp->size() == sizeof(beatled_message_hello_response_t));
 
-    // Client should now be registered and carry the v3 firmware fields.
+    // Client should now be registered and carry the version + firmware fields.
     auto client = sm.client_status(asio::ip::make_address("10.0.0.1"));
     REQUIRE(client != nullptr);
+    REQUIRE(client->protocol_version_major == BEATLED_PROTOCOL_VERSION_MAJOR);
+    REQUIRE(client->protocol_version_minor == BEATLED_PROTOCOL_VERSION_MINOR);
     REQUIRE(client->port_name == "pico-freertos");
     REQUIRE(client->git_sha == "abcd123-dirty");
     REQUIRE(client->build_time_us == kBuildTimeUs);
+  }
+
+  SECTION("Hello with mismatched major version is rejected, not registered") {
+    beatled_message_hello_request_t hello_req{};
+    hello_req.base.type = BEATLED_MESSAGE_HELLO_REQUEST;
+    hello_req.version_major = BEATLED_PROTOCOL_VERSION_MAJOR + 1; // wrong major
+    hello_req.version_minor = 0;
+    std::memcpy(hello_req.board_id, "DEAD0000DEAD0000", sizeof(hello_req.board_id));
+
+    auto buf = make_request(&hello_req, sizeof(hello_req));
+    UDPRequestHandler handler(&buf, sm);
+
+    auto resp = handler.response();
+    REQUIRE(resp->type() == BEATLED_MESSAGE_ERROR);
+    const auto *err = reinterpret_cast<const beatled_message_error_t *>(&(resp->data()));
+    REQUIRE(err->error_code == BEATLED_ERROR_VERSION_MISMATCH);
+
+    // The client must NOT have been registered.
+    REQUIRE(sm.client_status(asio::ip::make_address("10.0.0.1")) == nullptr);
+  }
+
+  SECTION("Hello with differing minor version still registers") {
+    beatled_message_hello_request_t hello_req{};
+    hello_req.base.type = BEATLED_MESSAGE_HELLO_REQUEST;
+    hello_req.version_major = BEATLED_PROTOCOL_VERSION_MAJOR;
+    hello_req.version_minor = BEATLED_PROTOCOL_VERSION_MINOR + 7; // newer minor, compatible
+    std::memcpy(hello_req.board_id, "BEEF0000BEEF0000", sizeof(hello_req.board_id));
+
+    auto buf = make_request(&hello_req, sizeof(hello_req));
+    UDPRequestHandler handler(&buf, sm);
+
+    auto resp = handler.response();
+    REQUIRE(resp->type() == BEATLED_MESSAGE_HELLO_RESPONSE);
+    REQUIRE(sm.client_status(asio::ip::make_address("10.0.0.1")) != nullptr);
   }
 
   SECTION("Undersized hello request returns error") {

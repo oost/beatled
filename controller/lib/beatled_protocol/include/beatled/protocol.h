@@ -14,6 +14,20 @@
 extern "C" {
 #endif
 
+// Wire-protocol version, carried on every HELLO_REQUEST. Bump MAJOR on any
+// incompatible change (a field added/removed/reordered, or a semantic
+// change a peer must understand); bump MINOR for backward-compatible
+// additions. The server refuses to register a controller whose MAJOR
+// differs from its own — see process_hello_request. Both binaries compile
+// against this one header, so the constant is the single source of truth.
+//
+// Invariant: the first two bytes after `base.type` of a HELLO_REQUEST are
+// reserved forever as {version_major, version_minor}. A server of any
+// major version can therefore always read the peer's major version, even
+// when the rest of the message layout has changed.
+#define BEATLED_PROTOCOL_VERSION_MAJOR 4
+#define BEATLED_PROTOCOL_VERSION_MINOR 0
+
 typedef enum {
   BEATLED_MESSAGE_ERROR = 0,
   BEATLED_MESSAGE_HELLO_REQUEST,
@@ -34,7 +48,11 @@ typedef enum {
 typedef enum {
   BEATLED_ERROR_UNKNOWN = 0,
   BEATLED_ERROR_UNKNOWN_MESSAGE_TYPE,
-  BEATLED_ERROR_NO_DATA
+  BEATLED_ERROR_NO_DATA,
+  // Returned to a HELLO_REQUEST whose protocol major version doesn't
+  // match the server's. The controller is NOT registered; it must be
+  // reflashed with firmware built against the same protocol header.
+  BEATLED_ERROR_VERSION_MISMATCH
 } beatled_error_codes;
 
 typedef struct {
@@ -95,6 +113,11 @@ typedef struct {
 
 // Hello. eCommandType = BEATLED_MESSAGE_HELLO_REQUEST
 //
+// `version_major` / `version_minor` lead the payload (immediately after
+// the type byte) and are the protocol-version handshake: the server
+// rejects a HELLO whose `version_major` differs from its own, returning
+// BEATLED_ERROR_VERSION_MISMATCH and declining to register the device.
+//
 // Protocol v3: gained `port_name`, `git_sha`, and `build_time_us` so the
 // server's `/api/devices` response can show what each controller is
 // running. All three are stamped at firmware build time —
@@ -104,6 +127,8 @@ typedef struct {
 // defines used elsewhere.
 typedef struct {
   beatled_message_t base;
+  uint8_t version_major;
+  uint8_t version_minor;
   uint8_t board_id[2 * PICO_UNIQUE_BOARD_ID_SIZE_BYTES + 1];
   char port_name[BEATLED_PORT_NAME_LEN];
   char git_sha[BEATLED_GIT_HASH_LEN];
