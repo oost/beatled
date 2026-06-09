@@ -16,8 +16,12 @@ namespace {
 // Scene-space size of the hat. The mesh is canonically scaled to a max extent
 // of 2 in mesh_loader, so the hat spans roughly +/-kHatScale around its center.
 constexpr float kHatScale = 2.0f;
-// Push the LED band just outside the crown surface so the cubes sit on it.
-constexpr float kBandRadiusMargin = 1.08f;
+// Seat the LED band on the crown surface (slightly inside so the cubes hug it
+// rather than floating off the felt).
+constexpr float kBandRadiusMargin = 0.97f;
+// Drop the band down the crown toward the brim, in scene units. The mesh's
+// detected band sits mid-crown; this lowers it to where a real hatband rides.
+constexpr float kBandHeightDrop = 0.35f;
 // Dark felt colour for the hat body.
 constexpr simd::float4 kHatColor = {0.05f, 0.05f, 0.06f, 1.0f};
 } // namespace
@@ -246,7 +250,7 @@ MTL::Buffer *Renderer::getInstanceDataBuffers() {
   // scaled into the scene the same way the hat is. The band is rigid -- no
   // per-LED wobble -- so it sits on the crown like a real strip.
   const float bandRadius = _crownRadius * kHatScale * kBandRadiusMargin;
-  const float bandHeight = _bandY * kHatScale;
+  const float bandHeight = _bandY * kHatScale - kBandHeightDrop;
   LEDColor c;
   for (size_t i = 0; i < _numInstances; ++i) {
     float rot_angle = 2 * M_PI * (float)i / (float)_numInstances;
