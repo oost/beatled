@@ -81,16 +81,13 @@ void StateManager::register_client(ClientStatus::Ptr client_status) {
       if (client_status->ip_address == (*it)->ip_address) {
         // Same board, same IP: just update timestamp (lightweight heartbeat)
         (*it)->last_status_time = client_status->last_status_time;
-        SPDLOG_DEBUG("Board {} heartbeat from {}",
-                     client_status->board_id.data(),
+        SPDLOG_DEBUG("Board {} heartbeat from {}", client_status->board_id.data(),
                      client_status->ip_address.to_string());
-        return;  // Don't add new registration
+        return; // Don't add new registration
       } else {
         // Same board, different IP: board changed networks, replace registration
-        SPDLOG_INFO("Board {} changed IP from {} to {}",
-                    client_status->board_id.data(),
-                    (*it)->ip_address.to_string(),
-                    client_status->ip_address.to_string());
+        SPDLOG_INFO("Board {} changed IP from {} to {}", client_status->board_id.data(),
+                    (*it)->ip_address.to_string(), client_status->ip_address.to_string());
         it = clients_.erase(it);
         continue;
       }
@@ -98,8 +95,7 @@ void StateManager::register_client(ClientStatus::Ptr client_status) {
     if (client_status->ip_address == (*it)->ip_address) {
       // Different board, same IP: new board took over IP, keep newest
       SPDLOG_INFO("IP {} has new board {}. Replacing old board {}",
-                  client_status->ip_address.to_string(),
-                  client_status->board_id.data(),
+                  client_status->ip_address.to_string(), client_status->board_id.data(),
                   (*it)->board_id.data());
       it = clients_.erase(it);
       continue;
