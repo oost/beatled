@@ -1,7 +1,10 @@
 #include <simd/simd.h>
+#include <string>
 
+#include "assets/top_hat.obj.h"
 #include "led_buffer.h"
 #include "math.h"
+#include "mesh_loader.h"
 #include "renderer.h"
 #include "shader_types.h"
 #include "shaders/triangle.metal.h"
@@ -9,13 +12,24 @@
 
 const int Renderer::kMaxFramesInFlight = 3;
 
+namespace {
+// Scene-space size of the hat. The mesh is canonically scaled to a max extent
+// of 2 in mesh_loader, so the hat spans roughly +/-kHatScale around its center.
+constexpr float kHatScale = 2.0f;
+// Push the LED band just outside the crown surface so the cubes sit on it.
+constexpr float kBandRadiusMargin = 1.08f;
+// Dark felt colour for the hat body.
+constexpr simd::float4 kHatColor = {0.05f, 0.05f, 0.06f, 1.0f};
+} // namespace
+
 Renderer::Renderer(MTL::Device *pDevice, size_t numInstances)
-    : _pDevice(pDevice->retain()), _numInstances(numInstances), _angle(0.f),
-      _frame(0), _pOverlayRenderer(nullptr), _overlayUpdateCounter(0) {
+    : _pDevice(pDevice->retain()), _numInstances(numInstances), _angle(0.f), _frame(0),
+      _pOverlayRenderer(nullptr), _overlayUpdateCounter(0) {
   _pCommandQueue = _pDevice->newCommandQueue();
   buildShaders();
   buildDepthStencilStates();
   buildBuffers();
+  buildHatGeometry();
 
   _pOverlayRenderer = new OverlayRenderer(_pDevice, _pShaderLibrary);
 
@@ -34,6 +48,11 @@ Renderer::~Renderer() {
     _pCameraDataBuffer[i]->release();
   }
   _pIndexBuffer->release();
+  _pHatVertexBuffer->release();
+  _pHatIndexBuffer->release();
+  for (int i = 0; i < kMaxFramesInFlight; ++i) {
+    _pHatInstanceBuffer[i]->release();
+  }
   _pPSO->release();
   _pCommandQueue->release();
   _pDevice->release();
@@ -45,26 +64,24 @@ void Renderer::buildShaders() {
   const char *shaderSrc = reinterpret_cast<char *>(shaders_triangle_metal);
 
   NS::Error *pError = nullptr;
-  MTL::Library *pLibrary = _pDevice->newLibrary(
-      NS::String::string(shaderSrc, UTF8StringEncoding), nullptr, &pError);
+  MTL::Library *pLibrary =
+      _pDevice->newLibrary(NS::String::string(shaderSrc, UTF8StringEncoding), nullptr, &pError);
   if (!pLibrary) {
     __builtin_printf("%s", pError->localizedDescription()->utf8String());
     assert(false);
   }
 
-  MTL::Function *pVertexFn = pLibrary->newFunction(
-      NS::String::string("vertexMain", UTF8StringEncoding));
-  MTL::Function *pFragFn = pLibrary->newFunction(
-      NS::String::string("fragmentMain", UTF8StringEncoding));
+  MTL::Function *pVertexFn =
+      pLibrary->newFunction(NS::String::string("vertexMain", UTF8StringEncoding));
+  MTL::Function *pFragFn =
+      pLibrary->newFunction(NS::String::string("fragmentMain", UTF8StringEncoding));
 
-  MTL::RenderPipelineDescriptor *pDesc =
-      MTL::RenderPipelineDescriptor::alloc()->init();
+  MTL::RenderPipelineDescriptor *pDesc = MTL::RenderPipelineDescriptor::alloc()->init();
   pDesc->setVertexFunction(pVertexFn);
   pDesc->setFragmentFunction(pFragFn);
   pDesc->colorAttachments()->object(0)->setPixelFormat(
       MTL::PixelFormat::PixelFormatBGRA8Unorm_sRGB);
-  pDesc->setDepthAttachmentPixelFormat(
-      MTL::PixelFormat::PixelFormatDepth16Unorm);
+  pDesc->setDepthAttachmentPixelFormat(MTL::PixelFormat::PixelFormatDepth16Unorm);
 
   _pPSO = _pDevice->newRenderPipelineState(pDesc, &pError);
   if (!_pPSO) {
@@ -79,8 +96,7 @@ void Renderer::buildShaders() {
 }
 
 void Renderer::buildDepthStencilStates() {
-  MTL::DepthStencilDescriptor *pDsDesc =
-      MTL::DepthStencilDescriptor::alloc()->init();
+  MTL::DepthStencilDescriptor *pDsDesc = MTL::DepthStencilDescriptor::alloc()->init();
   pDsDesc->setDepthCompareFunction(MTL::CompareFunction::CompareFunctionLess);
   pDsDesc->setDepthWriteEnabled(true);
 
@@ -125,10 +141,8 @@ void Renderer::buildBuffers() {
   const size_t vertexDataSize = sizeof(verts);
   const size_t indexDataSize = sizeof(indices);
 
-  MTL::Buffer *pVertexBuffer =
-      _pDevice->newBuffer(vertexDataSize, MTL::ResourceStorageModeManaged);
-  MTL::Buffer *pIndexBuffer =
-      _pDevice->newBuffer(indexDataSize, MTL::ResourceStorageModeManaged);
+  MTL::Buffer *pVertexBuffer = _pDevice->newBuffer(vertexDataSize, MTL::ResourceStorageModeManaged);
+  MTL::Buffer *pIndexBuffer = _pDevice->newBuffer(indexDataSize, MTL::ResourceStorageModeManaged);
 
   _pVertexDataBuffer = pVertexBuffer;
   _pIndexBuffer = pIndexBuffer;
@@ -136,8 +150,7 @@ void Renderer::buildBuffers() {
   memcpy(_pVertexDataBuffer->contents(), verts, vertexDataSize);
   memcpy(_pIndexBuffer->contents(), indices, indexDataSize);
 
-  _pVertexDataBuffer->didModifyRange(
-      NS::Range::Make(0, _pVertexDataBuffer->length()));
+  _pVertexDataBuffer->didModifyRange(NS::Range::Make(0, _pVertexDataBuffer->length()));
   _pIndexBuffer->didModifyRange(NS::Range::Make(0, _pIndexBuffer->length()));
 
   const size_t instanceDataSize =
@@ -147,12 +160,68 @@ void Renderer::buildBuffers() {
         _pDevice->newBuffer(instanceDataSize, MTL::ResourceStorageModeManaged);
   }
 
-  const size_t cameraDataSize =
-      kMaxFramesInFlight * sizeof(shader_types::CameraData);
+  const size_t cameraDataSize = kMaxFramesInFlight * sizeof(shader_types::CameraData);
   for (size_t i = 0; i < kMaxFramesInFlight; ++i) {
-    _pCameraDataBuffer[i] =
-        _pDevice->newBuffer(cameraDataSize, MTL::ResourceStorageModeManaged);
+    _pCameraDataBuffer[i] = _pDevice->newBuffer(cameraDataSize, MTL::ResourceStorageModeManaged);
   }
+}
+
+void Renderer::buildHatGeometry() {
+  std::string objText(reinterpret_cast<const char *>(assets_top_hat_obj), assets_top_hat_obj_len);
+  mesh_loader::LoadedMesh mesh = mesh_loader::loadObjFromString(objText);
+
+  _crownRadius = mesh.crownRadius;
+  _bandY = mesh.bandY;
+  _hatIndexCount = mesh.indices.size();
+
+  const size_t vertexDataSize = mesh.vertices.size() * sizeof(shader_types::VertexData);
+  const size_t indexDataSize = mesh.indices.size() * sizeof(uint32_t);
+
+  _pHatVertexBuffer = _pDevice->newBuffer(vertexDataSize, MTL::ResourceStorageModeManaged);
+  _pHatIndexBuffer = _pDevice->newBuffer(indexDataSize, MTL::ResourceStorageModeManaged);
+
+  memcpy(_pHatVertexBuffer->contents(), mesh.vertices.data(), vertexDataSize);
+  memcpy(_pHatIndexBuffer->contents(), mesh.indices.data(), indexDataSize);
+  _pHatVertexBuffer->didModifyRange(NS::Range::Make(0, _pHatVertexBuffer->length()));
+  _pHatIndexBuffer->didModifyRange(NS::Range::Make(0, _pHatIndexBuffer->length()));
+
+  for (int i = 0; i < kMaxFramesInFlight; ++i) {
+    _pHatInstanceBuffer[i] =
+        _pDevice->newBuffer(sizeof(shader_types::InstanceData), MTL::ResourceStorageModeManaged);
+  }
+}
+
+// The whole scene slowly tumbles about the object's position. Both the LED
+// band and the hat share this transform so they spin together.
+simd::float4x4 Renderer::fullObjectRotation(const simd::float3 &objectPosition) const {
+  using simd::float4x4;
+  float4x4 rt = math::makeTranslate(objectPosition);
+  float4x4 rr1 = math::makeYRotate(-_angle);
+  float4x4 rr0 = math::makeXRotate(_angle * 0.5);
+  float4x4 rtInv = math::makeTranslate({-objectPosition.x, -objectPosition.y, -objectPosition.z});
+  return rt * rr1 * rr0 * rtInv;
+}
+
+MTL::Buffer *Renderer::getHatInstanceBuffer() {
+  using simd::float3;
+  using simd::float4x4;
+
+  MTL::Buffer *pBuffer = _pHatInstanceBuffer[_frame];
+  shader_types::InstanceData *pInstanceData =
+      reinterpret_cast<shader_types::InstanceData *>(pBuffer->contents());
+
+  float3 objectPosition = {0.f, 0.f, -10.f};
+  // Mesh is canonically centred and crown already points +Y, so no reorient is
+  // needed -- just place at the scene centre and scale.
+  float4x4 transform = fullObjectRotation(objectPosition) * math::makeTranslate(objectPosition) *
+                       math::makeScale({kHatScale, kHatScale, kHatScale});
+
+  pInstanceData->instanceTransform = transform;
+  pInstanceData->instanceNormalTransform = math::discardTranslation(transform);
+  pInstanceData->instanceColor = kHatColor;
+
+  pBuffer->didModifyRange(NS::Range::Make(0, pBuffer->length()));
+  return pBuffer;
 }
 
 MTL::Buffer *Renderer::getInstanceDataBuffers() {
@@ -166,58 +235,38 @@ MTL::Buffer *Renderer::getInstanceDataBuffers() {
 
   const float scl = 0.1f;
   shader_types::InstanceData *pInstanceData =
-      reinterpret_cast<shader_types::InstanceData *>(
-          pInstanceDataBuffer->contents());
+      reinterpret_cast<shader_types::InstanceData *>(pInstanceDataBuffer->contents());
 
   float3 objectPosition = {0.f, 0.f, -10.f};
 
-  float4x4 rt = math::makeTranslate(objectPosition);
-  float4x4 rr1 = math::makeYRotate(-_angle);
-  float4x4 rr0 = math::makeXRotate(_angle * 0.5);
-  float4x4 rtInv = math::makeTranslate(
-      {-objectPosition.x, -objectPosition.y, -objectPosition.z});
-  float4x4 fullObjectRot = rt * rr1 * rr0 * rtInv;
+  float4x4 fullObjectRot = fullObjectRotation(objectPosition);
 
-  size_t ix = 0;
-  size_t iy = 0;
-  size_t iz = 0;
-  float radius = 1.5;
+  // Wrap the LEDs horizontally around the crown so they read as a glowing
+  // hatband. Radius/height come from the loaded hat mesh (canonical units),
+  // scaled into the scene the same way the hat is. The band is rigid -- no
+  // per-LED wobble -- so it sits on the crown like a real strip.
+  const float bandRadius = _crownRadius * kHatScale * kBandRadiusMargin;
+  const float bandHeight = _bandY * kHatScale;
   LEDColor c;
   for (size_t i = 0; i < _numInstances; ++i) {
     float rot_angle = 2 * M_PI * (float)i / (float)_numInstances;
 
     float4x4 scale = math::makeScale((float3){scl, scl, scl});
-    float4x4 zrot = math::makeZRotate(_angle * sinf((float)ix));
-    float4x4 yrot = math::makeYRotate(_angle * cosf((float)iy));
 
-    float x = radius * cos(rot_angle);
-    float y = radius * sin(rot_angle);
-    float z = 0;
+    float x = bandRadius * cosf(rot_angle);
+    float z = bandRadius * sinf(rot_angle);
+    float y = bandHeight;
 
-    float4x4 translate =
-        math::makeTranslate(math::add(objectPosition, {x, y, z}));
+    float4x4 translate = math::makeTranslate(math::add(objectPosition, {x, y, z}));
 
-    pInstanceData[i].instanceTransform =
-        fullObjectRot * translate * yrot * zrot * scale;
+    pInstanceData[i].instanceTransform = fullObjectRot * translate * scale;
     pInstanceData[i].instanceNormalTransform =
         math::discardTranslation(pInstanceData[i].instanceTransform);
 
-    float iDivNumInstances = i / (float)_numInstances;
-    float r = iDivNumInstances;
-    float g = 1.0f - r;
-    float b = sinf(M_PI * 2.0f * iDivNumInstances);
-
     c = led_data->at(i);
     pInstanceData[i].instanceColor = (float4){c.red, c.green, c.blue, 1.0f};
-    // pInstanceData[i].instanceColor = (float4){
-    //     static_cast<float>(c.red) / 255, static_cast<float>(c.green) / 255,
-    //     static_cast<float>(c.blue) / 255, 1.0f};
-    // pInstanceData[i].instanceColor = (float4){r, g, b, 1.0f};
-
-    ix += 1;
   }
-  pInstanceDataBuffer->didModifyRange(
-      NS::Range::Make(0, pInstanceDataBuffer->length()));
+  pInstanceDataBuffer->didModifyRange(NS::Range::Make(0, pInstanceDataBuffer->length()));
 
   return pInstanceDataBuffer;
 }
@@ -226,15 +275,12 @@ MTL::Buffer *Renderer::getCameraBuffer() {
 
   MTL::Buffer *pCameraDataBuffer = _pCameraDataBuffer[_frame];
   shader_types::CameraData *pCameraData =
-      reinterpret_cast<shader_types::CameraData *>(
-          pCameraDataBuffer->contents());
+      reinterpret_cast<shader_types::CameraData *>(pCameraDataBuffer->contents());
   pCameraData->perspectiveTransform =
       math::makePerspective(45.f * M_PI / 180.f, 1.f, 0.03f, 500.0f);
   pCameraData->worldTransform = math::makeIdentity();
-  pCameraData->worldNormalTransform =
-      math::discardTranslation(pCameraData->worldTransform);
-  pCameraDataBuffer->didModifyRange(
-      NS::Range::Make(0, sizeof(shader_types::CameraData)));
+  pCameraData->worldNormalTransform = math::discardTranslation(pCameraData->worldTransform);
+  pCameraDataBuffer->didModifyRange(NS::Range::Make(0, sizeof(shader_types::CameraData)));
   return pCameraDataBuffer;
 }
 
@@ -255,6 +301,7 @@ void Renderer::draw(MTK::View *pView) {
 
   // Update instance positions:
   MTL::Buffer *pInstanceDataBuffer = getInstanceDataBuffers();
+  MTL::Buffer *pHatInstanceBuffer = getHatInstanceBuffer();
 
   // Update camera state:
   MTL::Buffer *pCameraDataBuffer = getCameraBuffer();
@@ -275,8 +322,15 @@ void Renderer::draw(MTK::View *pView) {
   pEnc->setFrontFacingWinding(MTL::Winding::WindingCounterClockwise);
 
   pEnc->drawIndexedPrimitives(MTL::PrimitiveType::PrimitiveTypeTriangle, 6 * 6,
-                              MTL::IndexType::IndexTypeUInt16, _pIndexBuffer, 0,
-                              _numInstances);
+                              MTL::IndexType::IndexTypeUInt16, _pIndexBuffer, 0, _numInstances);
+
+  // Draw the hat behind the band: same PSO/depth state, but its own vertex +
+  // instance buffers and 32-bit indices. The camera buffer (index 2) is shared.
+  pEnc->setVertexBuffer(_pHatVertexBuffer, /* offset */ 0, /* index */ 0);
+  pEnc->setVertexBuffer(pHatInstanceBuffer, /* offset */ 0, /* index */ 1);
+  pEnc->drawIndexedPrimitives(MTL::PrimitiveType::PrimitiveTypeTriangle, _hatIndexCount,
+                              MTL::IndexType::IndexTypeUInt32, _pHatIndexBuffer, 0,
+                              /* instanceCount */ 1);
 
   // Draw status overlay (update every 6 frames for ~10Hz refresh at 60 FPS)
   if (++_overlayUpdateCounter % 6 == 0) {
