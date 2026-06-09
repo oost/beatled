@@ -54,8 +54,8 @@ int send_hello_request() {
     printf("[NET] Sending hello request (state=%s, no response yet)\n", state_name(st));
   } else {
     uint64_t since_us = time_us_64() - last_hello_response_us;
-    printf("[NET] Sending hello request (state=%s, last response %" PRIu64 "s ago)\n",
-           state_name(st), since_us / 1000000ULL);
+    printf("[NET] Sending hello request (state=%s, last response %llus ago)\n", state_name(st),
+           (unsigned long long)(since_us / 1000000ULL));
   }
   int err = send_udp_request(sizeof(beatled_message_hello_request_t), prepare_hello_request);
   if (err) {
