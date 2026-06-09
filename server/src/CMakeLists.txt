@@ -6,17 +6,7 @@ add_subdirectory(server)
 add_subdirectory(core)
 add_subdirectory(beat_detector)
 
-# TODO: Break circular dependency between core and server.
-# beatled_core depends on beatled_server for ServiceControllerInterface,
-# and beatled_server depends on beatled_core for StateManager.
-# Consider extracting shared interfaces into a separate target.
-target_link_libraries(beatled_core PUBLIC
-  beatled_server
-  beatled_protocol
-)
-
-
-add_executable(${BEAT_SERVER} 
+add_executable(${BEAT_SERVER}
   beatled_server.cpp
   application.cpp
 )
@@ -33,28 +23,19 @@ add_custom_target(build_constants ALL
 )
 add_dependencies(${BEAT_SERVER} build_constants)
 target_include_directories(${BEAT_SERVER} PUBLIC "${PROJECT_BINARY_DIR}/src")
-target_link_libraries(${BEAT_SERVER} PRIVATE 
-  beatled_server 
-  beat_detector
-  beatled_core
-
+# beatled_server PUBLIC-links beat_detector and beatled_core (which in turn
+# expose fmt/spdlog/lyra/asio), so listing those here too just duplicates them
+# on the link line. Keep only what isn't pulled transitively.
+target_link_libraries(${BEAT_SERVER} PRIVATE
+  beatled_server
   Threads::Threads
-  asio asio::asio 
-  fmt::fmt
-  bfg::lyra 
-  spdlog::spdlog 
 )
 
 
 add_executable(beatled_cli beatled_cli.cpp)
-target_link_libraries(beatled_cli PUBLIC 
+# beat_detector PUBLIC-links portaudio_static + beatled_core (fmt/spdlog/lyra).
+target_link_libraries(beatled_cli PRIVATE
   beat_detector
-  portaudio_static
-  # portaudio
-  bfg::lyra 
-  fmt::fmt
-  spdlog::spdlog 
-
 )
 
 

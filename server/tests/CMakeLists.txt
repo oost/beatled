@@ -26,10 +26,10 @@ target_link_libraries(blocking_udp_echo_server Threads::Threads)
 target_link_libraries(blocking_udp_echo_client Threads::Threads)
 
 add_executable(test_factorials test_factorials.cpp)
-target_link_libraries(test_factorials PRIVATE Catch2::Catch2 Catch2::Catch2WithMain)
+target_link_libraries(test_factorials PRIVATE Catch2::Catch2WithMain)
 
 add_executable(test_rgb_hsv test_rgb_hsv.cpp)
-target_link_libraries(test_rgb_hsv PRIVATE Catch2::Catch2 Catch2::Catch2WithMain)
+target_link_libraries(test_rgb_hsv PRIVATE Catch2::Catch2WithMain)
 # add_test (NAME TestFactorials COMMAND test_factorials)
 # catch_discover_tests(test_factorials)
 
@@ -50,7 +50,7 @@ target_link_libraries(test_kissfft PRIVATE  kissfft::kissfft)
 
 
 add_executable(test_audio_buffer_pool test_audio_buffer_pool.cpp)
-target_link_libraries(test_audio_buffer_pool PRIVATE beatled_core Catch2::Catch2 Catch2::Catch2WithMain spdlog::spdlog)
+target_link_libraries(test_audio_buffer_pool PRIVATE beat_detector beatled_core Catch2::Catch2WithMain)
 if(NOT VCPKG_TARGET_TRIPLET)
   message("Discover tests")
   catch_discover_tests(test_audio_buffer_pool)
@@ -60,7 +60,7 @@ endif()
 # target_link_libraries(test_tempo PRIVATE Aubio::aubio)
 
 add_executable(test_move_semantics test_move_semantics.cpp)
-target_link_libraries(test_move_semantics PRIVATE Catch2::Catch2 Catch2::Catch2WithMain)
+target_link_libraries(test_move_semantics PRIVATE Catch2::Catch2WithMain)
 
 if(NOT VCPKG_TARGET_TRIPLET)
   catch_discover_tests(test_move_semantics)

@@ -1,4 +1,6 @@
 #include <cstdlib>
+#include <stdexcept>
+
 #include <fmt/ostream.h>
 #include <spdlog/spdlog.h>
 
@@ -97,47 +99,4 @@ void Config::log_config() const {
                                               ? std::string("off")
                                               : fmt::format("{} ms", m_status_probe_ms));
   SPDLOG_INFO("  QoS skew warn/fail: {} us / {} us", m_qos_skew_warn_us, m_qos_skew_fail_us);
-}
-
-beatled::server::Server::parameters_t Config::server_parameters() const {
-  using beatled::server::BroadcastMode;
-  BroadcastMode mode = BroadcastMode::Unicast;
-  if (m_broadcast_mode == "limited") {
-    mode = BroadcastMode::Limited;
-  } else if (m_broadcast_mode == "subnet") {
-    mode = BroadcastMode::Subnet;
-  } else if (m_broadcast_mode == "unicast") {
-    mode = BroadcastMode::Unicast;
-  } else {
-    throw std::runtime_error{fmt::format(
-        "Invalid --broadcast-mode '{}' (must be limited, subnet, or unicast)", m_broadcast_mode)};
-  }
-
-  server::Server::parameters_t server_parameters{
-      .start_http_server = m_start_http_server,
-      .start_udp_server = m_start_udp_server,
-      .start_broadcaster = m_start_broadcaster,
-      .http =
-          {
-              m_address,          // address
-              m_http_port,        // port
-              m_root_dir,         // root_dir
-              m_certs_dir,        // cert_dir
-              m_cors_origin,      // cors_origin
-              m_api_token,        // api_token
-              m_no_tls,           // no_tls
-              m_qos_skew_warn_us, // qos_skew_warn_us
-              m_qos_skew_fail_us, // qos_skew_fail_us
-          },
-      .udp = {m_udp_port},
-      .broadcasting = {m_broadcasting_address, m_broadcasting_port, mode},
-      .logger = {20, m_log_level},
-      .thread_pool_size = m_pool_size,
-      .program_refresh_ms = m_program_refresh_ms,
-      .status_probe_ms = m_status_probe_ms,
-      .qos_skew_warn_us = m_qos_skew_warn_us,
-      .qos_skew_fail_us = m_qos_skew_fail_us,
-  };
-
-  return server_parameters;
 }
