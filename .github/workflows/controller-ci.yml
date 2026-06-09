@@ -45,12 +45,15 @@ jobs:
 
       # Synthetic env values — the build expects WIFI_SSID / WIFI_PASSWORD /
       # BEATLED_SERVER_NAME as defines on every port. POSIX sim ignores them
-      # at runtime so any non-empty string works.
+      # at runtime so any non-empty string works. The vcpkg toolchain is
+      # required so manifest dependencies (Catch2, tinyobjloader) resolve via
+      # find_package.
       - name: Configure CMake
         run: |
           cmake -S controller -B ${{ matrix.build_dir }} \
             -G Ninja \
             -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake \
             -DPORT=${{ matrix.cmake_port }} \
             -DNUM_PIXELS=30 \
             -DWS2812_PIN=0 \
@@ -58,8 +61,11 @@ jobs:
             -DWIFI_PASSWORD="ci-test" \
             -DBEATLED_SERVER_NAME="localhost"
 
+      # Only the firmware-logic tests are built on Linux: the pico_w_beatled
+      # simulator app links the macOS-only Metal renderer, so it is a macOS
+      # build artifact and is exercised on developer machines, not here.
       - name: Build
-        run: cmake --build ${{ matrix.build_dir }} --target pico_w_beatled tests
+        run: cmake --build ${{ matrix.build_dir }} --target tests
 
       - name: Run unit tests
         # The catch2 binaries are not registered with ctest (see

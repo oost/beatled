@@ -1,5 +1,4 @@
-#define TINYOBJLOADER_IMPLEMENTATION
-#include "third_party/tiny_obj_loader.h"
+#include <tiny_obj_loader.h>
 
 #include "mesh_loader.h"
 
