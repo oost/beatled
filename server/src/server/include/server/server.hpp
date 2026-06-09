@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 
+#include "core/config.hpp"
 #include "http_server/http_server.hpp"
 #include "logger/logger.hpp"
 #include "tempo_broadcaster/tempo_broadcaster.hpp"
@@ -70,6 +71,12 @@ private:
   /// The signal_set is used to register for process termination notifications.
   asio::signal_set signals_;
 };
+
+/// Map the parsed command-line Config (a core concern) onto the server's
+/// bootstrap parameters. Living in the server layer keeps beatled_core
+/// independent of beatled_server (no circular dependency).
+Server::parameters_t make_server_parameters(const core::Config &config);
+
 } // namespace server
 
 } // namespace beatled

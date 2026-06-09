@@ -21,8 +21,10 @@ jobs:
 
       - name: Check formatting
         run: |
-          sudo apt-get update
-          sudo apt-get install -y clang-format
+          # Pin clang-format so CI matches what contributors run locally; the
+          # unversioned apt package drifts between Ubuntu releases and would
+          # reformat differently than the developer's version.
+          pipx install clang-format==22.1.5
           find server/src -name '*.cpp' -o -name '*.hpp' -o -name '*.h' | \
             xargs clang-format --dry-run --Werror
 

@@ -27,8 +27,8 @@ Application::~Application() {
 }
 
 Application::Application(const Config &beatled_config)
-    : server_parameters_{beatled_config.server_parameters()}, logger_{server_parameters_.logger},
-      signals_{io_context_} {
+    : server_parameters_{server::make_server_parameters(beatled_config)},
+      logger_{server_parameters_.logger}, signals_{io_context_} {
 
   // Program-state refresh: re-push the current program at a low-rate
   // (default 200 ms; tunable via --program-refresh-ms) so a controller

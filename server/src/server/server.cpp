@@ -12,8 +12,12 @@
 #include <memory>
 #include <mutex>
 #include <spdlog/spdlog.h>
+#include <stdexcept>
 #include <vector>
 
+#include <fmt/format.h>
+
+#include "core/config.hpp"
 #include "core/interfaces/service_manager.hpp"
 #include "http_server/http_server.hpp"
 #include "server/server.hpp"
@@ -79,6 +83,47 @@ void Server::run() {
   // If an error was detected it should be propagated.
   if (exception_caught)
     std::rethrow_exception(exception_caught);
+}
+
+Server::parameters_t make_server_parameters(const core::Config &config) {
+  BroadcastMode mode = BroadcastMode::Unicast;
+  const std::string &broadcast_mode = config.broadcast_mode();
+  if (broadcast_mode == "limited") {
+    mode = BroadcastMode::Limited;
+  } else if (broadcast_mode == "subnet") {
+    mode = BroadcastMode::Subnet;
+  } else if (broadcast_mode == "unicast") {
+    mode = BroadcastMode::Unicast;
+  } else {
+    throw std::runtime_error{fmt::format(
+        "Invalid --broadcast-mode '{}' (must be limited, subnet, or unicast)", broadcast_mode)};
+  }
+
+  return Server::parameters_t{
+      .start_http_server = config.start_http_server(),
+      .start_udp_server = config.start_udp_server(),
+      .start_broadcaster = config.start_broadcaster(),
+      .http =
+          {
+              config.address(),          // address
+              config.http_port(),        // port
+              config.root_dir(),         // root_dir
+              config.certs_dir(),        // cert_dir
+              config.cors_origin(),      // cors_origin
+              config.api_token(),        // api_token
+              config.no_tls(),           // no_tls
+              config.qos_skew_warn_us(), // qos_skew_warn_us
+              config.qos_skew_fail_us(), // qos_skew_fail_us
+          },
+      .udp = {config.udp_port()},
+      .broadcasting = {config.broadcasting_address(), config.broadcasting_port(), mode},
+      .logger = {20, config.log_level()},
+      .thread_pool_size = config.pool_size(),
+      .program_refresh_ms = config.program_refresh_ms(),
+      .status_probe_ms = config.status_probe_ms(),
+      .qos_skew_warn_us = config.qos_skew_warn_us(),
+      .qos_skew_fail_us = config.qos_skew_fail_us(),
+  };
 }
 
 } // namespace beatled::server
