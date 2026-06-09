@@ -73,9 +73,9 @@ Environment variables (all optional, sensible defaults shown):
   ESP32_PORT             /dev/cu.usbmodem*         serial device for esptool / monitor
   BEATLED_API_TOKEN      (none)                    fallback API token for 'server start --api-token'
 
-Most of those live in $PICO_DIR/.env.pico or .env.esp32. Copy the
-.template alongside, fill in your values, and the relevant subcommand
-sources it automatically.
+Most of those live in $PICO_DIR/.env.pico, .env.posix, or .env.esp32.
+Copy the .template alongside, fill in your values, and the relevant
+subcommand sources it automatically.
 
 Full reference: https://oost.github.io/beatled/cli.html
 EOF
@@ -158,10 +158,13 @@ Flashing notes:
            point at the serial device (usually /dev/cu.usbmodem*).
 
 Config:
-  Copy $PICO_DIR/.env.pico.template     to .env.pico    (Pico W / POSIX)
+  Copy $PICO_DIR/.env.pico.template     to .env.pico    (Pico W hardware)
+  Copy $PICO_DIR/.env.posix.template    to .env.posix   (POSIX simulator)
   Copy $PICO_DIR/.env.esp32.template    to .env.esp32   (ESP32)
   Fill in WIFI_SSID / WIFI_PASSWORD / BEATLED_SERVER_NAME / NUM_PIXELS /
-  WS2812_PIN. These values are baked into the firmware at build time.
+  WS2812_PIN. These values are baked into the firmware at build time. The
+  POSIX simulator only needs BEATLED_SERVER_NAME + NUM_PIXELS (no Wi-Fi or
+  GPIO), so .env.posix can stay minimal.
 EOF
   exit 1
 }
@@ -285,7 +288,7 @@ build_pico() {
     exit 1
   fi
 
-  load_pico_env
+  load_posix_env
 
   if [ ! -d "$PICO_BUILD_DIR" ]; then
     info "Configuring pico build (posix port, first time)..."
@@ -311,7 +314,7 @@ build_pico_freertos() {
     exit 1
   fi
 
-  load_pico_env
+  load_posix_env
 
   if [ ! -d "$PICO_FREERTOS_BUILD_DIR" ]; then
     info "Configuring pico build (posix_freertos port, first time)..."
@@ -474,6 +477,27 @@ load_pico_env() {
   fi
   # shellcheck disable=SC1090
   set -a; source "$env_file"; set +a
+}
+
+load_posix_env() {
+  local env_file="$PICO_DIR/.env.posix"
+  if [[ ! -f "$env_file" ]]; then
+    error "POSIX env file not found: $env_file"
+    error "Copy .env.posix.template to .env.posix and fill in your values"
+    exit 1
+  fi
+  # The native simulator has no Wi-Fi and no real GPIO, so .env.posix only needs
+  # to carry what actually differs from the hardware build (server + pixel
+  # count). Seed harmless defaults for the rest so the shared CMake/source still
+  # compiles; anything set in .env.posix below overrides these.
+  set -a
+  : "${WIFI_SSID:=}"
+  : "${WIFI_PASSWORD:=}"
+  : "${WS2812_PIN:=0}"
+  : "${NUM_PIXELS:=30}"
+  # shellcheck disable=SC1090
+  source "$env_file"
+  set +a
 }
 
 load_esp32_env() {
