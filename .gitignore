@@ -142,6 +142,9 @@ StyleCopReport.xml
 *.ilk
 *.meta
 *.obj
+# ...except vendored 3D model assets for the POSIX simulator (Wavefront OBJ),
+# which are source, not build output.
+!controller/src/hal/runtime/ports/posix/assets/*.obj
 *.iobj
 *.pch
 *.pdb

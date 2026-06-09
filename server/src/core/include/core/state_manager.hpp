@@ -59,7 +59,6 @@ private:
   StateManager(const StateManager &) = delete;
   StateManager &operator=(const StateManager &) = delete;
 
-  uint16_t client_id_max_ = 0;
   float tempo_ = 0.0f;
   uint64_t time_ref_ = 0;
   std::atomic<uint64_t> next_beat_time_ref_{0};

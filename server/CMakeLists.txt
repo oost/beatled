@@ -45,6 +45,19 @@ include("${CMAKE_CURRENT_LIST_DIR}/cmake/beatled_protocol_import.cmake")
 beatled_protocol_init()
 
 
+# beatled_core and beatled_server form a static-library cycle (see the TODO in
+# src/CMakeLists.txt: core needs ServiceControllerInterface, server needs
+# StateManager). CMake repeats the archives on the link line to resolve the
+# cycle, which makes the Apple linker (ld-prime, Xcode 15+) warn about duplicate
+# libraries. The repetition is harmless; suppress the warning where the linker
+# supports the flag, until the cycle is broken by extracting the shared
+# interfaces into their own target.
+include(CheckLinkerFlag)
+check_linker_flag(CXX "-Wl,-no_warn_duplicate_libraries" HAVE_NO_WARN_DUPLICATE_LIBRARIES)
+if(HAVE_NO_WARN_DUPLICATE_LIBRARIES)
+  add_link_options("-Wl,-no_warn_duplicate_libraries")
+endif()
+
 add_subdirectory(src)
 
 if (BEATSERVER_ENABLE_TESTS)

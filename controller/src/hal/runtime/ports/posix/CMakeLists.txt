@@ -18,6 +18,23 @@ FOREACH(INPUT_FILE ${SHADER_FILES})
     LIST(APPEND SHADER_HEADER_FILES ${OUTPUT_FILE})
 ENDFOREACH()
 
+# Embed binary assets (e.g. the top-hat OBJ) into headers with the same xxd -i
+# mechanism as the shaders, so nothing is read from disk at runtime.
+FILE(GLOB_RECURSE ASSET_FILES "${CMAKE_CURRENT_LIST_DIR}/assets/*.obj")
+FOREACH(INPUT_FILE ${ASSET_FILES})
+    SET(INPUT_FILE_RELATIVE $<PATH:RELATIVE_PATH,${INPUT_FILE},${CMAKE_CURRENT_LIST_DIR}>)
+    SET(OUTPUT_FILE "${INPUT_FILE_RELATIVE}.h")
+    message(${OUTPUT_FILE})
+    add_custom_command(
+          OUTPUT ${OUTPUT_FILE}
+          COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/$<PATH:GET_PARENT_PATH,${OUTPUT_FILE}>
+          COMMAND xxd -i ${INPUT_FILE_RELATIVE} ${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT_FILE}
+          WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+          DEPENDS ${INPUT_FILE}
+    )
+    LIST(APPEND SHADER_HEADER_FILES ${OUTPUT_FILE})
+ENDFOREACH()
+
 add_custom_target(
   ShaderHeaders
   DEPENDS ${SHADER_HEADER_FILES}
@@ -29,6 +46,7 @@ target_sources(${CURRENT_LIBRARY_NAME} INTERFACE
   ${CMAKE_CURRENT_LIST_DIR}/mtk_view_delegate.cpp
   ${CMAKE_CURRENT_LIST_DIR}/app_delegate.cpp
   ${CMAKE_CURRENT_LIST_DIR}/math.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/mesh_loader.cpp
   ${CMAKE_CURRENT_LIST_DIR}/led_buffer.cpp
   ${CMAKE_CURRENT_LIST_DIR}/status_buffer.cpp
   ${CMAKE_CURRENT_LIST_DIR}/overlay_renderer.cpp

@@ -56,41 +56,50 @@ private:
   int counter_ = 0;
 };
 
-bool test_pass_by_value(A param, A::ContructorType expected_constructor_type,
-                        int expect_counter) {
+bool test_pass_by_value(A param, A::ContructorType expected_constructor_type, int expect_counter) {
   return (param.counter() == expect_counter) &&
          (param.constructorType() == expected_constructor_type);
 }
 
-bool test_pass_by_lvalue_reference(A &param,
-                                   A::ContructorType expected_constructor_type,
+bool test_pass_by_lvalue_reference(A &param, A::ContructorType expected_constructor_type,
                                    int expect_counter) {
   return (param.counter() == expect_counter) &&
          (param.constructorType() == expected_constructor_type);
 }
 
-bool test_pass_by_const_lvalue_reference(
-    const A &param, A::ContructorType expected_constructor_type,
-    int expect_counter) {
+bool test_pass_by_const_lvalue_reference(const A &param,
+                                         A::ContructorType expected_constructor_type,
+                                         int expect_counter) {
   return (param.counter() == expect_counter) &&
          (param.constructorType() == expected_constructor_type);
 }
-bool test_pass_by_rvalue_reference(A &&param,
-                                   A::ContructorType expected_constructor_type,
+bool test_pass_by_rvalue_reference(A &&param, A::ContructorType expected_constructor_type,
                                    int expect_counter) {
   return (param.counter() == expect_counter) &&
          (param.constructorType() == expected_constructor_type);
 }
 
-A test_return_by_value_with_rvo_copy_elision() { return A(); }
+A test_return_by_value_with_rvo_copy_elision() {
+  return A();
+}
 A test_return_by_value_with_nrvo_copy_elision() {
   A e;
   return e;
 }
+// Intentionally returns a dangling reference to a local: this exists to
+// demonstrate that "return by rvalue reference" is broken (see the guarded
+// test section below). Silence the (correct) warning so the build stays clean.
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wreturn-stack-address"
+#endif
 A &&test_return_by_rvalue_reference() {
   A e;
   return std::move(e);
 }
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 
 TEST_CASE("Move semantics ", "[move]") {
   A a;

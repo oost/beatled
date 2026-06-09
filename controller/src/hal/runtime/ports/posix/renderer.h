@@ -3,6 +3,7 @@
 
 #include <Metal/Metal.hpp>
 #include <MetalKit/MetalKit.hpp>
+#include <simd/simd.h>
 
 #include "overlay_renderer.h"
 
@@ -15,11 +16,14 @@ public:
   void buildShaders();
   void buildDepthStencilStates();
   void buildBuffers();
+  void buildHatGeometry();
   void draw(MTK::View *pView);
 
 private:
   MTL::Buffer *getInstanceDataBuffers();
+  MTL::Buffer *getHatInstanceBuffer();
   MTL::Buffer *getCameraBuffer();
+  simd::float4x4 fullObjectRotation(const simd::float3 &objectPosition) const;
 
   MTL::Device *_pDevice;
   MTL::CommandQueue *_pCommandQueue;
@@ -30,6 +34,17 @@ private:
   MTL::Buffer *_pInstanceDataBuffer[kMaxFramesInFlight];
   MTL::Buffer *_pCameraDataBuffer[kMaxFramesInFlight];
   MTL::Buffer *_pIndexBuffer;
+
+  // Top-hat mesh drawn once behind the LED band (32-bit indices; see
+  // mesh_loader). _crownRadius / _bandY come from the loaded mesh and place the
+  // LEDs as a glowing hatband on the crown.
+  MTL::Buffer *_pHatVertexBuffer;
+  MTL::Buffer *_pHatIndexBuffer;
+  MTL::Buffer *_pHatInstanceBuffer[kMaxFramesInFlight];
+  size_t _hatIndexCount;
+  float _crownRadius;
+  float _bandY;
+
   size_t _numInstances;
   float _angle;
   int _frame;
