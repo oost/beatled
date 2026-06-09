@@ -184,8 +184,8 @@ int process_time_msg(beatled_message_t *server_msg, size_t data_length, uint64_t
   // orig_time doesn't match the most-recently-sent one, this is a delayed
   // response from a prior request — applying it would corrupt the offset.
   if (!have_outstanding_request || orig_time != outstanding_orig_time) {
-    printf("[CMD] Stale TIME_RESPONSE orig=%" PRIu64 " (expected %" PRIu64 "), dropping\n",
-           orig_time, outstanding_orig_time);
+    printf("[CMD] Stale TIME_RESPONSE orig=%llu (expected %llu), dropping\n",
+           (unsigned long long)orig_time, (unsigned long long)outstanding_orig_time);
     return 0;
   }
   have_outstanding_request = false;
@@ -208,9 +208,10 @@ int process_time_msg(beatled_message_t *server_msg, size_t data_length, uint64_t
   uint64_t threshold = med_delay * 2 > med_delay ? med_delay * 2 : UINT64_MAX;
   int64_t med_offset = median_offset_excluding_outliers(threshold);
 
-  printf("[CMD] Time sync: delay=%" PRIu64 "us offset=%" PRId64 "us "
-         "(med_delay=%" PRIu64 "us med_offset=%" PRId64 "us n=%zu)\n",
-         delay, clock_offset, med_delay, med_offset, valid_sample_count);
+  printf("[CMD] Time sync: delay=%lluus offset=%lldus "
+         "(med_delay=%lluus med_offset=%lldus n=%zu)\n",
+         (unsigned long long)delay, (long long)clock_offset, (unsigned long long)med_delay,
+         (long long)med_offset, valid_sample_count);
 
   set_server_time_offset(med_offset);
 
