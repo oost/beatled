@@ -52,8 +52,13 @@ target_sources(${CURRENT_LIBRARY_NAME} INTERFACE
   ${CMAKE_CURRENT_LIST_DIR}/overlay_renderer.cpp
 )
 
+# tinyobjloader (mesh loading for the simulator) comes from the controller
+# vcpkg manifest; the POSIX build already configures with the vcpkg toolchain.
+find_package(tinyobjloader CONFIG REQUIRED)
+
 target_link_libraries(${CURRENT_LIBRARY_NAME} INTERFACE
   METAL_CPP
+  tinyobjloader::tinyobjloader
   "-framework CoreGraphics"
   "-framework CoreText"
 )

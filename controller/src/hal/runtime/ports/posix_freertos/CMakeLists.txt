@@ -52,8 +52,13 @@ target_sources(${CURRENT_LIBRARY_NAME} INTERFACE
   ${POSIX_RUNTIME_DIR}/overlay_renderer.cpp
 )
 
+# tinyobjloader (mesh loading) comes from the controller vcpkg manifest; the
+# shared ../posix/mesh_loader.cpp needs it here too.
+find_package(tinyobjloader CONFIG REQUIRED)
+
 target_link_libraries(${CURRENT_LIBRARY_NAME} INTERFACE
   METAL_CPP
+  tinyobjloader::tinyobjloader
   "-framework CoreGraphics"
   "-framework CoreText"
   FreeRTOS-Kernel
