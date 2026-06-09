@@ -40,16 +40,33 @@ int create_udp_socket(udp_parameters_t *udp_params) {
   device_addr.sin_addr.s_addr = INADDR_ANY;
   device_addr.sin_port = htons(udp_params->udp_port);
 
+  // Optional fixed local source address (runtime env, simulator only). The
+  // server identifies controllers by source IP, so two simulator instances on
+  // one host collide unless each binds a distinct loopback alias. Give each one
+  // a different BEATLED_BIND_ADDR (127.0.0.1, 127.0.0.2, ...) at launch:
+  //   BEATLED_BIND_ADDR=127.0.0.2 ./beatled.sh controller posix build
+  // Unset -> INADDR_ANY, the original single-instance behaviour. Note that
+  // INADDR_ANY claims the port on all addresses, so when running several
+  // instances every one of them needs its own explicit address.
+  const char *bind_addr = getenv("BEATLED_BIND_ADDR");
+  if (bind_addr && bind_addr[0] != '\0') {
+    struct in_addr parsed;
+    if (inet_pton(AF_INET, bind_addr, &parsed) == 1) {
+      device_addr.sin_addr = parsed;
+      printf("[NET] Binding local source address to %s\n", bind_addr);
+    } else {
+      printf("[ERR] Invalid BEATLED_BIND_ADDR '%s'; using INADDR_ANY\n", bind_addr);
+    }
+  }
+
   // Set receive timeout (30 seconds)
   struct timeval tv = {.tv_sec = 30, .tv_usec = 0};
-  if (setsockopt(udp_socket_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) <
-      0) {
+  if (setsockopt(udp_socket_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
     perror("setsockopt SO_RCVTIMEO failed");
   }
 
   // Bind the socket with the server address
-  if (bind(udp_socket_fd, (const struct sockaddr *)&device_addr,
-           sizeof(device_addr)) < 0) {
+  if (bind(udp_socket_fd, (const struct sockaddr *)&device_addr, sizeof(device_addr)) < 0) {
     perror("bind failed");
     return 1;
   }
@@ -66,11 +83,9 @@ int sendall(int socket_fd, char *data_buffer, size_t *data_length,
 
   while (total < *data_length) {
     n = sendto(socket_fd, data_buffer + total, bytesleft, 0,
-               (const struct sockaddr *)recipient_addr,
-               sizeof(*recipient_addr));
+               (const struct sockaddr *)recipient_addr, sizeof(*recipient_addr));
     if (n == -1) {
-      if ((errno == EAGAIN || errno == EWOULDBLOCK) &&
-          retries < max_retries) {
+      if ((errno == EAGAIN || errno == EWOULDBLOCK) && retries < max_retries) {
         retries++;
         printf("[NET] UDP send retry (%d/%d)\n", retries, max_retries);
         usleep(retries * 1000); // 1-3ms backoff
@@ -112,8 +127,7 @@ uint32_t get_ip_address() {
   close(fd);
 
   /*Extract IP Address*/
-  strcpy((void *)ip_address,
-         inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr));
+  strcpy((void *)ip_address, inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr));
 
   printf("[NET] System IP: %s\n", ip_address);
   return 0;
@@ -194,8 +208,7 @@ int send_udp_request(size_t msg_length, prepare_payload_fn prepare_payload) {
   }
 
   char ip4[INET_ADDRSTRLEN]; // space to hold the IPv4 string
-  const struct sockaddr_in *recipient_addr =
-      (const struct sockaddr_in *)&server_addr;
+  const struct sockaddr_in *recipient_addr = (const struct sockaddr_in *)&server_addr;
   inet_ntop(AF_INET, &(recipient_addr->sin_addr), ip4, INET_ADDRSTRLEN);
 #if BEATLED_VERBOSE_LOG
   printf("[NET] Sent UDP request to %s:%d\n", ip4, ntohs(recipient_addr->sin_port));
