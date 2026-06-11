@@ -40,4 +40,26 @@ function RadioGroupItem({
   );
 }
 
-export { RadioGroup, RadioGroupItem };
+// A radio item styled as a selectable tile instead of a circle-with-label.
+// Keeps Radix's role="radio"/aria-checked semantics and keyboard navigation.
+function RadioGroupCard({
+  className,
+  children,
+  ...props
+}: React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Item>) {
+  return (
+    <RadioGroupPrimitive.Item
+      data-slot="radio-group-card"
+      className={cn(
+        "border-input text-foreground hover:bg-accent/50 focus-visible:border-ring focus-visible:ring-ring/50 rounded-lg border text-sm font-medium shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50",
+        "data-[state=checked]:border-primary data-[state=checked]:bg-primary/10 data-[state=checked]:text-primary",
+        className,
+      )}
+      {...props}
+    >
+      {children}
+    </RadioGroupPrimitive.Item>
+  );
+}
+
+export { RadioGroup, RadioGroupItem, RadioGroupCard };
