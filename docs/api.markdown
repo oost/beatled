@@ -321,8 +321,8 @@ Returns the list of connected Pico W devices.
 | `devices[].port_name` | string | Firmware port: `pico`, `pico-freertos`, `posix`, `posix-freertos`, `esp32`, or `unknown`. Empty for v2-or-older firmware. |
 | `devices[].git_sha` | string | Short Git SHA of the firmware build (possibly with `-dirty`). Empty for pre-v3 clients. |
 | `devices[].build_time_us` | number | Unix epoch microseconds of the firmware build. 0 for pre-v3 clients. |
-| `devices[].owd_us` | number | Server-smoothed one-way delay estimate (EWMA over the controller's reported `owd_us_estimate`). |
-| `devices[].qos` | object \| null | Protocol v4 diagnostic snapshot. `null` until the device has sent its first TEMPO_REQUEST or STATUS_RESPONSE. Fields: `current_offset_us`, `uptime_us`, `median_rtt_us`, `next_beat_gap_total`, `intercore_drop_total`, `time_sync_outlier_total`, `valid_sample_count`, `last_applied_program_seq`, `server_received_at_us`, `last_rtt_us`. |
+| `devices[].owd_us` | number | Server-smoothed one-way delay estimate (EWMA over the controller's reported `owd_us_estimate`). Diagnostic only — beat timestamps are not delay-compensated. |
+| `devices[].qos` | object \| null | Protocol v4 diagnostic snapshot. `null` until the device has sent its first TEMPO_REQUEST or STATUS_RESPONSE. Fields: `current_offset_us`, `uptime_us`, `median_rtt_us`, `next_beat_gap_total`, `intercore_drop_total`, `time_sync_outlier_total`, `valid_sample_count`, `last_applied_program_seq`, `server_received_at_us`, `last_rtt_us`, `sync_error_us` (server-side estimate of this device's clock-sync error: `current_offset_us - ((server_received_at_us - rtt/2) - uptime_us)`; `null` until an RTT sample exists). |
 | `count` | number | Total connected devices |
 
 ---
@@ -355,8 +355,8 @@ for the React Fleet QoS card and any external observability tooling.
 |-------|------|-------------|
 | `device_count` | number | Total registered controllers |
 | `reporting_count` | number | Number of controllers that have sent at least one v4 QoS snapshot |
-| `min_offset_us` / `max_offset_us` | number \| null | Lowest / highest reported controller-side server-time-offset |
-| `fleet_skew_us` | number \| null | `max_offset_us - min_offset_us`; the spread that drives the health pip |
+| `min_offset_us` / `max_offset_us` | number \| null | Lowest / highest reported controller-side server-time-offset. Raw diagnostic — dominated by each device's boot epoch, so not comparable across devices. |
+| `fleet_skew_us` | number \| null | Spread of per-device `sync_error_us` (`max - min`); approximates the worst-case beat skew across the fleet and drives the health pip. `null` until at least one device has a computable sync error. |
 | `min_rtt_us` / `mean_rtt_us` / `max_rtt_us` | number \| null | Aggregate over each controller's `median_rtt_us` |
 | `slowest_device_board_id` | string | board_id of the device whose `median_rtt_us` is the largest |
 | `total_next_beat_gap` | number | Sum of `next_beat_gap_total` across all reporting devices |
