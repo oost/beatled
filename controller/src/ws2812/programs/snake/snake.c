@@ -6,8 +6,11 @@
 #define SNAKE_BEATS_PER_LOOP 4u
 // Body length as a fraction of the ring (denominator): 2 -> half the ring.
 #define SNAKE_TAIL_DIVISOR 3u
-// Brightness floor between beats so the body never fully disappears (0-255).
-#define SNAKE_BEAT_FLOOR 10u
+// Perceptual brightness floor between beats so the body never fully
+// disappears (0-255, pre-gamma: keep above ~30 or gamma8[] rounds it to 0).
+#define SNAKE_BEAT_FLOOR 70u
+// Brightest channel value this program may emit (0-255); bounds current draw.
+#define SNAKE_MAX_BRIGHTNESS 255u
 
 void pattern_snakes_init() {}
 
@@ -60,7 +63,9 @@ void pattern_snakes(uint32_t *stream, size_t len, uint8_t t, uint32_t beat_count
 
     uint8_t hue = head_hue + (uint8_t)(dist_q8 * 48u / tail_q8);
     // Full-brightness colour scaled down, rather than HSV at a low value,
-    // so the tail fades without hue-quantization flicker.
-    stream[i] = color_scale(convert_hsv_to_rgb(hue, 255, 255), value);
+    // so the tail fades without hue-quantization flicker. The combined
+    // fade is gamma-corrected and capped at the program ceiling first.
+    stream[i] = color_scale(convert_hsv_to_rgb(hue, 255, 255),
+                            brightness_apply(value, SNAKE_MAX_BRIGHTNESS));
   }
 }
