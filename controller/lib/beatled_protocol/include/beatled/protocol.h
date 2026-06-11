@@ -218,6 +218,29 @@ typedef struct {
   beatled_qos_block_t qos;
 } __attribute__((__packed__)) beatled_message_status_response_t;
 
+// ---------------------------------------------------------------------------
+// LED program table — single source of truth for program ids and display
+// names. The firmware expands it into its pattern function table
+// (controller/src/ws2812/ws2812_patterns.c) and the server expands it into
+// the /api/program response (server/src/server/http/api_handler.cpp), so a
+// pattern added here appears in both or fails to compile.
+//
+// X(id, fn_suffix, display_name): `fn_suffix` names the firmware handler
+// `pattern_<fn_suffix>`. Ids must stay dense and in table order — the
+// firmware indexes its table by program id.
+#define BEATLED_PROGRAM_TABLE(X)                                                                   \
+  X(0, snakes, "Snakes!")                                                                          \
+  X(1, random, "Random data")                                                                      \
+  X(2, sparkle, "Sparkles")                                                                        \
+  X(3, greys, "Greys")                                                                             \
+  X(4, drops, "Drops")                                                                             \
+  X(5, solid, "Solid!")                                                                            \
+  X(6, fade_grey, "Fade")                                                                          \
+  X(7, fade_color, "Fade Colors")                                                                  \
+  X(8, off, "Off")
+
+#define BEATLED_PROGRAM_COUNT 9
+
 #ifdef __cplusplus
 } /*extern "C" */
 #endif

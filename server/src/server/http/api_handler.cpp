@@ -327,10 +327,13 @@ APIHandler::req_status_t APIHandler::on_get_program(const req_handle_t &req,
   json response_body;
   response_body["message"] = fmt::format("Current program is {}", program_id);
 
-  response_body["programs"] =
-      json::array({Program{"Snakes!", 0}, Program{"Random data", 1}, Program{"Sparkles", 2},
-                   Program{"Greys", 3}, Program{"Drops", 4}, Program{"Solid!", 5},
-                   Program{"Fade", 6}, Program{"Fade Color", 7}, Program{"Off", 8}});
+  // Expanded from the shared protocol header — the same table the firmware
+  // builds its pattern functions from, so the two lists can't drift apart.
+  json programs = json::array();
+#define X(id, fn_suffix, display_name) programs.push_back(Program{display_name, id});
+  BEATLED_PROGRAM_TABLE(X)
+#undef X
+  response_body["programs"] = std::move(programs);
 
   response_body["programId"] = program_id;
 

@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "beatled/protocol.h"
 #include "programs/programs.h"
 #include "programs/utils.h"
 #include "ws2812_config.h"
@@ -30,15 +31,16 @@ void pattern_fade_exp(uint32_t *stream, size_t len, uint8_t t, uint32_t beat_cou
   }
 }
 
-const pattern _pattern_table[] = {
-    {pattern_snakes, NULL, "Snakes!"},   {pattern_random, NULL, "Random data"},
-    {pattern_sparkle, NULL, "Sparkles"}, {pattern_greys, NULL, "Greys"},
-    {pattern_drops, NULL, "Drops"},      {pattern_solid, NULL, "Solid!"},
-    {pattern_fade_grey, NULL, "Fade"},   {pattern_fade_color, NULL, "Fade Colors"},
-    {pattern_off, NULL, "Off"},
-};
+// Expanded from the shared protocol header so the server's program list
+// and this table can't drift apart.
+#define X(id, fn_suffix, display_name) {pattern_##fn_suffix, NULL, display_name},
+const pattern _pattern_table[] = {BEATLED_PROGRAM_TABLE(X)};
+#undef X
 
 const size_t num_patterns = sizeof(_pattern_table) / sizeof((_pattern_table)[0]);
+
+_Static_assert(sizeof(_pattern_table) / sizeof((_pattern_table)[0]) == BEATLED_PROGRAM_COUNT,
+               "BEATLED_PROGRAM_COUNT out of sync with BEATLED_PROGRAM_TABLE");
 
 void get_all_patterns_table(const pattern *pattern_table, size_t *pattern_count) {
   (void)pattern_table;

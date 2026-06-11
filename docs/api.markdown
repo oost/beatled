@@ -213,7 +213,7 @@ Returns the active LED program and the list of available programs.
     { "name": "Drops", "id": 4 },
     { "name": "Solid!", "id": 5 },
     { "name": "Fade", "id": 6 },
-    { "name": "Fade Color", "id": 7 },
+    { "name": "Fade Colors", "id": 7 },
     { "name": "Off", "id": 8 }
   ]
 }
