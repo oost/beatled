@@ -16,6 +16,7 @@ struct StatusView: View {
 
                 tempoSection
                 serviceTogglesSection
+                fleetQosSection
                 devicesSection
             }
             .navigationTitle("Status")
@@ -83,6 +84,80 @@ struct StatusView: View {
                 }
             }
         }
+    }
+
+    // Fleet-wide QoS aggregates, mirroring the web client's Fleet QoS card.
+    // The server computes the health verdict from operator-tuned thresholds;
+    // the app only renders the matching colour/label so the single source of
+    // truth stays server-side.
+    @ViewBuilder
+    private var fleetQosSection: some View {
+        Section {
+            qosRow("Health") {
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(healthColor)
+                        .frame(width: 8, height: 8)
+                    Text(healthLabel)
+                }
+            }
+            qosRow("Reporting") {
+                Text(viewModel.qos.map { "\($0.reportingCount) / \($0.deviceCount)" } ?? "—")
+            }
+            qosRow("Fleet skew") { Text(Self.usToMs(viewModel.qos?.fleetSkewUs)) }
+            qosRow("Mean RTT") { Text(Self.usToMs(viewModel.qos?.meanRttUs)) }
+            qosRow("Slowest device") { Text(slowestDeviceText) }
+            qosRow("NEXT_BEAT gaps") {
+                Text(viewModel.qos.map { String($0.totalNextBeatGap) } ?? "—")
+            }
+            qosRow("Intercore drops") {
+                Text(viewModel.qos.map { String($0.totalIntercoreDrops) } ?? "—")
+            }
+            qosRow("TIME outliers") {
+                Text(viewModel.qos.map { String($0.totalTimeSyncOutliers) } ?? "—")
+            }
+        } header: {
+            Text("Fleet QoS")
+        }
+    }
+
+    private func qosRow(_ label: String, @ViewBuilder value: () -> some View) -> some View {
+        HStack {
+            Text(label)
+            Spacer()
+            value()
+                .font(.system(.caption, design: .monospaced))
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var healthColor: Color {
+        switch viewModel.qos?.health {
+        case "ok": .green
+        case "warn": .orange
+        case "fail": .red
+        default: .gray
+        }
+    }
+
+    private var healthLabel: String {
+        switch viewModel.qos?.health {
+        case "ok": "Healthy"
+        case "warn": "Marginal"
+        case "fail": "Degraded"
+        default:
+            (viewModel.qos?.reportingCount ?? 0) > 0 ? "—" : "No QoS samples yet"
+        }
+    }
+
+    private var slowestDeviceText: String {
+        guard let qos = viewModel.qos, !qos.slowestDeviceBoardId.isEmpty else { return "—" }
+        return "\(qos.slowestDeviceBoardId) (\(Self.usToMs(qos.maxRttUs)))"
+    }
+
+    private static func usToMs(_ us: Double?) -> String {
+        guard let us else { return "—" }
+        return String(format: "%.1f ms", us / 1000)
     }
 
     @ViewBuilder

@@ -20,6 +20,7 @@ class StatusViewModel {
 
     var status: StatusResponse?
     var devices: [Device] = []
+    var qos: FleetQos?
     var tempoHistory: [TempoReading] = []
     var lastUpdate: Date?
     var error: String?
@@ -117,6 +118,10 @@ class StatusViewModel {
             let (s, d) = try await (statusReq, devicesReq)
             self.status = s
             self.devices = d.devices
+            // Soft-fail like the web client: older servers without /api/qos
+            // (or a momentary failure) just leave the card empty.
+            let q: FleetQos? = try? await api.get("/api/qos")
+            self.qos = q
             self.lastUpdate = Date()
             self.error = nil
 

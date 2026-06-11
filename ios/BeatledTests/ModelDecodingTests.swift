@@ -90,6 +90,78 @@ final class ModelDecodingTests: XCTestCase {
         XCTAssertEqual(device.ipAddress, "192.168.1.42")
         XCTAssertEqual(device.lastStatusTime, 1_707_900_120_000_000)
         XCTAssertEqual(device.id, 1, "Identifiable id should mirror client_id")
+        XCTAssertEqual(device.portName, "pico-freertos")
+        XCTAssertEqual(device.gitSha, "1a2b3c4-dirty")
+        XCTAssertEqual(device.qos?.currentOffsetUs, -42)
+        XCTAssertEqual(device.qos?.lastRttUs, 555)
+        XCTAssertNil(device.qos?.medianRttUs, "absent QoS fields decode as nil")
+
+        let bare = try XCTUnwrap(response.devices.last)
+        XCTAssertNil(bare.portName)
+        XCTAssertNil(bare.qos, "qos is nil until the first v4 snapshot")
+    }
+
+    // MARK: /api/qos
+
+    func testFleetQosDecoding() throws {
+        // Fixture mirrors the GET /api/qos example in docs/api.markdown.
+        let json = """
+        {
+          "device_count": 2,
+          "reporting_count": 2,
+          "min_offset_us": -42,
+          "max_offset_us": 17,
+          "fleet_skew_us": 59,
+          "mean_rtt_us": 1234,
+          "min_rtt_us": 1100,
+          "max_rtt_us": 1400,
+          "slowest_device_board_id": "E6614103E72B6A2F",
+          "total_next_beat_gap": 3,
+          "total_intercore_drops": 0,
+          "total_time_sync_outliers": 5,
+          "thresholds": { "skew_warn_us": 5000, "skew_fail_us": 20000 },
+          "health": "ok"
+        }
+        """
+        let qos = try decode(FleetQos.self, json)
+        XCTAssertEqual(qos.deviceCount, 2)
+        XCTAssertEqual(qos.reportingCount, 2)
+        XCTAssertEqual(qos.fleetSkewUs, 59)
+        XCTAssertEqual(qos.meanRttUs, 1234)
+        XCTAssertEqual(qos.maxRttUs, 1400)
+        XCTAssertEqual(qos.slowestDeviceBoardId, "E6614103E72B6A2F")
+        XCTAssertEqual(qos.totalNextBeatGap, 3)
+        XCTAssertEqual(qos.totalIntercoreDrops, 0)
+        XCTAssertEqual(qos.totalTimeSyncOutliers, 5)
+        XCTAssertEqual(qos.health, "ok")
+        XCTAssertEqual(qos.thresholds.skewWarnUs, 5000)
+        XCTAssertEqual(qos.thresholds.skewFailUs, 20000)
+    }
+
+    func testFleetQosDecodesNullAggregates() throws {
+        // Aggregates are null until any device reports a snapshot.
+        let json = """
+        {
+          "device_count": 1,
+          "reporting_count": 0,
+          "min_offset_us": null,
+          "max_offset_us": null,
+          "fleet_skew_us": null,
+          "mean_rtt_us": null,
+          "min_rtt_us": null,
+          "max_rtt_us": null,
+          "slowest_device_board_id": "",
+          "total_next_beat_gap": 0,
+          "total_intercore_drops": 0,
+          "total_time_sync_outliers": 0,
+          "thresholds": { "skew_warn_us": 5000, "skew_fail_us": 20000 },
+          "health": "unknown"
+        }
+        """
+        let qos = try decode(FleetQos.self, json)
+        XCTAssertNil(qos.fleetSkewUs)
+        XCTAssertNil(qos.meanRttUs)
+        XCTAssertEqual(qos.health, "unknown")
     }
 
     func testDeviceRejectsLegacyLastSeenKey() {

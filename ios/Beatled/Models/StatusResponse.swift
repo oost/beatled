@@ -14,11 +14,113 @@ struct DevicesResponse: Codable {
     let count: Int
 }
 
+// Protocol v4 per-device diagnostic snapshot carried in /api/devices.
+// Every field is optional so abbreviated or older payloads still decode;
+// the UI renders missing values as "—".
+struct DeviceQos: Codable {
+    let currentOffsetUs: Double?
+    let uptimeUs: Double?
+    let medianRttUs: Double?
+    let nextBeatGapTotal: Int?
+    let intercoreDropTotal: Int?
+    let timeSyncOutlierTotal: Int?
+    let validSampleCount: Int?
+    let lastAppliedProgramSeq: Int?
+    let serverReceivedAtUs: Double?
+    let lastRttUs: Double?
+    let syncErrorUs: Double?
+
+    private enum CodingKeys: String, CodingKey {
+        case currentOffsetUs = "current_offset_us"
+        case uptimeUs = "uptime_us"
+        case medianRttUs = "median_rtt_us"
+        case nextBeatGapTotal = "next_beat_gap_total"
+        case intercoreDropTotal = "intercore_drop_total"
+        case timeSyncOutlierTotal = "time_sync_outlier_total"
+        case validSampleCount = "valid_sample_count"
+        case lastAppliedProgramSeq = "last_applied_program_seq"
+        case serverReceivedAtUs = "server_received_at_us"
+        case lastRttUs = "last_rtt_us"
+        case syncErrorUs = "sync_error_us"
+    }
+}
+
+// Fleet-wide aggregates from /api/qos. Numeric fields are null until at
+// least one device has reported a v4 QoS snapshot.
+struct FleetQos: Codable {
+    struct Thresholds: Codable {
+        let skewWarnUs: Double
+        let skewFailUs: Double
+
+        private enum CodingKeys: String, CodingKey {
+            case skewWarnUs = "skew_warn_us"
+            case skewFailUs = "skew_fail_us"
+        }
+    }
+
+    let deviceCount: Int
+    let reportingCount: Int
+    let minOffsetUs: Double?
+    let maxOffsetUs: Double?
+    let fleetSkewUs: Double?
+    let meanRttUs: Double?
+    let minRttUs: Double?
+    let maxRttUs: Double?
+    let slowestDeviceBoardId: String
+    let totalNextBeatGap: Int
+    let totalIntercoreDrops: Int
+    let totalTimeSyncOutliers: Int
+    // Kept as a raw string ("ok" / "warn" / "fail" / "unknown") so a future
+    // server-side verdict doesn't break decoding; the view maps known values.
+    let health: String
+    let thresholds: Thresholds
+
+    private enum CodingKeys: String, CodingKey {
+        case deviceCount = "device_count"
+        case reportingCount = "reporting_count"
+        case minOffsetUs = "min_offset_us"
+        case maxOffsetUs = "max_offset_us"
+        case fleetSkewUs = "fleet_skew_us"
+        case meanRttUs = "mean_rtt_us"
+        case minRttUs = "min_rtt_us"
+        case maxRttUs = "max_rtt_us"
+        case slowestDeviceBoardId = "slowest_device_board_id"
+        case totalNextBeatGap = "total_next_beat_gap"
+        case totalIntercoreDrops = "total_intercore_drops"
+        case totalTimeSyncOutliers = "total_time_sync_outliers"
+        case health
+        case thresholds
+    }
+}
+
 struct Device: Codable, Identifiable {
     let clientId: Int
     let boardId: String
     let ipAddress: String
     let lastStatusTime: UInt64
+    // v3+ firmware self-description; nil/empty for older clients.
+    let portName: String?
+    let gitSha: String?
+    let buildTimeUs: UInt64?
+    // Server-smoothed one-way delay estimate; diagnostic only.
+    let owdUs: Double?
+    // v4 QoS snapshot; nil until the device's first TEMPO_REQUEST or
+    // STATUS_RESPONSE.
+    let qos: DeviceQos?
+
+    init(clientId: Int, boardId: String, ipAddress: String, lastStatusTime: UInt64,
+         portName: String? = nil, gitSha: String? = nil, buildTimeUs: UInt64? = nil,
+         owdUs: Double? = nil, qos: DeviceQos? = nil) {
+        self.clientId = clientId
+        self.boardId = boardId
+        self.ipAddress = ipAddress
+        self.lastStatusTime = lastStatusTime
+        self.portName = portName
+        self.gitSha = gitSha
+        self.buildTimeUs = buildTimeUs
+        self.owdUs = owdUs
+        self.qos = qos
+    }
 
     var id: Int { clientId }
 
@@ -40,5 +142,10 @@ struct Device: Codable, Identifiable {
         case boardId = "board_id"
         case ipAddress = "ip_address"
         case lastStatusTime = "last_status_time"
+        case portName = "port_name"
+        case gitSha = "git_sha"
+        case buildTimeUs = "build_time_us"
+        case owdUs = "owd_us"
+        case qos
     }
 }
