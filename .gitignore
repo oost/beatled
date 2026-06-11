@@ -20,6 +20,9 @@ certs
 *.pem
 *.key
 *.p12
+# Test-only TLS fixtures (self-signed, trusted nowhere) are the one
+# exception — see server/tests/http/fixtures/tls/README.md.
+!server/tests/http/fixtures/tls/*.pem
 
 # Local secrets and machine-specific overrides.
 # Anything matching .env / .env.<name> is excluded — that's where Wi-Fi

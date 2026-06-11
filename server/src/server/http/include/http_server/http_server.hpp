@@ -20,6 +20,15 @@ namespace beatled::server {
 using core::ServiceControllerInterface;
 using core::ServiceManagerInterface;
 
+// Build the TLS context used by the HTTPS listener: TLS 1.2+, cert chain,
+// private key and DH params from the given PEM files. Throws
+// std::runtime_error when a file is missing; OpenSSL errors for malformed
+// contents propagate as asio system errors. Split out of the HTTPServer
+// constructor so certificate loading is testable without a server.
+restinio::asio_ns::ssl::context make_tls_context(const std::filesystem::path &cert_file,
+                                                 const std::filesystem::path &key_file,
+                                                 const std::filesystem::path &dh_params_file);
+
 class HTTPServer : public ServiceControllerInterface {
 public:
   using router_t = restinio::router::express_router_t<>;

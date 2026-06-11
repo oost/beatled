@@ -20,6 +20,30 @@ namespace beatled::server {
 namespace rr = restinio::router;
 using router_t = rr::express_router_t<>;
 
+restinio::asio_ns::ssl::context make_tls_context(const std::filesystem::path &cert_file,
+                                                 const std::filesystem::path &key_file,
+                                                 const std::filesystem::path &dh_params_file) {
+  namespace asio_ns = restinio::asio_ns;
+
+  for (const auto &cert_path : {cert_file, key_file, dh_params_file}) {
+    if (!std::filesystem::exists(cert_path)) {
+      throw std::runtime_error(fmt::format("Missing certificate file: {}", cert_path.string()));
+    }
+  }
+
+  asio_ns::ssl::context tls_context{asio_ns::ssl::context::tls};
+  tls_context.set_options(asio_ns::ssl::context::default_workarounds |
+                          asio_ns::ssl::context::no_sslv2 | asio_ns::ssl::context::no_sslv3 |
+                          asio_ns::ssl::context::no_tlsv1 | asio_ns::ssl::context::no_tlsv1_1 |
+                          asio_ns::ssl::context::single_dh_use);
+
+  tls_context.use_certificate_chain_file(cert_file.string());
+  tls_context.use_private_key_file(key_file.string(), asio_ns::ssl::context::pem);
+  tls_context.use_tmp_dh_file(dh_params_file.string());
+
+  return tls_context;
+}
+
 std::unique_ptr<router_t> HTTPServer::server_handler(const std::string &root_dir) {
   auto router = std::make_unique<router_t>();
 
@@ -123,33 +147,8 @@ HTTPServer::HTTPServer(const std::string &id, const parameters_t &http_server_pa
                                                    .write_http_response_timelimit(1s)
                                                    .handle_request_timeout(1s));
   } else {
-
-    // Since RESTinio supports both stand-alone ASIO and boost::ASIO
-    // we specify an alias for a concrete asio namesace.
-    // That's makes it possible to compile the code in both cases.
-    // Typicaly only one of ASIO variants would be used,
-    // and so only asio::* or only boost::asio::* would be applied.
-
-    namespace asio_ns = restinio::asio_ns;
-
-    std::vector<std::filesystem::path> certificate_paths{certificate_file_path(), key_file_path(),
-                                                         dh_params_file_path()};
-
-    for (const auto &cert_path : certificate_paths) {
-      if (!std::filesystem::exists(cert_path)) {
-        throw std::runtime_error(fmt::format("Missing certificate file: {}", cert_path.string()));
-      }
-    }
-
-    asio_ns::ssl::context tls_context{asio_ns::ssl::context::tls};
-    tls_context.set_options(asio_ns::ssl::context::default_workarounds |
-                            asio_ns::ssl::context::no_sslv2 | asio_ns::ssl::context::no_sslv3 |
-                            asio_ns::ssl::context::no_tlsv1 | asio_ns::ssl::context::no_tlsv1_1 |
-                            asio_ns::ssl::context::single_dh_use);
-
-    tls_context.use_certificate_chain_file(certificate_file_path());
-    tls_context.use_private_key_file(key_file_path(), asio_ns::ssl::context::pem);
-    tls_context.use_tmp_dh_file(dh_params_file_path());
+    auto tls_context =
+        make_tls_context(certificate_file_path(), key_file_path(), dh_params_file_path());
 
     SPDLOG_INFO("{}: listening on {}:{} (HTTPS)", name(), http_server_parameters.address,
                 http_server_parameters.port);
