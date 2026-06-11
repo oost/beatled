@@ -1,0 +1,61 @@
+name: iOS CI
+
+on:
+  push:
+    branches: [master, "feature/*"]
+    paths:
+      - "ios/**"
+      - ".github/workflows/ios-ci.yml"
+  pull_request:
+    paths:
+      - "ios/**"
+
+jobs:
+  build-and-test:
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Select Xcode 26
+        # The project targets iOS / macOS 26, which needs the Xcode 26 SDK.
+        # The runner image ships several Xcodes and its default may be older,
+        # so pick the newest 26.x explicitly.
+        run: |
+          XCODE_APP=$(find /Applications -maxdepth 1 -name 'Xcode_26*.app' | sort -V | tail -1)
+          if [ -z "$XCODE_APP" ]; then
+            echo "::error::No Xcode 26 found on this runner. Available:"
+            ls /Applications | grep -i xcode
+            exit 1
+          fi
+          sudo xcode-select -s "$XCODE_APP/Contents/Developer"
+          xcodebuild -version
+
+      - name: Build
+        # CODE_SIGNING_ALLOWED=NO because the runner has no signing identity;
+        # unit tests run fine in an unsigned debug host app on macOS. The
+        # macOS destination avoids simulator downloads — the SwiftUI code is
+        # shared, so it exercises the same models / services as iOS.
+        run: |
+          xcodebuild build \
+            -project ios/Beatled.xcodeproj \
+            -scheme Beatled \
+            -destination 'platform=macOS' \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Test
+        run: |
+          xcodebuild test \
+            -project ios/Beatled.xcodeproj \
+            -scheme Beatled \
+            -destination 'platform=macOS' \
+            -resultBundlePath TestResults.xcresult \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Upload test results on failure
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ios-test-results
+          path: TestResults.xcresult
+          retention-days: 7
