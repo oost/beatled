@@ -18,11 +18,10 @@ import {
   type RouteObject,
 } from "react-router-dom";
 
-vi.mock("../../lib/api", () => ({
+vi.mock("../../lib/api", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../lib/api")>()),
   getEndpoint: vi.fn(),
   postEndpoint: vi.fn(),
-  getAPIHost: vi.fn(() => "https://localhost:8080"),
-  setAPIHost: vi.fn(),
 }));
 
 import { getEndpoint, postEndpoint } from "../../lib/api";

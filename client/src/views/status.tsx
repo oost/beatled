@@ -22,7 +22,7 @@ interface TempoHistoryEntry {
   x: Date;
   y: number;
   error?: boolean;
-  status?: string | Record<string, boolean>;
+  status?: string | boolean | Record<string, boolean>;
   tempo?: number;
   deviceCount?: number;
 }

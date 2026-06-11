@@ -1,8 +1,12 @@
-import { getEndpoint, postEndpoint } from "./api";
+import { getEndpoint, postEndpoint, toApiFailure, invalidResponse, type ApiErrorKind } from "./api";
 
 export interface StatusResponse {
   error?: boolean;
-  status?: string | Record<string, boolean>;
+  kind?: ApiErrorKind;
+  httpStatus?: number;
+  // string in error responses, boolean from /api/service/control, and a
+  // service-id → running map from /api/status.
+  status?: string | boolean | Record<string, boolean>;
   tempo?: number;
   // Operator-chosen BPM used by the `manual-bpm` service. Mirrors the field
   // the server returns from /api/status and /api/tempo/manual.
@@ -10,12 +14,34 @@ export interface StatusResponse {
   deviceCount?: number;
 }
 
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null && !Array.isArray(v);
+}
+
+// Every /api/status field is optional on the wire, so this validates
+// types rather than presence.
+export function isStatusResponse(v: unknown): v is StatusResponse {
+  if (!isRecord(v)) return false;
+  if (v.tempo !== undefined && typeof v.tempo !== "number") return false;
+  if (v.manualBpm !== undefined && typeof v.manualBpm !== "number") return false;
+  if (v.deviceCount !== undefined && typeof v.deviceCount !== "number") return false;
+  if (
+    v.status !== undefined &&
+    typeof v.status !== "string" &&
+    typeof v.status !== "boolean" &&
+    !isRecord(v.status)
+  )
+    return false;
+  return true;
+}
+
 export async function getStatus(): Promise<StatusResponse> {
   try {
     const res = await getEndpoint("/api/status");
-    return res.json();
-  } catch {
-    return { error: true, status: "Network error" };
+    const json: unknown = await res.json();
+    return isStatusResponse(json) ? json : invalidResponse();
+  } catch (err) {
+    return toApiFailure(err);
   }
 }
 
@@ -58,10 +84,30 @@ export interface DevicesResponse {
   count: number;
 }
 
+function isDevice(v: unknown): v is Device {
+  return (
+    isRecord(v) &&
+    typeof v.client_id === "number" &&
+    typeof v.board_id === "string" &&
+    typeof v.ip_address === "string" &&
+    typeof v.last_status_time === "number"
+  );
+}
+
+export function isDevicesResponse(v: unknown): v is DevicesResponse {
+  return (
+    isRecord(v) &&
+    typeof v.count === "number" &&
+    Array.isArray(v.devices) &&
+    v.devices.every(isDevice)
+  );
+}
+
 export async function getDevices(): Promise<DevicesResponse> {
   try {
     const res = await getEndpoint("/api/devices");
-    return res.json();
+    const json: unknown = await res.json();
+    return isDevicesResponse(json) ? json : { devices: [], count: 0 };
   } catch {
     return { devices: [], count: 0 };
   }
@@ -89,10 +135,22 @@ export interface FleetQos {
   thresholds: { skew_warn_us: number; skew_fail_us: number };
 }
 
+export function isFleetQos(v: unknown): v is FleetQos {
+  return (
+    isRecord(v) &&
+    typeof v.device_count === "number" &&
+    typeof v.reporting_count === "number" &&
+    typeof v.health === "string" &&
+    ["ok", "warn", "fail", "unknown"].includes(v.health) &&
+    isRecord(v.thresholds)
+  );
+}
+
 export async function getQos(): Promise<FleetQos | null> {
   try {
     const res = await getEndpoint("/api/qos");
-    return res.json();
+    const json: unknown = await res.json();
+    return isFleetQos(json) ? json : null;
   } catch {
     return null;
   }
@@ -104,9 +162,10 @@ export async function serviceControl(serviceId: string, status: boolean): Promis
       id: serviceId,
       status,
     });
-    return res.json();
-  } catch {
-    return { error: true, status: "Network error" };
+    const json: unknown = await res.json();
+    return isStatusResponse(json) ? json : invalidResponse();
+  } catch (err) {
+    return toApiFailure(err);
   }
 }
 
@@ -116,8 +175,9 @@ export async function serviceControl(serviceId: string, status: boolean): Promis
 export async function setManualBpm(bpm: number): Promise<StatusResponse> {
   try {
     const res = await postEndpoint("/api/tempo/manual", { bpm });
-    return res.json();
-  } catch {
-    return { error: true, status: "Network error" };
+    const json: unknown = await res.json();
+    return isStatusResponse(json) ? json : invalidResponse();
+  } catch (err) {
+    return toApiFailure(err);
   }
 }

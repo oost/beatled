@@ -1,14 +1,15 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
 import { getStatus, getDevices, serviceControl } from "../status";
 
-vi.mock("../api", () => ({
+// Mock only the fetch helpers; the error-classification helpers
+// (ApiError, toApiFailure, ...) stay real.
+vi.mock("../api", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../api")>()),
   getEndpoint: vi.fn(),
   postEndpoint: vi.fn(),
-  getAPIHost: vi.fn(() => "https://localhost:8080"),
-  setAPIHost: vi.fn(),
 }));
 
-import { getEndpoint, postEndpoint } from "../api";
+import { getEndpoint, postEndpoint, ApiError } from "../api";
 
 describe("getStatus", () => {
   beforeEach(() => {
@@ -36,7 +37,30 @@ describe("getStatus", () => {
 
     const result = await getStatus();
 
-    expect(result).toEqual({ error: true, status: "Network error" });
+    expect(result).toEqual({ error: true, kind: "network", status: "Network error" });
+  });
+
+  it("carries the HTTP status code through on http failure", async () => {
+    (getEndpoint as Mock).mockRejectedValue(new ApiError("http", 401));
+
+    const result = await getStatus();
+
+    expect(result).toEqual({
+      error: true,
+      kind: "http",
+      httpStatus: 401,
+      status: "HTTP 401 — check API token",
+    });
+  });
+
+  it("treats a malformed response body as an error", async () => {
+    (getEndpoint as Mock).mockResolvedValue({
+      json: () => Promise.resolve("not an object"),
+    });
+
+    const result = await getStatus();
+
+    expect(result).toEqual({ error: true, kind: "invalid", status: "Invalid server response" });
   });
 });
 
@@ -74,6 +98,16 @@ describe("getDevices", () => {
 
     expect(result).toEqual({ devices: [], count: 0 });
   });
+
+  it("returns empty devices when the response shape is wrong", async () => {
+    (getEndpoint as Mock).mockResolvedValue({
+      json: () => Promise.resolve({ devices: [{ board_id: 42 }], count: 1 }),
+    });
+
+    const result = await getDevices();
+
+    expect(result).toEqual({ devices: [], count: 0 });
+  });
 });
 
 describe("serviceControl", () => {
@@ -100,6 +134,6 @@ describe("serviceControl", () => {
 
     const result = await serviceControl("beat_detector", true);
 
-    expect(result).toEqual({ error: true, status: "Network error" });
+    expect(result).toEqual({ error: true, kind: "network", status: "Network error" });
   });
 });

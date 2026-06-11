@@ -7,6 +7,8 @@ import {
   getAPIToken,
   setAPIToken,
   pingHealth,
+  toApiFailure,
+  ApiError,
 } from "../api";
 
 function createStorageMock() {
@@ -74,6 +76,25 @@ describe("API host configuration", () => {
       "https://custom-host:9090",
     );
   });
+
+  it("rejects a host that is not a valid URL", () => {
+    setAPIHost("https://custom-host:9090");
+    expect(setAPIHost("not a url")).toBe(false);
+    expect(getAPIHost()).toBe("https://custom-host:9090");
+  });
+
+  it("rejects non-http(s) schemes", () => {
+    setAPIHost("https://custom-host:9090");
+    // eslint-disable-next-line no-script-url
+    expect(setAPIHost("javascript:alert(1)")).toBe(false);
+    expect(setAPIHost("ftp://host")).toBe(false);
+    expect(getAPIHost()).toBe("https://custom-host:9090");
+  });
+
+  it("accepts a valid http(s) URL", () => {
+    expect(setAPIHost("http://localhost:5173")).toBe(true);
+    expect(getAPIHost()).toBe("http://localhost:5173");
+  });
 });
 
 describe("getEndpoint", () => {
@@ -95,21 +116,72 @@ describe("getEndpoint", () => {
     expect(options.method).toBe("GET");
   });
 
-  it("throws on non-ok response", async () => {
+  it("throws an ApiError carrying the status code on non-ok response", async () => {
     const mockResponse = {
       ok: false,
-      statusCode: 500,
+      status: 500,
       statusText: "Internal Server Error",
     };
     vi.spyOn(globalThis, "fetch").mockResolvedValue(mockResponse as unknown as Response);
 
-    await expect(getEndpoint("/api/status")).rejects.toThrow("Internal Server Error");
+    await expect(getEndpoint("/api/status")).rejects.toMatchObject({
+      kind: "http",
+      status: 500,
+    });
   });
 
-  it("throws on network error", async () => {
+  it("throws an ApiError of kind 'network' on fetch failure", async () => {
     vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("Network error"));
 
-    await expect(getEndpoint("/api/status")).rejects.toThrow("Network error");
+    await expect(getEndpoint("/api/status")).rejects.toMatchObject({ kind: "network" });
+  });
+
+  it("aborts and classifies as 'timeout' when the request hangs", async () => {
+    vi.useFakeTimers();
+    vi.spyOn(globalThis, "fetch").mockImplementation(
+      (_input, init) =>
+        new Promise((_resolve, reject) => {
+          (init as RequestInit | undefined)?.signal?.addEventListener("abort", () =>
+            reject(new DOMException("aborted", "AbortError")),
+          );
+        }) as Promise<Response>,
+    );
+
+    const pending = getEndpoint("/api/status");
+    const assertion = expect(pending).rejects.toMatchObject({ kind: "timeout" });
+    await vi.advanceTimersByTimeAsync(10_000);
+    await assertion;
+    vi.useRealTimers();
+  });
+});
+
+describe("toApiFailure", () => {
+  it("maps a 401 to an API-token hint", () => {
+    expect(toApiFailure(new ApiError("http", 401))).toEqual({
+      error: true,
+      kind: "http",
+      httpStatus: 401,
+      status: "HTTP 401 — check API token",
+    });
+  });
+
+  it("maps other HTTP codes to a plain status line", () => {
+    expect(toApiFailure(new ApiError("http", 503))).toMatchObject({
+      kind: "http",
+      httpStatus: 503,
+      status: "HTTP 503",
+    });
+  });
+
+  it("maps timeouts and unknown errors", () => {
+    expect(toApiFailure(new ApiError("timeout"))).toMatchObject({
+      kind: "timeout",
+      status: "Request timed out",
+    });
+    expect(toApiFailure(new Error("boom"))).toMatchObject({
+      kind: "network",
+      status: "Network error",
+    });
   });
 });
 

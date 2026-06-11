@@ -1,14 +1,15 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
 import { getProgram, postProgram } from "../program";
 
-vi.mock("../api", () => ({
+// Mock only the fetch helpers; the error-classification helpers
+// (ApiError, toApiFailure, ...) stay real.
+vi.mock("../api", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../api")>()),
   getEndpoint: vi.fn(),
   postEndpoint: vi.fn(),
-  getAPIHost: vi.fn(() => "https://localhost:8080"),
-  setAPIHost: vi.fn(),
 }));
 
-import { getEndpoint, postEndpoint } from "../api";
+import { getEndpoint, postEndpoint, ApiError } from "../api";
 
 describe("getProgram", () => {
   beforeEach(() => {
@@ -38,7 +39,25 @@ describe("getProgram", () => {
 
     const result = await getProgram();
 
-    expect(result).toEqual({ error: true, status: "Network error" });
+    expect(result).toEqual({ error: true, kind: "network", status: "Network error" });
+  });
+
+  it("carries the HTTP status code through on http failure", async () => {
+    (getEndpoint as Mock).mockRejectedValue(new ApiError("http", 503));
+
+    const result = await getProgram();
+
+    expect(result).toEqual({ error: true, kind: "http", httpStatus: 503, status: "HTTP 503" });
+  });
+
+  it("treats a malformed programs list as an error", async () => {
+    (getEndpoint as Mock).mockResolvedValue({
+      json: () => Promise.resolve({ programs: [{ id: "zero", name: 0 }] }),
+    });
+
+    const result = await getProgram();
+
+    expect(result).toEqual({ error: true, kind: "invalid", status: "Invalid server response" });
   });
 });
 
@@ -63,6 +82,6 @@ describe("postProgram", () => {
 
     const result = await postProgram(5);
 
-    expect(result).toEqual({ error: true, status: "Network error" });
+    expect(result).toEqual({ error: true, kind: "network", status: "Network error" });
   });
 });

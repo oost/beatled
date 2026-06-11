@@ -22,6 +22,9 @@ export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
   const updates = Object.fromEntries(formData);
   if (updates.host) {
+    // setAPIHost validates the URL and returns false (logging why) on
+    // anything that isn't absolute http(s) — the stored host is then
+    // left untouched.
     setAPIHost(updates.host as string);
   }
   if (formData.has("token")) {
