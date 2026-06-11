@@ -1,0 +1,153 @@
+import XCTest
+@testable import Beatled
+
+/// Decodes sample payloads matching `docs/api.markdown` and asserts the
+/// Swift models pick up every consumer-facing field. The fixtures include
+/// fields the models intentionally ignore (e.g. `manualBpm`, `qos`) so a
+/// server-side addition can't break decoding.
+final class ModelDecodingTests: XCTestCase {
+    private func decode<T: Decodable>(_ type: T.Type, _ json: String) throws -> T {
+        try JSONDecoder().decode(type, from: Data(json.utf8))
+    }
+
+    // MARK: /api/status
+
+    func testStatusResponseDecoding() throws {
+        let json = """
+        {
+          "message": "It's all good!",
+          "status": {
+            "beat-detector": true,
+            "manual-bpm": false,
+            "udp-server": false,
+            "tempo-broadcaster": true
+          },
+          "tempo": 120.5,
+          "manualBpm": 120.0,
+          "deviceCount": 3
+        }
+        """
+        let status = try decode(StatusResponse.self, json)
+        XCTAssertEqual(status.message, "It's all good!")
+        XCTAssertEqual(status.tempo, 120.5)
+        XCTAssertEqual(status.deviceCount, 3)
+        XCTAssertEqual(status.status["beat-detector"], true)
+        XCTAssertEqual(status.status["manual-bpm"], false)
+        XCTAssertEqual(status.status["tempo-broadcaster"], true)
+        XCTAssertEqual(status.status.count, 4)
+    }
+
+    // MARK: /api/devices
+
+    func testDevicesResponseDecoding() throws {
+        // The wire format is snake_case (`last_status_time` is the canonical
+        // name — `last_seen` was the historical mistake renamed away).
+        let json = """
+        {
+          "devices": [
+            {
+              "client_id": 1,
+              "board_id": "E6614103E72B6A2F",
+              "ip_address": "192.168.1.42",
+              "last_status_time": 1707900120000000,
+              "port_name": "pico-freertos",
+              "git_sha": "1a2b3c4-dirty",
+              "qos": { "current_offset_us": -42, "last_rtt_us": 555 }
+            },
+            {
+              "client_id": 2,
+              "board_id": "E6614103E72B6A30",
+              "ip_address": "192.168.1.43",
+              "last_status_time": 0
+            }
+          ],
+          "count": 2
+        }
+        """
+        let response = try decode(DevicesResponse.self, json)
+        XCTAssertEqual(response.count, 2)
+        XCTAssertEqual(response.devices.count, 2)
+
+        let device = try XCTUnwrap(response.devices.first)
+        XCTAssertEqual(device.clientId, 1)
+        XCTAssertEqual(device.boardId, "E6614103E72B6A2F")
+        XCTAssertEqual(device.ipAddress, "192.168.1.42")
+        XCTAssertEqual(device.lastStatusTime, 1_707_900_120_000_000)
+        XCTAssertEqual(device.id, 1, "Identifiable id should mirror client_id")
+    }
+
+    func testDeviceRejectsLegacyLastSeenKey() {
+        // A payload still using the pre-rename `last_seen` key must fail to
+        // decode — silently accepting it would hide a server regression.
+        let json = """
+        {
+          "client_id": 1,
+          "board_id": "E6614103E72B6A2F",
+          "ip_address": "192.168.1.42",
+          "last_seen": 1707900120000000
+        }
+        """
+        XCTAssertThrowsError(try decode(Device.self, json))
+    }
+
+    // MARK: Device.lastSeenText
+
+    private func device(lastStatusTime: UInt64) -> Device {
+        Device(clientId: 1,
+               boardId: "B",
+               ipAddress: "192.168.1.42",
+               lastStatusTime: lastStatusTime)
+    }
+
+    private func microsecondsAgo(_ seconds: TimeInterval) -> UInt64 {
+        UInt64((Date().timeIntervalSince1970 - seconds) * 1_000_000)
+    }
+
+    func testLastSeenTextIsUnknownForZeroAndFutureTimestamps() {
+        XCTAssertEqual(device(lastStatusTime: 0).lastSeenText, "unknown")
+        let future = microsecondsAgo(-3600)
+        XCTAssertEqual(device(lastStatusTime: future).lastSeenText, "unknown")
+    }
+
+    func testLastSeenTextBuckets() {
+        XCTAssertEqual(device(lastStatusTime: microsecondsAgo(30)).lastSeenText, "30s ago")
+        XCTAssertEqual(device(lastStatusTime: microsecondsAgo(5 * 60)).lastSeenText, "5m ago")
+        XCTAssertEqual(device(lastStatusTime: microsecondsAgo(2 * 3600)).lastSeenText, "2h ago")
+    }
+
+    // MARK: /api/program
+
+    func testProgramResponseDecoding() throws {
+        let json = """
+        {
+          "message": "Current program is 2",
+          "programId": 2,
+          "programs": [
+            { "name": "Snakes!", "id": 0 },
+            { "name": "Random data", "id": 1 },
+            { "name": "Sparkles", "id": 2 }
+          ]
+        }
+        """
+        let response = try decode(ProgramResponse.self, json)
+        XCTAssertEqual(response.message, "Current program is 2")
+        XCTAssertEqual(response.programId, 2)
+        XCTAssertEqual(response.programs.count, 3)
+        XCTAssertEqual(response.programs[2].name, "Sparkles")
+        XCTAssertEqual(response.programs[2].id, 2)
+    }
+
+    // MARK: /api/service/control
+
+    func testServiceControlRoundTrip() throws {
+        let request = ServiceControlRequest(id: "udp-server", status: true)
+        let encoded = try JSONEncoder().encode(request)
+        let object = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        XCTAssertEqual(object["id"] as? String, "udp-server")
+        XCTAssertEqual(object["status"] as? Bool, true)
+
+        let response = try decode(ServiceControlResponse.self, #"{ "status": true }"#)
+        XCTAssertTrue(response.status)
+    }
+}

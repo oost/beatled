@@ -1,6 +1,23 @@
 import Foundation
 import Security
 
+/// Abstracts token persistence so the migration / fallback logic in
+/// `AppSettings` can be unit-tested with an in-memory fake. The only real
+/// implementation in the app is `KeychainTokenStore`.
+protocol TokenStore {
+    /// Read the token, or nil if none is set (or the store is unavailable).
+    func load() -> String?
+
+    /// Save (or replace) the token. An empty string deletes instead — that
+    /// matches the legacy UserDefaults behaviour where an empty string meant
+    /// "no token configured".
+    @discardableResult
+    func save(_ token: String) -> Bool
+
+    @discardableResult
+    func delete() -> Bool
+}
+
 /// Persists the bearer API token in the iOS / macOS Keychain.
 ///
 /// The Beatled API token authorises every read and write on the server
@@ -12,10 +29,10 @@ import Security
 /// This wrapper keeps the wire-compatible API minimal — `save`, `load`,
 /// `delete` over a single (service, account) pair — so callers can use it
 /// like a typed `String?` accessor.
-enum KeychainTokenStore {
+struct KeychainTokenStore: TokenStore {
     /// Bundle-suffixed service tag so multiple builds of the app on the same
     /// device (debug vs. release vs. TestFlight) don't share keychain items.
-    private static let service: String = {
+    static let defaultService: String = {
         let base = "com.beatled.api-token"
         if let bundle = Bundle.main.bundleIdentifier {
             return "\(base).\(bundle)"
@@ -23,14 +40,23 @@ enum KeychainTokenStore {
         return base
     }()
 
+    private let service: String
+
     /// Single-user app — one account row is enough. If we ever multi-tenant
     /// the app, switch this to a user-id or host hash.
-    private static let account = "default"
+    private let account: String
+
+    /// The non-default service/account are for tests, which use a throwaway
+    /// service tag so they never touch the user's real token.
+    init(service: String = KeychainTokenStore.defaultService, account: String = "default") {
+        self.service = service
+        self.account = account
+    }
 
     /// Read the token, or nil if none is set. Returns nil on any keychain
     /// failure rather than throwing — callers treat absence and read errors
     /// identically (the network call will just fail with 401).
-    static func load() -> String? {
+    func load() -> String? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
@@ -53,7 +79,7 @@ enum KeychainTokenStore {
     /// matches the legacy UserDefaults behaviour where an empty string meant
     /// "no token configured".
     @discardableResult
-    static func save(_ token: String) -> Bool {
+    func save(_ token: String) -> Bool {
         if token.isEmpty {
             return delete()
         }
@@ -85,7 +111,7 @@ enum KeychainTokenStore {
     }
 
     @discardableResult
-    static func delete() -> Bool {
+    func delete() -> Bool {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,

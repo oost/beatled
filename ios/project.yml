@@ -34,8 +34,28 @@ targets:
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: false
         CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: C9RK364LS9
       configs:
         Debug:
           SWIFT_OPTIMIZATION_LEVEL: "-Onone"
         Release:
           SWIFT_OPTIMIZATION_LEVEL: "-O"
+    scheme:
+      testTargets:
+        - BeatledTests
+
+  BeatledTests:
+    type: bundle.unit-test
+    supportedDestinations: [iOS, macOS]
+    sources:
+      - path: BeatledTests
+    dependencies:
+      - target: Beatled
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: C9RK364LS9
+        # XcodeGen emits the iOS-style host path for multiplatform targets;
+        # on macOS the binary lives under Contents/MacOS.
+        TEST_HOST[sdk=macosx*]: "$(BUILT_PRODUCTS_DIR)/Beatled.app/Contents/MacOS/Beatled"
