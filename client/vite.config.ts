@@ -3,6 +3,20 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
+import type { Plugin } from "vite";
+
+// The CSP meta tag in index.html is production-only: the dev server
+// needs inline scripts (react-refresh preamble) and a ws: connection
+// (HMR), so serve mode strips the tag.
+function stripCspForDev(): Plugin {
+  return {
+    name: "strip-csp-for-dev",
+    apply: "serve",
+    transformIndexHtml(html) {
+      return html.replace(/<meta[^>]*http-equiv="Content-Security-Policy"[^>]*>\s*/i, "");
+    },
+  };
+}
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -17,6 +31,7 @@ export default defineConfig({
     },
   },
   plugins: [
+    stripCspForDev(),
     tailwindcss(),
     react(),
     VitePWA({
