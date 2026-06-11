@@ -16,7 +16,6 @@ struct StatusView: View {
 
                 tempoSection
                 serviceTogglesSection
-                tempoChartSection
                 devicesSection
             }
             .navigationTitle("Status")
@@ -82,23 +81,6 @@ struct StatusView: View {
                     ))
                     .toggleStyle(.switch)
                 }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var tempoChartSection: some View {
-        Section("Tempo History") {
-            if viewModel.tempoHistory.isEmpty {
-                ContentUnavailableView {
-                    Label("No Data", systemImage: "waveform.slash")
-                } description: {
-                    Text("Beat detector is paused or not yet running.")
-                }
-                .frame(height: 160)
-            } else {
-                TempoChartView(readings: viewModel.tempoHistory)
-                    .frame(height: 160)
             }
         }
     }

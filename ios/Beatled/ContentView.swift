@@ -7,11 +7,15 @@ struct ContentView: View {
     var body: some View {
         #if os(iOS)
         TabView {
+            // Program first, matching the web client's default route.
+            Tab("Program", systemImage: "music.note") {
+                ProgramView(
+                    viewModel: ProgramViewModel(api: api),
+                    statusViewModel: StatusViewModel(api: api)
+                )
+            }
             Tab("Status", systemImage: "waveform.path") {
                 StatusView(viewModel: StatusViewModel(api: api))
-            }
-            Tab("Program", systemImage: "music.note") {
-                ProgramView(viewModel: ProgramViewModel(api: api))
             }
             Tab("Log", systemImage: "text.alignleft") {
                 LogView(viewModel: LogViewModel(api: api))

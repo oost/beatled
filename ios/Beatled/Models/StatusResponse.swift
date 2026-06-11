@@ -5,6 +5,8 @@ struct StatusResponse: Codable {
     let status: [String: Bool]
     let tempo: Double
     let deviceCount: Int
+    // Optional so older servers without the field still decode.
+    let manualBpm: Double?
 }
 
 struct DevicesResponse: Codable {

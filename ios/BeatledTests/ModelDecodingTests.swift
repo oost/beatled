@@ -3,8 +3,8 @@ import XCTest
 
 /// Decodes sample payloads matching `docs/api.markdown` and asserts the
 /// Swift models pick up every consumer-facing field. The fixtures include
-/// fields the models intentionally ignore (e.g. `manualBpm`, `qos`) so a
-/// server-side addition can't break decoding.
+/// fields the models intentionally ignore (e.g. `qos`) so a server-side
+/// addition can't break decoding.
 final class ModelDecodingTests: XCTestCase {
     private func decode<T: Decodable>(_ type: T.Type, _ json: String) throws -> T {
         try JSONDecoder().decode(type, from: Data(json.utf8))
@@ -35,6 +35,22 @@ final class ModelDecodingTests: XCTestCase {
         XCTAssertEqual(status.status["manual-bpm"], false)
         XCTAssertEqual(status.status["tempo-broadcaster"], true)
         XCTAssertEqual(status.status.count, 4)
+        XCTAssertEqual(status.manualBpm, 120.0)
+    }
+
+    func testStatusResponseDecodesWithoutManualBpm() throws {
+        // Older servers omit manualBpm; the field is optional so decoding
+        // must still succeed.
+        let json = """
+        {
+          "message": "ok",
+          "status": { "beat-detector": true },
+          "tempo": 120.5,
+          "deviceCount": 0
+        }
+        """
+        let status = try decode(StatusResponse.self, json)
+        XCTAssertNil(status.manualBpm)
     }
 
     // MARK: /api/devices
