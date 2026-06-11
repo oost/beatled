@@ -46,6 +46,8 @@ std::unique_ptr<router_t> HTTPServer::server_handler(const std::string &root_dir
 
   router->http_get("/api/tempo", by_api_handler(&APIHandler::on_get_tempo));
 
+  router->http_post("/api/tempo/manual", by_api_handler(&APIHandler::on_post_manual_tempo));
+
   router->http_post("/api/program", by_api_handler(&APIHandler::on_post_program));
 
   router->http_get("/api/program", by_api_handler(&APIHandler::on_get_program));

@@ -9,10 +9,12 @@
 #include "beat_detector/beat_detector.hpp"
 #include "config.hpp"
 #include "http_server/http_server.hpp"
+#include "manual_tempo/manual_tempo.hpp"
 #include "tempo_broadcaster/tempo_broadcaster.hpp"
 #include "udp_server/udp_server.hpp"
 
 const char *BEAT_DETECTOR_ID = "beat-detector";
+const char *MANUAL_TEMPO_ID = "manual-bpm";
 const char *HTTP_SERVER_ID = "http-server";
 const char *UDP_SERVER_ID = "udp-server";
 const char *TEMPO_BROADCASTER_ID = "tempo-broadcaster";
@@ -42,10 +44,22 @@ Application::Application(const Config &beatled_config)
           std::chrono::milliseconds(server_parameters_.status_probe_ms),
           server_parameters_.broadcasting, state_manager_);
 
+  // Shared "next beat" sink. Both tempo sources — the audio BeatDetector and
+  // the software ManualTempo metronome — funnel through here so the state
+  // update and broadcast are identical regardless of origin.
+  auto on_next_beat = [&, tp = tempo_broadcaster.get()](uint64_t next_beat_time_ref, double tempo,
+                                                        double /*estimated_tempo*/,
+                                                        uint32_t beat_count) {
+    SPDLOG_DEBUG("Next beat {}, {}", next_beat_time_ref, tempo);
+    state_manager_.update_tempo(tempo, next_beat_time_ref);
+    state_manager_.update_next_beat(next_beat_time_ref);
+
+    tp->broadcast_next_beat(next_beat_time_ref, beat_count);
+  };
+
   registerController(std::make_unique<beatled::detector::BeatDetector>(
       BEAT_DETECTOR_ID, 44100, beatled::constants::audio_buffer_size,
-      [&, tp = tempo_broadcaster.get()](uint64_t beat_time_ref, double tempo,
-                                        double estimated_tempo, uint32_t beat_count) {
+      [&](uint64_t beat_time_ref, double tempo, double estimated_tempo, uint32_t beat_count) {
         uint64_t next_beat_time_ref = state_manager_.get_next_beat_time_ref();
 
         // Per-beat traffic: fires 1–4 times a second at any plausible
@@ -55,14 +69,10 @@ Application::Application(const Config &beatled_config)
                      static_cast<int64_t>(beat_time_ref) -
                          static_cast<int64_t>(next_beat_time_ref));
       },
-      [&, tp = tempo_broadcaster.get()](uint64_t next_beat_time_ref, double tempo,
-                                        double estimated_tempo, uint32_t beat_count) {
-        SPDLOG_DEBUG("Next beat {}, {}", next_beat_time_ref, tempo);
-        state_manager_.update_tempo(tempo, next_beat_time_ref);
-        state_manager_.update_next_beat(next_beat_time_ref);
+      on_next_beat));
 
-        tp->broadcast_next_beat(next_beat_time_ref, beat_count);
-      }));
+  registerController(std::make_unique<server::ManualTempo>(MANUAL_TEMPO_ID, io_context_,
+                                                           state_manager_, on_next_beat));
 
   registerController(std::make_unique<server::UDPServer>(UDP_SERVER_ID, io_context_,
                                                          server_parameters_.udp, state_manager_));

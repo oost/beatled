@@ -16,6 +16,7 @@ REST API served over HTTPS on port **8443**. Used by the React, iOS, and macOS c
 | `/api/status`          | GET      | Service status, tempo, client list                |
 | `/api/service/control` | POST     | Start/stop services                               |
 | `/api/tempo`           | GET      | Current tempo and time reference                  |
+| `/api/tempo/manual`    | POST     | Set the manual (operator-chosen) BPM              |
 | `/api/program`         | GET/POST | Get/set LED program                               |
 | `/api/log`             | GET      | Server log tail                                   |
 | `/api/devices`         | GET      | Connected device list with IPs and last seen time |
@@ -76,11 +77,13 @@ Returns the server health status, service states, current tempo, and connected d
 {
   "message": "It's all good!",
   "status": {
-    "beat_detector": true,
-    "udp_server": false,
-    "tempo_broadcaster": false
+    "beat-detector": true,
+    "manual-bpm": false,
+    "udp-server": false,
+    "tempo-broadcaster": false
   },
   "tempo": 120.5,
+  "manualBpm": 120.0,
   "deviceCount": 3
 }
 ```
@@ -89,7 +92,8 @@ Returns the server health status, service states, current tempo, and connected d
 |-------|------|-------------|
 | `message` | string | Status message |
 | `status` | object | Map of service ID to running state (boolean) |
-| `tempo` | number | Current detected tempo in BPM |
+| `tempo` | number | Current tempo in BPM (from whichever tempo source is active) |
+| `manualBpm` | number | Operator-chosen BPM used by the `manual-bpm` service |
 | `deviceCount` | number | Number of connected Pico W devices |
 
 ---
@@ -102,15 +106,17 @@ Start or stop a server service.
 
 ```json
 {
-  "id": "beat_detector",
+  "id": "beat-detector",
   "status": true
 }
 ```
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `id` | string | Yes | Service identifier |
+| `id` | string | Yes | Service identifier (`beat-detector`, `manual-bpm`, `tempo-broadcaster`, `udp-server`, `http-server`) |
 | `status` | boolean | Yes | `true` to start, `false` to stop |
+
+`beat-detector` (audio beat tracking) and `manual-bpm` (the software metronome) are **mutually exclusive** tempo sources: starting one automatically stops the other so only one beat stream reaches the fleet. Set the manual BPM value via [`POST /api/tempo/manual`](#post-apitempomanual) before or after enabling `manual-bpm`.
 
 **Response** `200 OK`
 
@@ -139,7 +145,8 @@ Returns the current tempo and beat time reference.
 ```json
 {
   "tempo": 128.0,
-  "time_ref": 1707900000000000
+  "time_ref": 1707900000000000,
+  "manualBpm": 120.0
 }
 ```
 
@@ -147,6 +154,44 @@ Returns the current tempo and beat time reference.
 |-------|------|-------------|
 | `tempo` | number | Current tempo in BPM |
 | `time_ref` | number | Beat reference timestamp in microseconds since epoch |
+| `manualBpm` | number | Operator-chosen BPM used by the `manual-bpm` service |
+
+---
+
+### POST /api/tempo/manual
+
+Set the manual BPM used by the `manual-bpm` metronome service. This stores the
+value (it persists across the service being toggled off and on); it does **not**
+start the service — enable `manual-bpm` via [`POST /api/service/control`](#post-apiservicecontrol),
+which also stops the audio beat detector. If `manual-bpm` is already running the
+new rate takes effect on the next beat.
+
+**Request body**
+
+```json
+{
+  "bpm": 128.0
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `bpm` | number | Yes | Target tempo in BPM, in the range 20–400 |
+
+**Response** `200 OK`
+
+```json
+{
+  "manualBpm": 128.0
+}
+```
+
+**Error responses**
+
+| Status | Condition |
+|--------|-----------|
+| `400 Bad Request` | Missing/non-numeric `bpm`, value outside 20–400, body too large, or invalid JSON |
+| `429 Too Many Requests` | Rate limit exceeded |
 
 ---
 
@@ -168,7 +213,8 @@ Returns the active LED program and the list of available programs.
     { "name": "Drops", "id": 4 },
     { "name": "Solid!", "id": 5 },
     { "name": "Fade", "id": 6 },
-    { "name": "Fade Color", "id": 7 }
+    { "name": "Fade Color", "id": 7 },
+    { "name": "Off", "id": 8 }
   ]
 }
 ```
@@ -195,7 +241,7 @@ Set the active LED program. The program change is broadcast to all connected Pic
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `programId` | number | Yes | Program ID (0-7) |
+| `programId` | number | Yes | Program ID (0-8) |
 
 **Response** `200 OK`
 

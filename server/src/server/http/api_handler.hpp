@@ -43,6 +43,7 @@ public:
   req_status_t on_post_service_control(const req_handle_t &req, route_params_t params);
 
   req_status_t on_get_tempo(const req_handle_t &req, route_params_t params);
+  req_status_t on_post_manual_tempo(const req_handle_t &req, route_params_t params);
 
   req_status_t on_get_program(const req_handle_t &req, route_params_t params);
   req_status_t on_post_program(const req_handle_t &req, route_params_t params);

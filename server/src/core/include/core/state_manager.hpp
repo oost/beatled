@@ -37,6 +37,13 @@ public:
   void update_next_beat(uint64_t next_beat_time_ref);
   uint64_t get_next_beat_time_ref() const;
 
+  // Operator-chosen BPM used by the ManualTempo service when the audio beat
+  // detector is off. Stored here (rather than on the service) so the HTTP
+  // handler can set it without downcasting, and so it survives the service
+  // being toggled off and back on. Clamped by the API layer.
+  void set_manual_bpm(float bpm) { manual_bpm_ = bpm; }
+  float get_manual_bpm() const { return manual_bpm_; }
+
   ClientStatus::Ptr client_status(const ClientStatus::board_id_t &board_id) const;
   ClientStatus::Ptr client_status(const asio::ip::address &ip_address) const;
   void register_client(ClientStatus::Ptr client_status);
@@ -63,6 +70,7 @@ private:
   uint64_t time_ref_ = 0;
   std::atomic<uint64_t> next_beat_time_ref_{0};
   std::atomic<uint16_t> program_id_{0};
+  std::atomic<float> manual_bpm_{120.0f};
   mutable std::mutex tempo_mtx_;
   mutable std::mutex client_mtx_;
   ClientStatus::client_map_t clients_;

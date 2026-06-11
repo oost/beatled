@@ -74,6 +74,7 @@ APIHandler::req_status_t APIHandler::on_get_status(const req_handle_t &req, rout
   }
   response_body["status"] = service_status;
   response_body["tempo"] = service_manager_.state_manager().get_tempo_ref().tempo;
+  response_body["manualBpm"] = service_manager_.state_manager().get_manual_bpm();
   response_body["deviceCount"] = service_manager_.state_manager().get_clients().size();
 
   return init_resp(req->create_response(restinio::status_ok()))
@@ -118,6 +119,17 @@ APIHandler::req_status_t APIHandler::on_post_service_control(const req_handle_t 
 
     if (service) {
       if (requested_status) {
+        // The audio beat detector and the manual-BPM metronome are mutually
+        // exclusive tempo sources — running both would interleave two beat
+        // streams onto the fleet. Starting one stops the other.
+        const std::string other_source = service_name == "beat-detector" ? "manual-bpm"
+                                         : service_name == "manual-bpm"  ? "beat-detector"
+                                                                         : "";
+        if (!other_source.empty()) {
+          if (ServiceControllerInterface *other = service_manager_.service(other_source)) {
+            other->stop();
+          }
+        }
         service->start();
       } else {
         service->stop();
@@ -160,10 +172,75 @@ APIHandler::req_status_t APIHandler::on_get_tempo(const req_handle_t &req, route
 
   response_body["tempo"] = tr.tempo;
   response_body["time_ref"] = tr.beat_time_ref;
+  response_body["manualBpm"] = service_manager_.state_manager().get_manual_bpm();
 
   return init_resp(req->create_response(restinio::status_ok()))
       .set_body(response_body.dump())
       .done();
+}
+
+APIHandler::req_status_t APIHandler::on_post_manual_tempo(const req_handle_t &req,
+                                                          route_params_t params) {
+  if (!check_auth(req)) {
+    return init_resp(req->create_response(restinio::status_unauthorized()))
+        .set_body(R"({"error":"Unauthorized"})")
+        .done();
+  }
+  if (!check_rate_limit()) {
+    return init_resp(req->create_response(restinio::status_too_many_requests()))
+        .set_body(R"({"error":"Too many requests"})")
+        .done();
+  }
+
+  json response_body;
+  try {
+    if (req->body().size() > 4096) {
+      response_body["error"] = "Request body too large";
+      return init_resp(req->create_response(restinio::status_bad_request()))
+          .set_body(response_body.dump())
+          .connection_close()
+          .done();
+    }
+    json request_body = json::parse(req->body());
+    if (!request_body.contains("bpm")) {
+      response_body["error"] = "Missing required field: bpm";
+      return init_resp(req->create_response(restinio::status_bad_request()))
+          .set_body(response_body.dump())
+          .connection_close()
+          .done();
+    }
+    const auto &bpm_field = request_body["bpm"];
+    if (!bpm_field.is_number()) {
+      response_body["error"] = "Field 'bpm' must be a number";
+      return init_resp(req->create_response(restinio::status_bad_request()))
+          .set_body(response_body.dump())
+          .connection_close()
+          .done();
+    }
+    double bpm = bpm_field.get<double>();
+    // Keep in lockstep with ManualTempo's clamp range so the value the UI
+    // reads back matches what the metronome will actually use.
+    if (bpm < 20.0 || bpm > 400.0) {
+      response_body["error"] = "Field 'bpm' must be between 20 and 400";
+      return init_resp(req->create_response(restinio::status_bad_request()))
+          .set_body(response_body.dump())
+          .connection_close()
+          .done();
+    }
+    service_manager_.state_manager().set_manual_bpm(static_cast<float>(bpm));
+
+    response_body["manualBpm"] = service_manager_.state_manager().get_manual_bpm();
+    return init_resp(req->create_response(restinio::status_ok()))
+        .set_body(response_body.dump())
+        .done();
+  } catch (const std::exception &e) {
+    response_body["error"] = e.what();
+    SPDLOG_ERROR("Error with request: {}", e.what());
+    return init_resp(req->create_response(restinio::status_bad_request()))
+        .set_body(response_body.dump())
+        .connection_close()
+        .done();
+  }
 }
 
 APIHandler::req_status_t APIHandler::on_post_program(const req_handle_t &req,
@@ -253,7 +330,7 @@ APIHandler::req_status_t APIHandler::on_get_program(const req_handle_t &req,
   response_body["programs"] =
       json::array({Program{"Snakes!", 0}, Program{"Random data", 1}, Program{"Sparkles", 2},
                    Program{"Greys", 3}, Program{"Drops", 4}, Program{"Solid!", 5},
-                   Program{"Fade", 6}, Program{"Fade Color", 7}});
+                   Program{"Fade", 6}, Program{"Fade Color", 7}, Program{"Off", 8}});
 
   response_body["programId"] = program_id;
 
