@@ -3,12 +3,18 @@
 #include "hal/wifi.h"
 
 int wifi_connect(const char *wifi_ssid, const char *wifi_password) {
-  if (cyw43_arch_wifi_connect_blocking(wifi_ssid, wifi_password,
-                                       CYW43_AUTH_WPA2_AES_PSK)) {
+  if (cyw43_arch_wifi_connect_blocking(wifi_ssid, wifi_password, CYW43_AUTH_WPA2_AES_PSK)) {
     puts("[ERR] Failed to connect to WiFi");
     return 1;
   }
   printf("[NET] Connected to %s\n", wifi_ssid);
+
+  // Disable Wi-Fi power-save (set after connect — the join can reset it).
+  // The default PM2 mode lets the AP buffer inbound frames until the radio
+  // wakes, adding tens of ms of asymmetric delay that biases the NTP-style
+  // clock offset and shows up as inter-controller beat skew. The LEDs dwarf
+  // the radio's power draw, so trade power for latency.
+  cyw43_wifi_pm(&cyw43_state, cyw43_pm_value(CYW43_NO_POWERSAVE_MODE, 20, 1, 1, 10));
   return 0;
 }
 
@@ -30,4 +36,6 @@ void hal_wifi_init() {
   cyw43_arch_enable_sta_mode();
 }
 
-void hal_wifi_deinit() { cyw43_arch_deinit(); }
+void hal_wifi_deinit() {
+  cyw43_arch_deinit();
+}
