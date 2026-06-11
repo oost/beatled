@@ -44,8 +44,7 @@ void stub_reset_counters(void);
 
 // Build an event_t wrapping a heap-copied protocol message.
 // handle_event() will free the data pointer.
-static event_t make_server_event(const void *msg, size_t size,
-                                 uint64_t dest_time = 0) {
+static event_t make_server_event(const void *msg, size_t size, uint64_t dest_time = 0) {
   void *data = malloc(size);
   REQUIRE(data != nullptr);
   memcpy(data, msg, size);
@@ -162,8 +161,7 @@ static void drain_intercore_queue() {
 
 // ── Tests ────────────────────────────────────────────────────────────
 
-TEST_CASE("Full lifecycle: UNKNOWN to TEMPO_SYNCED via server messages",
-          "[integration]") {
+TEST_CASE("Full lifecycle: UNKNOWN to TEMPO_SYNCED via server messages", "[integration]") {
   init_system();
 
   // ── STARTED → INITIALIZED (auto-scheduled by enter_started_state) ──
@@ -225,13 +223,14 @@ TEST_CASE("Full lifecycle: UNKNOWN to TEMPO_SYNCED via server messages",
 
   // Intercore message should be queued
   intercore_message_t ic_msg = pop_intercore_msg();
-  REQUIRE((ic_msg.message_type & (0x01 << intercore_tempo_update)) != 0);
-  REQUIRE((ic_msg.message_type & (0x01 << intercore_program_update)) != 0);
+  REQUIRE((ic_msg.message_type & INTERCORE_FLAG_TEMPO_UPDATE) != 0);
+  REQUIRE((ic_msg.message_type & INTERCORE_FLAG_PROGRAM_UPDATE) != 0);
 
   process_pending_events();
   REQUIRE(state_manager_get_state() == STATE_TEMPO_SYNCED);
-  // enter_tempo_synced_state created 3 repeating timers
-  REQUIRE(stub_timer_create_count == 4); // 1 hello (INITIALIZED) + 3 (TEMPO_SYNCED)
+  // 1 hello (INITIALIZED) + 1 time retry (REGISTERED) + 1 tempo retry
+  // (TIME_SYNCED) + 3 sync timers (TEMPO_SYNCED)
+  REQUIRE(stub_timer_create_count == 6);
 }
 
 TEST_CASE("State entry handlers perform correct setup", "[integration]") {
@@ -265,8 +264,9 @@ TEST_CASE("State entry handlers perform correct setup", "[integration]") {
 
   SECTION("enter_tempo_synced_state creates 3 repeating timers") {
     advance_to(STATE_TEMPO_SYNCED);
-    // 1 hello timer (INITIALIZED) + 3 sync timers (TEMPO_SYNCED)
-    REQUIRE(stub_timer_create_count == 4);
+    // 1 hello timer (INITIALIZED) + 1 time retry (REGISTERED) + 1 tempo
+    // retry (TIME_SYNCED) + 3 sync timers (TEMPO_SYNCED)
+    REQUIRE(stub_timer_create_count == 6);
   }
 
   SECTION("tempo re-sync updates registry without state re-entry") {
@@ -314,8 +314,7 @@ TEST_CASE("Time sync calculates correct clock offset", "[integration]") {
   REQUIRE(handle_event(&event) == 0);
 
   int64_t expected_offset =
-      ((int64_t)(recv_t / 2) - (int64_t)(orig / 2)) +
-      ((int64_t)(xmit / 2) - (int64_t)(dest / 2));
+      ((int64_t)(recv_t / 2) - (int64_t)(orig / 2)) + ((int64_t)(xmit / 2) - (int64_t)(dest / 2));
   REQUIRE(expected_offset == 9950);
   REQUIRE(get_server_time_offset() == expected_offset);
 
@@ -329,8 +328,7 @@ TEST_CASE("Time sync calculates correct clock offset", "[integration]") {
   REQUIRE(state_manager_get_state() == STATE_TIME_SYNCED);
 }
 
-TEST_CASE("Tempo response updates registry and queues intercore message",
-          "[integration]") {
+TEST_CASE("Tempo response updates registry and queues intercore message", "[integration]") {
   init_system();
   advance_to(STATE_TIME_SYNCED);
   drain_intercore_queue();
@@ -384,8 +382,7 @@ TEST_CASE("Next beat updates registry with beat timing", "[integration]") {
   REQUIRE(state_manager_get_state() == STATE_TEMPO_SYNCED);
 }
 
-TEST_CASE("Tempo and next_beat rejected before TIME_SYNCED",
-          "[integration]") {
+TEST_CASE("Tempo and next_beat rejected before TIME_SYNCED", "[integration]") {
   init_system();
   advance_to(STATE_REGISTERED);
   drain_intercore_queue();
@@ -420,8 +417,7 @@ TEST_CASE("Tempo and next_beat rejected before TIME_SYNCED",
   }
 }
 
-TEST_CASE("Program change updates registry and queues intercore message",
-          "[integration]") {
+TEST_CASE("Program change updates registry and queues intercore message", "[integration]") {
   init_system();
   advance_to(STATE_TEMPO_SYNCED);
   drain_intercore_queue();
