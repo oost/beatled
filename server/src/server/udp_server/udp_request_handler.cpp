@@ -79,38 +79,40 @@ DataBuffer::Ptr UDPRequestHandler::process_hello_request() {
     return error_response(BEATLED_ERROR_NO_DATA);
   }
 
-  const auto *hello_req =
-      reinterpret_cast<const beatled_message_hello_request_t *>(&(request_buffer_ptr_->data()));
+  // Copy out of the receive buffer: the raw bytes carry no alignment
+  // guarantee, so casting them to a struct pointer would be UB.
+  beatled_message_hello_request_t hello_req;
+  std::memcpy(&hello_req, request_buffer_ptr_->data().data(), sizeof(hello_req));
 
   // Protocol-version gate. The major version must match exactly; a
   // mismatch means the firmware was built against an incompatible wire
   // format, so we reject the registration outright rather than risk
   // misinterpreting later messages.
-  if (hello_req->version_major != BEATLED_PROTOCOL_VERSION_MAJOR) {
+  if (hello_req.version_major != BEATLED_PROTOCOL_VERSION_MAJOR) {
     SPDLOG_WARN("Rejecting HELLO from {}: protocol major v{}.{} != server v{}.{}",
                 request_buffer_ptr_->remote_endpoint().address().to_string(),
-                hello_req->version_major, hello_req->version_minor, BEATLED_PROTOCOL_VERSION_MAJOR,
+                hello_req.version_major, hello_req.version_minor, BEATLED_PROTOCOL_VERSION_MAJOR,
                 BEATLED_PROTOCOL_VERSION_MINOR);
     return error_response(BEATLED_ERROR_VERSION_MISMATCH);
   }
 
   ClientStatus::Ptr cs = std::make_shared<ClientStatus>(
-      hello_req->board_id, request_buffer_ptr_->remote_endpoint().address());
+      hello_req.board_id, request_buffer_ptr_->remote_endpoint().address());
   cs->last_status_time = Clock::wall_time_us_64();
   // Remember the full endpoint (incl. ephemeral port) for unicast delivery.
   cs->endpoint = request_buffer_ptr_->remote_endpoint();
 
-  cs->protocol_version_major = hello_req->version_major;
-  cs->protocol_version_minor = hello_req->version_minor;
+  cs->protocol_version_major = hello_req.version_major;
+  cs->protocol_version_minor = hello_req.version_minor;
 
   // Pull the firmware self-description carried since protocol v3. The
   // wire fields are fixed-size, null-terminated strings; build_time_us
   // is network byte order.
   cs->port_name =
-      std::string(hello_req->port_name, strnlen(hello_req->port_name, BEATLED_PORT_NAME_LEN));
-  cs->git_sha = std::string(hello_req->git_sha, strnlen(hello_req->git_sha, BEATLED_GIT_HASH_LEN));
-  cs->build_time_us = ntohll(hello_req->build_time_us);
-  SPDLOG_INFO("Client hello: board_id={} v{}.{} port={} sha={} built_us={}", hello_req->board_id,
+      std::string(hello_req.port_name, strnlen(hello_req.port_name, BEATLED_PORT_NAME_LEN));
+  cs->git_sha = std::string(hello_req.git_sha, strnlen(hello_req.git_sha, BEATLED_GIT_HASH_LEN));
+  cs->build_time_us = ntohll(hello_req.build_time_us);
+  SPDLOG_INFO("Client hello: board_id={} v{}.{} port={} sha={} built_us={}", hello_req.board_id,
               cs->protocol_version_major, cs->protocol_version_minor, cs->port_name, cs->git_sha,
               cs->build_time_us);
 
@@ -134,10 +136,10 @@ DataBuffer::Ptr UDPRequestHandler::process_time_request() {
     cs->last_status_time = Clock::wall_time_us_64();
   }
 
-  const auto *time_req_msg =
-      reinterpret_cast<const beatled_message_time_request_t *>(&(request_buffer_ptr_->data()));
+  beatled_message_time_request_t time_req_msg;
+  std::memcpy(&time_req_msg, request_buffer_ptr_->data().data(), sizeof(time_req_msg));
 
-  uint64_t orig_time = ntohll(time_req_msg->orig_time);
+  uint64_t orig_time = ntohll(time_req_msg.orig_time);
 
   SPDLOG_INFO("Sending time request. (n) \n - orig_time: {0} / {0:x}", orig_time);
   return std::make_unique<TimeResponseBuffer>(orig_time, ms_start, Clock::time_us_64());
@@ -151,10 +153,10 @@ DataBuffer::Ptr UDPRequestHandler::process_tempo_request() {
     return error_response(BEATLED_ERROR_NO_DATA);
   }
 
-  const auto *tempo_req =
-      reinterpret_cast<const beatled_message_tempo_request_t *>(&(request_buffer_ptr_->data()));
+  beatled_message_tempo_request_t tempo_req;
+  std::memcpy(&tempo_req, request_buffer_ptr_->data().data(), sizeof(tempo_req));
   const auto remote = request_buffer_ptr_->remote_endpoint();
-  uint32_t owd_us = ntohl(tempo_req->owd_us_estimate);
+  uint32_t owd_us = ntohl(tempo_req.owd_us_estimate);
 
   auto cs = state_manager_.client_status(remote.address());
   if (cs) {
@@ -164,7 +166,7 @@ DataBuffer::Ptr UDPRequestHandler::process_tempo_request() {
     cs->endpoint = remote;
     // Protocol v4: decode the trailing diagnostic block into
     // ClientStatus::QosSnapshot. STATUS_RESPONSE shares the same helper.
-    decode_qos_block(tempo_req->qos, cs->latest_qos);
+    decode_qos_block(tempo_req.qos, cs->latest_qos);
   }
   if (owd_us > 0) {
     state_manager_.update_client_owd(remote.address(), owd_us);
@@ -182,17 +184,17 @@ DataBuffer::Ptr UDPRequestHandler::process_status_response() {
                  sizeof(beatled_message_status_response_t));
     return error_response(BEATLED_ERROR_NO_DATA);
   }
-  const auto *resp =
-      reinterpret_cast<const beatled_message_status_response_t *>(&(request_buffer_ptr_->data()));
+  beatled_message_status_response_t resp;
+  std::memcpy(&resp, request_buffer_ptr_->data().data(), sizeof(resp));
   const auto remote = request_buffer_ptr_->remote_endpoint();
 
   auto cs = state_manager_.client_status(remote.address());
   if (cs) {
     cs->last_status_time = Clock::wall_time_us_64();
     cs->endpoint = remote;
-    decode_qos_block(resp->qos, cs->latest_qos);
+    decode_qos_block(resp.qos, cs->latest_qos);
     // Fresh server-controlled RTT measurement: now − echoed send-time.
-    const uint64_t send_time = ntohll(resp->echo_server_send_time_us);
+    const uint64_t send_time = ntohll(resp.echo_server_send_time_us);
     const uint64_t now = Clock::wall_time_us_64();
     if (now > send_time) {
       const uint64_t rtt = now - send_time;
