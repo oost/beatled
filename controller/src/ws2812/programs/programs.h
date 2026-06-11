@@ -4,6 +4,7 @@
 #include "drops/drops.h"
 #include "fade/fade.h"
 #include "greys/greys.h"
+#include "off/off.h"
 #include "random/random.h"
 #include "snake/snake.h"
 #include "solid/solid.h"

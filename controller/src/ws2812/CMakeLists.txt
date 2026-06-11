@@ -11,6 +11,7 @@ target_sources(beatled_ws2812 INTERFACE
   programs/fade/fade.c
   programs/random/random.c
   programs/greys/greys.c
+  programs/off/off.c
   programs/solid/solid.c
   programs/sparkle/sparkle.c
 )

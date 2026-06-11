@@ -2,40 +2,65 @@
 
 #include "../utils.h"
 
-static uint8_t position_;
-static uint8_t speed_;
+// Snake travels one full lap of the ring every SNAKE_BEATS_PER_LOOP beats.
+#define SNAKE_BEATS_PER_LOOP 4u
+// Body length as a fraction of the ring (denominator): 2 -> half the ring.
+#define SNAKE_TAIL_DIVISOR 3u
+// Brightness floor between beats so the body never fully disappears (0-255).
+#define SNAKE_BEAT_FLOOR 10u
 
-void pattern_snakes_init() {
-  position_ = 0;
-  speed_ = 1;
-}
+void pattern_snakes_init() {}
 
-void pattern_snakes(uint32_t *stream, size_t len, uint8_t t,
-                    uint32_t beat_count) {
-  // Calculate base intensity using quadratic decay for musical beat response
-  // Peaks at 255 when t=0 (beat start), decays to 0 when t=255 (beat end)
-  uint8_t base_intensity = beat_intensity_quadratic(t) >> 1;  // Right-shift by 1 divides by 2, giving 0-127 range
+void pattern_snakes(uint32_t *stream, size_t len, uint8_t t, uint32_t beat_count) {
+  if (len == 0) {
+    return;
+  }
 
-  // Calculate position for smooth snake movement within each beat
-  // Dividing t by 4 slows down movement: 0-255 becomes 0-63
-  uint8_t pos = t >> 2;  // Right-shift by 2 divides by 4
+  // Continuous phase within one lap, in 1/256-beat units: 0 .. N*256-1. Using
+  // beat_count keeps the head moving smoothly across beat boundaries instead of
+  // resetting every beat.
+  uint32_t loop_phase = ((uint32_t)(beat_count % SNAKE_BEATS_PER_LOOP) << 8) + t;
 
-  // Rotate hue every 4 beats for visual variety
-  uint8_t hue_offset = (beat_count & 0x3) * 64;
+  // Head position in 1/256-LED fixed point, wrapping once per lap. Over N beats
+  // loop_phase spans N*256, so the head travels exactly `len` LEDs -> one lap.
+  uint32_t ring_q8 = (uint32_t)len << 8;
+  uint32_t head_q8 = (loop_phase * (uint32_t)len) / SNAKE_BEATS_PER_LOOP;
+  head_q8 %= ring_q8;
 
-  for (unsigned int i = 0; i < len; ++i) {
-    unsigned int x = (i + (pos >> 1)) % 64;
+  // Body length in 1/256-LED units (at least one LED).
+  uint32_t tail_q8 = ring_q8 / SNAKE_TAIL_DIVISOR;
+  if (tail_q8 == 0) {
+    tail_q8 = 256;
+  }
 
-    uint32_t value;
-    if (x < 10)
-      value = convert_hsv_to_rgb(0 + hue_offset, 255, base_intensity);
-    else if (x >= 15 && x < 25)
-      value = convert_hsv_to_rgb(85 + hue_offset, 255, base_intensity);
-    else if (x >= 30 && x < 40)
-      value = convert_hsv_to_rgb(170 + hue_offset, 255, base_intensity);
-    else
-      value = 0;
+  // Whole-body brightness envelope: peaks at the beat (t=0) and decays toward
+  // the next beat, never below SNAKE_BEAT_FLOOR so the snake stays visible as
+  // it travels.
+  uint8_t beat_env =
+      SNAKE_BEAT_FLOOR + (uint8_t)(((255u - SNAKE_BEAT_FLOOR) * beat_intensity_quadratic(t)) >> 8);
 
-    stream[i] = value;
+  // Hue advances each beat so successive laps differ; a gentle gradient runs
+  // along the body for depth.
+  uint8_t head_hue = (uint8_t)(beat_count * 32u);
+
+  for (size_t i = 0; i < len; ++i) {
+    // How far this pixel sits behind the head, walking backwards round the
+    // ring, in 1/256-LED units. 0 == exactly at the head.
+    uint32_t pixel_q8 = (uint32_t)i << 8;
+    uint32_t dist_q8 = (head_q8 + ring_q8 - pixel_q8) % ring_q8;
+
+    if (dist_q8 >= tail_q8) {
+      stream[i] = 0; // outside the body
+      continue;
+    }
+
+    // Spatial fade: bright at the head, dark at the tail tip.
+    uint32_t tail_fade = (tail_q8 - dist_q8) * 255u / tail_q8; // 0..255
+    uint8_t value = (uint8_t)((tail_fade * beat_env) >> 8);
+
+    uint8_t hue = head_hue + (uint8_t)(dist_q8 * 48u / tail_q8);
+    // Full-brightness colour scaled down, rather than HSV at a low value,
+    // so the tail fades without hue-quantization flicker.
+    stream[i] = color_scale(convert_hsv_to_rgb(hue, 255, 255), value);
   }
 }
