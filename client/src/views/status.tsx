@@ -1,7 +1,14 @@
 import { useFetcher } from "react-router-dom";
 import { useEffect } from "react";
 import { useInterval } from "../hooks/interval";
-import { getStatus, getDevices, getQos, serviceControl, type Device, type FleetQos } from "../lib/status";
+import {
+  getStatus,
+  getDevices,
+  getQos,
+  serviceControl,
+  type Device,
+  type FleetQos,
+} from "../lib/status";
 import PageHeader from "../components/page-header";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -29,11 +36,7 @@ interface TempoHistoryEntry {
 
 export async function loader() {
   console.log("Loading status");
-  const [status, devicesResponse, qos] = await Promise.all([
-    getStatus(),
-    getDevices(),
-    getQos(),
-  ]);
+  const [status, devicesResponse, qos] = await Promise.all([getStatus(), getDevices(), getQos()]);
   const last: TempoHistoryEntry = { x: new Date(), y: status.tempo || NaN, ...status };
   return {
     last,
@@ -60,7 +63,9 @@ function formatFirmware(device: Device): string {
   if (device.port_name) parts.push(device.port_name);
   if (device.git_sha) parts.push(device.git_sha);
   if (device.build_time_us && device.build_time_us > 0) {
-    parts.push("built " + formatDistanceToNow(new Date(device.build_time_us / 1000), { addSuffix: true }));
+    parts.push(
+      "built " + formatDistanceToNow(new Date(device.build_time_us / 1000), { addSuffix: true }),
+    );
   }
   return parts.length === 0 ? "—" : parts.join(" · ");
 }
@@ -324,9 +329,7 @@ export default function StatusPage() {
                     <TableRow key={device.client_id}>
                       <TableCell className="font-mono text-xs">{device.board_id}</TableCell>
                       <TableCell>{device.ip_address}</TableCell>
-                      <TableCell className="font-mono text-xs">
-                        {formatFirmware(device)}
-                      </TableCell>
+                      <TableCell className="font-mono text-xs">{formatFirmware(device)}</TableCell>
                       <TableCell className="text-right font-mono text-xs">
                         {formatOffset(device)}
                       </TableCell>

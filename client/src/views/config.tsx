@@ -5,13 +5,7 @@ import PageHeader from "../components/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import {
-  getAPIHost,
-  setAPIHost,
-  getAPIToken,
-  setAPIToken,
-  pingHealth,
-} from "../lib/api";
+import { getAPIHost, setAPIHost, getAPIToken, setAPIToken, pingHealth } from "../lib/api";
 import { useInterval } from "../hooks/interval";
 
 export async function loader() {
@@ -42,11 +36,7 @@ type HealthStatus = "unknown" | "ok" | "error";
 
 function StatusDot({ status }: { status: HealthStatus }) {
   const color =
-    status === "ok"
-      ? "bg-green-500"
-      : status === "error"
-        ? "bg-red-500"
-        : "bg-gray-400";
+    status === "ok" ? "bg-green-500" : status === "error" ? "bg-red-500" : "bg-gray-400";
   return (
     <span className="relative inline-flex h-2.5 w-2.5">
       {status === "ok" && (
@@ -75,14 +65,13 @@ function useHealthChecks() {
     const signal = abortRef.current.signal;
 
     for (const host of API_HOSTS) {
-      pingHealth(host.value, { signal })
-        .then((ok) => {
-          if (signal.aborted) return;
-          setStatuses((prev) => ({
-            ...prev,
-            [host.value]: ok ? "ok" : "error",
-          }));
-        });
+      pingHealth(host.value, { signal }).then((ok) => {
+        if (signal.aborted) return;
+        setStatuses((prev) => ({
+          ...prev,
+          [host.value]: ok ? "ok" : "error",
+        }));
+      });
     }
   }, []);
 
@@ -101,11 +90,14 @@ export default function ConfigPage() {
   const { host, token } = useLoaderData() as { host: string; token: string };
   const healthStatuses = useHealthChecks();
 
-  const onHostChange = useCallback((value: string) => {
-    const formData = new FormData();
-    formData.set("host", value);
-    submit(formData, { method: "post" });
-  }, [submit]);
+  const onHostChange = useCallback(
+    (value: string) => {
+      const formData = new FormData();
+      formData.set("host", value);
+      submit(formData, { method: "post" });
+    },
+    [submit],
+  );
 
   const didAutoSelect = useRef(false);
   useEffect(() => {
@@ -142,7 +134,10 @@ export default function ConfigPage() {
                 {API_HOSTS.map((api_host) => (
                   <div key={api_host.value} className="flex items-center space-x-3 py-2">
                     <RadioGroupItem value={api_host.value} id={`host-${api_host.value}`} />
-                    <Label htmlFor={`host-${api_host.value}`} className="text-sm font-normal flex items-center gap-2">
+                    <Label
+                      htmlFor={`host-${api_host.value}`}
+                      className="text-sm font-normal flex items-center gap-2"
+                    >
                       {api_host.name}{" "}
                       <span className="text-muted-foreground">
                         {new URL(api_host.value).hostname}

@@ -12,11 +12,7 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import {
-  createMemoryRouter,
-  RouterProvider,
-  type RouteObject,
-} from "react-router-dom";
+import { createMemoryRouter, RouterProvider, type RouteObject } from "react-router-dom";
 
 vi.mock("../../lib/api", () => ({
   getEndpoint: vi.fn(),
@@ -26,10 +22,7 @@ vi.mock("../../lib/api", () => ({
 }));
 
 import { getEndpoint, postEndpoint } from "../../lib/api";
-import ProgramPage, {
-  loader as programLoader,
-  action as programAction,
-} from "../program";
+import ProgramPage, { loader as programLoader, action as programAction } from "../program";
 
 const programResponse = {
   programId: 1,

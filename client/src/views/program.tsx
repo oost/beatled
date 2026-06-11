@@ -10,12 +10,7 @@ import { Button } from "@/components/ui/button";
 import { FormattedNumber } from "react-intl";
 import BeatChart from "../components/BeatChart";
 import { getProgram, postProgram, type ProgramInfo } from "../lib/program";
-import {
-  getStatus,
-  serviceControl,
-  setManualBpm,
-  type StatusResponse,
-} from "../lib/status";
+import { getStatus, serviceControl, setManualBpm, type StatusResponse } from "../lib/status";
 
 const BEAT_DETECTOR_ID = "beat-detector";
 const MANUAL_BPM_ID = "manual-bpm";

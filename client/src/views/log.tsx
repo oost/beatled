@@ -27,14 +27,11 @@ export default function LogPage() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [, setNow] = useState(Date.now()); // ticks once a second to keep the "Xs ago" label live
 
-  useInterval(
-    () => {
-      if (autoRefresh && fetcher.state === "idle" && document.visibilityState === "visible") {
-        fetcher.submit(null);
-      }
-    },
-    REFRESH_INTERVAL_MS,
-  );
+  useInterval(() => {
+    if (autoRefresh && fetcher.state === "idle" && document.visibilityState === "visible") {
+      fetcher.submit(null);
+    }
+  }, REFRESH_INTERVAL_MS);
 
   useInterval(() => setNow(Date.now()), 1000);
 
