@@ -4,10 +4,15 @@
 #include "hardware/clocks.h"
 #include "hardware/dma.h"
 #include "hardware/irq.h"
+#include "hardware/sync.h"
 #include "pico/sem.h"
 #include "pico/stdlib.h"
 
 #include "ws2812_dma.h"
+
+// WS2812B latch: the data line must idle low >=280 us (current chip
+// revisions) before the next frame; 400 us adds margin.
+#define WS2812_RESET_DELAY_US 400
 
 int dma_channel;
 uint32_t dma_channel_mask = 0;
@@ -18,24 +23,30 @@ static struct semaphore reset_delay_complete_sem;
 volatile alarm_id_t reset_delay_alarm_id;
 
 int64_t reset_delay_complete(alarm_id_t id, void *user_data) {
-  reset_delay_alarm_id = 0;
+  // The DMA IRQ may be re-arming the alarm concurrently; only clear the
+  // id if it is still ours so a freshly armed alarm id is not lost.
+  uint32_t save = save_and_disable_interrupts();
+  if (reset_delay_alarm_id == id) {
+    reset_delay_alarm_id = 0;
+  }
+  restore_interrupts(save);
   sem_release(&reset_delay_complete_sem);
   // no repeat
-  // puts("Release semaphore");
-
   return 0;
 }
 
 void __isr dma_complete_handler() {
   if (dma_hw->ints0 & dma_channel_mask) {
-    // puts("Interrupt");
     // clear IRQ
     dma_hw->ints0 = dma_channel_mask;
-    // when the dma is complete we start the reset delay timer
+    // when the dma is complete we start the reset delay timer; guard the
+    // alarm id against the alarm callback firing mid-update on the
+    // timer IRQ.
+    uint32_t save = save_and_disable_interrupts();
     if (reset_delay_alarm_id)
       cancel_alarm(reset_delay_alarm_id);
-    reset_delay_alarm_id =
-        add_alarm_in_us(400, reset_delay_complete, NULL, true);
+    reset_delay_alarm_id = add_alarm_in_us(WS2812_RESET_DELAY_US, reset_delay_complete, NULL, true);
+    restore_interrupts(save);
   }
 }
 
@@ -48,8 +59,7 @@ void dma_init(PIO pio, uint sm, uint16_t num_pixel) {
 
   // main DMA channel outputs 8 word fragments, and then chains back to the
   // chain channel
-  dma_channel_config channel_config =
-      dma_channel_get_default_config(dma_channel);
+  dma_channel_config channel_config = dma_channel_get_default_config(dma_channel);
   channel_config_set_dreq(&channel_config, pio_get_dreq(pio, sm, true));
   // channel_config_set_chain_to(&channel_config, DMA_CB_CHANNEL);
   // channel_config_set_irq_quiet(&channel_config, true);
