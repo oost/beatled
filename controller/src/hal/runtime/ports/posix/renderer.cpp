@@ -24,11 +24,13 @@ constexpr float kBandRadiusMargin = 0.97f;
 constexpr float kBandHeightDrop = 0.35f;
 // Dark felt colour for the hat body.
 constexpr simd::float4 kHatColor = {0.05f, 0.05f, 0.06f, 1.0f};
+// Orbit-drag sensitivity: radians of hat rotation per pixel of mouse travel.
+constexpr float kDragRadiansPerPixel = 0.01f;
 } // namespace
 
 Renderer::Renderer(MTL::Device *pDevice, size_t numInstances)
-    : _pDevice(pDevice->retain()), _numInstances(numInstances), _angle(0.f), _frame(0),
-      _pOverlayRenderer(nullptr), _overlayUpdateCounter(0) {
+    : _pDevice(pDevice->retain()), _numInstances(numInstances), _yaw(0.f), _pitch(0.f),
+      _dragging(false), _frame(0), _pOverlayRenderer(nullptr), _overlayUpdateCounter(0) {
   _pCommandQueue = _pDevice->newCommandQueue();
   buildShaders();
   buildDepthStencilStates();
@@ -200,10 +202,25 @@ void Renderer::buildHatGeometry() {
 simd::float4x4 Renderer::fullObjectRotation(const simd::float3 &objectPosition) const {
   using simd::float4x4;
   float4x4 rt = math::makeTranslate(objectPosition);
-  float4x4 rr1 = math::makeYRotate(-_angle);
-  float4x4 rr0 = math::makeXRotate(_angle * 0.5);
+  float4x4 rr1 = math::makeYRotate(_yaw);
+  float4x4 rr0 = math::makeXRotate(_pitch);
   float4x4 rtInv = math::makeTranslate({-objectPosition.x, -objectPosition.y, -objectPosition.z});
   return rt * rr1 * rr0 * rtInv;
+}
+
+void Renderer::beginDrag() {
+  _dragging = true;
+}
+
+void Renderer::dragBy(float dxPixels, float dyPixels) {
+  // NSEvent deltaY > 0 means the mouse moved down; pitching the hat backward
+  // (top toward the viewer) for a downward drag makes it follow the cursor.
+  _yaw += dxPixels * kDragRadiansPerPixel;
+  _pitch -= dyPixels * kDragRadiansPerPixel;
+}
+
+void Renderer::endDrag() {
+  _dragging = false;
 }
 
 MTL::Buffer *Renderer::getHatInstanceBuffer() {
@@ -301,7 +318,13 @@ void Renderer::draw(MTK::View *pView) {
     dispatch_semaphore_signal(pRenderer->_semaphore);
   });
 
-  _angle += 0.002f;
+  // Auto-tumble unless the user is orbiting with the mouse; on release the
+  // tumble resumes from wherever the drag left the hat. The rates reproduce
+  // the original single-angle tumble (yaw at -0.002, pitch at half speed).
+  if (!_dragging) {
+    _yaw -= 0.002f;
+    _pitch += 0.001f;
+  }
 
   // Update instance positions:
   MTL::Buffer *pInstanceDataBuffer = getInstanceDataBuffers();

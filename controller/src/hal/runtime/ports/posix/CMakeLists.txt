@@ -45,6 +45,7 @@ target_sources(${CURRENT_LIBRARY_NAME} INTERFACE
   ${CMAKE_CURRENT_LIST_DIR}/renderer.cpp
   ${CMAKE_CURRENT_LIST_DIR}/mtk_view_delegate.cpp
   ${CMAKE_CURRENT_LIST_DIR}/app_delegate.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/mouse_monitor.cpp
   ${CMAKE_CURRENT_LIST_DIR}/math.cpp
   ${CMAKE_CURRENT_LIST_DIR}/mesh_loader.cpp
   ${CMAKE_CURRENT_LIST_DIR}/led_buffer.cpp

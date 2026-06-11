@@ -19,6 +19,12 @@ public:
   void buildHatGeometry();
   void draw(MTK::View *pView);
 
+  // Mouse-orbit interface. Main thread only: AppKit event monitors and
+  // MTKView's draw callback both run on the main thread, so no locking.
+  void beginDrag();
+  void dragBy(float dxPixels, float dyPixels);
+  void endDrag();
+
 private:
   MTL::Buffer *getInstanceDataBuffers();
   MTL::Buffer *getHatInstanceBuffer();
@@ -46,7 +52,11 @@ private:
   float _bandY;
 
   size_t _numInstances;
-  float _angle;
+  // Hat orientation in radians. Auto-tumbles each frame unless the user is
+  // dragging, in which case the mouse drives it (see mouse_monitor).
+  float _yaw;
+  float _pitch;
+  bool _dragging;
   int _frame;
   dispatch_semaphore_t _semaphore;
   static const int kMaxFramesInFlight;

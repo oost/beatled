@@ -10,6 +10,7 @@ public:
   MyMTKViewDelegate(MTL::Device *pDevice, size_t numInstances);
   virtual ~MyMTKViewDelegate() override;
   virtual void drawInMTKView(MTK::View *pView) override;
+  Renderer *renderer() const { return _pRenderer; }
 
 private:
   Renderer *_pRenderer;
