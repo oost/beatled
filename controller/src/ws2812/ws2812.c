@@ -27,6 +27,7 @@
 
 #ifdef PICO_PORT
 #define LED_SELF_TEST_STEP_MS 1200
+#define LED_SELF_TEST_BRIGHTNESS 125
 
 static void led_self_test_fill(uint32_t *colors, uint32_t value, const char *label) {
   for (size_t p = 0; p < NUM_PIXELS; p++)
@@ -43,10 +44,12 @@ static void led_self_test(void) {
   // the strip. The R/G/B/W sweep also tells you whether the channel
   // ordering / data line is healthy.
   puts("[INIT] LED self-test: starting (~6s of full-brightness colours)");
-  led_self_test_fill(colors, rgb_u32(255, 0, 0), "RED");
-  led_self_test_fill(colors, rgb_u32(0, 255, 0), "GREEN");
-  led_self_test_fill(colors, rgb_u32(0, 0, 255), "BLUE");
-  led_self_test_fill(colors, rgb_u32(255, 255, 255), "WHITE");
+  led_self_test_fill(colors, rgb_u32(LED_SELF_TEST_BRIGHTNESS, 0, 0), "RED");
+  led_self_test_fill(colors, rgb_u32(0, LED_SELF_TEST_BRIGHTNESS, 0), "GREEN");
+  led_self_test_fill(colors, rgb_u32(0, 0, LED_SELF_TEST_BRIGHTNESS), "BLUE");
+  led_self_test_fill(
+      colors, rgb_u32(LED_SELF_TEST_BRIGHTNESS, LED_SELF_TEST_BRIGHTNESS, LED_SELF_TEST_BRIGHTNESS),
+      "WHITE");
   led_self_test_fill(colors, 0, "off");
   puts("[INIT] LED self-test: done");
 }
