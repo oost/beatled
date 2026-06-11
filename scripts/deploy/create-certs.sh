@@ -51,7 +51,7 @@ mkcert -cert-file cert.pem -key-file key.pem "${DOMAINS[@]}"
 # Generate DH params (mkcert doesn't do this)
 if [ ! -f dh_param.pem ]; then
   echo "- Generating DH params (this takes a moment)"
-  openssl dhparam -out dh_param.pem 2048
+  openssl dhparam -out dh_param.pem 4096
 else
   echo "- DH params already exist, skipping"
 fi

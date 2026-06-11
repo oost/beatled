@@ -4,7 +4,8 @@
 # Build server
 ####################################
 
-FROM debian:trixie-backports AS build-server
+# Pinned by digest so builds are reproducible (digest = multi-arch manifest list).
+FROM debian:trixie-backports@sha256:79ded819079d5ab15d9566eef150213d271e26b39b724d6ec8a8c0b0c574144f AS build-server
 
 RUN echo "I am running on $TARGETPLATFORM, uname $(uname -m)" 
 
@@ -18,11 +19,11 @@ RUN dpkg --add-architecture arm64 \
     libfftw3-dev:arm64 libasound-dev:arm64 portaudio19-dev:arm64 \
     libasound2-dev:arm64 libflac-dev:arm64 libogg-dev:arm64 \
     libtool:arm64 libvorbis-dev:arm64 libopus-dev:arm64 libmp3lame-dev:arm64 \
-    libmpg123-dev:arm64 libpulse-dev:arm64 libpython3-dev
-  #  linux-headers 
-  # qemu binfmt-support qemu-user-static qemu-utils qemu-system-arm  
+    libmpg123-dev:arm64 libpulse-dev:arm64 libpython3-dev \
+  && rm -rf /var/lib/apt/lists/*
+  #  linux-headers
+  # qemu binfmt-support qemu-user-static qemu-utils qemu-system-arm
   # autoconf libtool
-  # && rm -rf /var/lib/apt/lists/*
 
 ENV VCPKG_FORCE_SYSTEM_BINARIES=1
 RUN cd /tmp \

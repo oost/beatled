@@ -9,4 +9,6 @@ out
 test-docker
 *.md
 client/node_modules
-server/build
+client/dist
+server/build*
+controller/build*

@@ -109,7 +109,7 @@ Usage: $(basename "$0") client react <action>
 
 Actions:
   build   Build the React frontend for production (output: client/dist)
-  dev     Start the Vite dev server (proxies API to https://127.0.0.1:8080)
+  dev     Start the Vite dev server (proxies API to https://127.0.0.1:8443)
 EOF
   exit 1
 }
@@ -644,7 +644,7 @@ cmd_server_deploy() {
 
 cmd_client_react_dev() {
   info "Starting Vite dev server..."
-  info "API requests proxy to https://127.0.0.1:8080 (configure in vite.config.ts)"
+  info "API requests proxy to https://127.0.0.1:8443 (configure in vite.config.ts)"
   (cd "$CLIENT_DIR" && npm install --silent && npm run dev)
 }
 

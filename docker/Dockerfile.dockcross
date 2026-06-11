@@ -6,7 +6,9 @@
 # (aarch64/ARM64)
 ####################################
 
-FROM dockcross/linux-arm64 AS dockcross-builder
+# Pinned by digest so builds are reproducible (digest = multi-arch manifest
+# list for dockcross 20250914-6ea98ba; dockcross only dates the per-arch tags).
+FROM dockcross/linux-arm64:latest@sha256:b539be3189e8e35dbc2320ae3c5bf1c02536ed181d3248495b9b44cc784ad36f AS dockcross-builder
 
 # Install ARM64 audio system dependencies
 RUN dpkg --add-architecture arm64 \

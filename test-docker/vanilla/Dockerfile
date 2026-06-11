@@ -33,6 +33,10 @@ RUN cmake -G Ninja \
   && cmake --build ../build \
   && cmake --install ../build --prefix /home/final
 
-FROM scratch
-WORKDIR /home 
+# Slim runtime stage (mirrors docker/Dockerfile.beatled's runtime pattern;
+# `scratch` had no libc/runtime libs, so the binaries couldn't run).
+FROM debian:trixie-slim@sha256:4e401d95de7083948053197a9c3913343cd06b706bf15eb6a0c3ccd26f436a0e
+RUN useradd -r -s /usr/sbin/nologin beatled
+WORKDIR /home
 COPY --from=build-server /home/final .
+USER beatled

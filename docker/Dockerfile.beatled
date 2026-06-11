@@ -23,7 +23,8 @@ RUN cmake --build ../build \
 ####################################
 # Build front end
 ####################################
-FROM --platform=$BUILDPLATFORM node AS build-client
+# Pinned by digest so builds are reproducible (digest = multi-arch manifest list).
+FROM --platform=$BUILDPLATFORM node:20-trixie-slim@sha256:abfbe12cc943141a0c9e8c0a57d710df1dadd95d35e8662cc02958b284d1f35b AS build-client
 
 RUN   apt-get update \
   &&  apt-get install -y tar 
@@ -33,7 +34,7 @@ COPY client /home
 RUN npm ci && npm run build
 
 
-FROM debian:trixie-slim
+FROM debian:trixie-slim@sha256:4e401d95de7083948053197a9c3913343cd06b706bf15eb6a0c3ccd26f436a0e
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates libasound2 libportaudio2 libfftw3-single3 \
   && rm -rf /var/lib/apt/lists/* \
