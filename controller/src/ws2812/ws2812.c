@@ -171,7 +171,9 @@ void update_tempo(intercore_message_t *ic_message) {
   registry_unlock_mutex();
 }
 
-void led_update() {
+uint32_t led_update(void) {
+  const uint32_t frame_us = (uint32_t)LED_CORE_SLEEP_MS * 1000u;
+
   // Snapshot shared state under registry lock to prevent torn reads from core0
   registry_lock_mutex();
   uint64_t time_ref = _time_ref;
@@ -184,7 +186,7 @@ void led_update() {
   registry_unlock_mutex();
 
   if (time_ref == 0 || tempo_period_us == 0) {
-    return;
+    return frame_us;
   }
 
   static uint32_t colors[2][NUM_PIXELS];
@@ -246,4 +248,15 @@ void led_update() {
   _next_beat_time = next_beat_time;
   _next_beat_count = next_beat_count;
   registry_unlock_mutex();
+
+  // Wake for the beat boundary if it falls before the next regular frame so
+  // the onset frame renders right at the beat on every controller.
+  uint64_t after = time_us_64();
+  if (next_beat_time > after) {
+    uint64_t remaining = next_beat_time - after;
+    if (remaining < frame_us) {
+      return (uint32_t)remaining;
+    }
+  }
+  return frame_us;
 }

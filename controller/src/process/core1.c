@@ -29,8 +29,12 @@ void core1_loop() {
       update_tempo(&ic_message);
     }
 
-    led_update();
-    sleep_ms(LED_CORE_SLEEP_MS);
+    uint32_t sleep_hint_us = led_update();
+    // Round up to the ms-granular HAL sleep; never spin (min 1 ms). The
+    // residual ≤1 ms overshoot past a beat boundary is far below the
+    // frame-interval quantization this replaces.
+    uint32_t sleep_duration_ms = (sleep_hint_us + 999u) / 1000u;
+    sleep_ms(sleep_duration_ms > 0 ? sleep_duration_ms : 1u);
     idx++;
   }
 }
