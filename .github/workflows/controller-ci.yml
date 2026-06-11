@@ -39,7 +39,7 @@ jobs:
       # backend; they just need a working toolchain and Catch2. Catch2 is
       # vendored via the firmware tree's vcpkg manifest at controller/.
       - name: Setup vcpkg
-        uses: lukka/run-vcpkg@7d259227a1fb6471a0253dd5ab7419835228f7d7 # v11
+        uses: lukka/run-vcpkg@305c06bd4dee21e23dcf142c85c657a993f7aa1a # v11
         with:
           vcpkgGitCommitId: "66c0373dc7fca549e5803087b9487edfe3aca0a1"
 
