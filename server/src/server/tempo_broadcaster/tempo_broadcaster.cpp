@@ -70,7 +70,7 @@ void TempoBroadcaster::broadcast_next_beat(uint64_t next_beat_time_ref, uint32_t
     auto buffer = std::make_unique<NextBeatBuffer>(next_beat_time_ref, beat_count, seq);
     // Per-beat traffic — same reasoning as application.cpp.
     SPDLOG_DEBUG("{} next_beat seq={} t={} count={}", name(), seq, next_beat_time_ref, beat_count);
-    dispatch(std::move(buffer), /*compensate_owd=*/true, next_beat_time_ref);
+    dispatch(std::move(buffer));
   });
 }
 
@@ -83,7 +83,7 @@ void TempoBroadcaster::broadcast_beat(uint64_t beat_time_ref, uint32_t beat_coun
   asio::post(strand_, [this, beat_time_ref, beat_count]() {
     uint16_t seq = beat_seq_.fetch_add(1, std::memory_order_relaxed);
     auto buffer = std::make_unique<BeatBuffer>(beat_time_ref, beat_count, seq);
-    dispatch(std::move(buffer), /*compensate_owd=*/true, beat_time_ref);
+    dispatch(std::move(buffer));
   });
 }
 
@@ -97,8 +97,7 @@ void TempoBroadcaster::push_program_now() {
     SPDLOG_INFO("{} program push seq={} pid={}", name(), seq, pid);
 
     // Immediate send.
-    dispatch(std::make_unique<ProgramPushBuffer>(pid, seq),
-             /*compensate_owd=*/false, 0);
+    dispatch(std::make_unique<ProgramPushBuffer>(pid, seq));
 
     // Retry 50 ms later with the same seq so controllers that already
     // applied the first packet treat the retry as an idempotent no-op
@@ -113,8 +112,7 @@ void TempoBroadcaster::push_program_now() {
           if (ec || !is_running()) {
             return;
           }
-          dispatch(std::make_unique<ProgramPushBuffer>(pid, seq),
-                   /*compensate_owd=*/false, 0);
+          dispatch(std::make_unique<ProgramPushBuffer>(pid, seq));
         }));
   });
 }
@@ -137,57 +135,29 @@ void TempoBroadcaster::schedule_program_refresh() {
       }));
 }
 
-void TempoBroadcaster::dispatch(DataBuffer::Ptr response_buffer, bool compensate_owd,
-                                uint64_t base_time_for_compensation) {
+void TempoBroadcaster::dispatch(DataBuffer::Ptr response_buffer) {
+  // Timestamps in these messages live in the shared synced-clock domain:
+  // controllers convert them with the NTP-style offset they negotiated over
+  // TIME_REQUEST, which already accounts for path delay symmetrically. The
+  // per-client OWD rewrite this used to do on NEXT_BEAT/BEAT double-counted
+  // that delay and made each controller fire early by its own OWD — skewing
+  // controllers against each other by the *difference* of their estimates.
+  auto shared = std::shared_ptr<DataBuffer>(std::move(response_buffer));
+
   if (broadcasting_server_parameters_.mode != BroadcastMode::Unicast) {
-    // Broadcast mode: one packet, no per-client compensation possible.
-    auto shared = std::shared_ptr<DataBuffer>(std::move(response_buffer));
+    // Broadcast mode: one packet for everyone.
     send_to_endpoint(std::move(shared), broadcast_endpoint_);
     return;
   }
 
   // Unicast mode. Snapshot the client list (also prunes stale entries) and
-  // send one frame per registered client. For NEXT_BEAT/BEAT we rewrite the
-  // time field per-recipient to compensate measured one-way delay.
+  // send the same bytes to every registered client.
   auto clients = state_manager_.get_clients();
-  if (clients.empty()) {
-    return;
-  }
-
-  uint8_t type = response_buffer->type();
-  bool can_compensate =
-      compensate_owd && (type == BEATLED_MESSAGE_NEXT_BEAT || type == BEATLED_MESSAGE_BEAT);
-
   for (const auto &cs : clients) {
     if (cs->endpoint.port() == 0) {
       continue; // never observed a real endpoint
     }
-
-    if (!can_compensate || cs->owd_us == 0) {
-      // No per-client adjustment — share the same bytes.
-      auto shared = std::shared_ptr<DataBuffer>(new auto(*response_buffer));
-      send_to_endpoint(std::move(shared), cs->endpoint);
-      continue;
-    }
-
-    // Build a per-client copy with the time field shifted back by OWD so
-    // when the packet *arrives* at the controller, the embedded
-    // next_beat_time_ref equals the server's intended hit time.
-    uint64_t adjusted =
-        base_time_for_compensation > cs->owd_us ? base_time_for_compensation - cs->owd_us : 0;
-    DataBuffer::Ptr per_client;
-    if (type == BEATLED_MESSAGE_NEXT_BEAT) {
-      const auto *src =
-          reinterpret_cast<const beatled_message_next_beat_t *>(response_buffer->data().data());
-      per_client =
-          std::make_unique<NextBeatBuffer>(adjusted, ntohl(src->beat_count), ntohs(src->seq));
-    } else {
-      const auto *src =
-          reinterpret_cast<const beatled_message_beat_t *>(response_buffer->data().data());
-      per_client = std::make_unique<BeatBuffer>(adjusted, ntohl(src->beat_count), ntohs(src->seq));
-    }
-    auto shared = std::shared_ptr<DataBuffer>(std::move(per_client));
-    send_to_endpoint(std::move(shared), cs->endpoint);
+    send_to_endpoint(shared, cs->endpoint);
   }
 }
 
