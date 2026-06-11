@@ -7,20 +7,21 @@
 // Only define them if not already available.
 #ifndef htonll
 
-#if defined(__BYTE_ORDER) && __BYTE_ORDER == __BIG_ENDIAN ||                   \
-    defined(__BIG_ENDIAN__) || defined(__ARMEB__) || defined(__THUMBEB__) ||   \
-    defined(__AARCH64EB__) || defined(_MIBSEB) || defined(__MIBSEB) ||         \
-    defined(__MIBSEB__)
+#if defined(__BYTE_ORDER) && __BYTE_ORDER == __BIG_ENDIAN || defined(__BIG_ENDIAN__) ||            \
+    defined(__ARMEB__) || defined(__THUMBEB__) || defined(__AARCH64EB__) || defined(_MIBSEB) ||    \
+    defined(__MIBSEB) || defined(__MIBSEB__)
 // Big endian
 #define htonll(x) (x)
 
-#elif defined(__BYTE_ORDER) && __BYTE_ORDER == __LITTLE_ENDIAN ||              \
-    defined(__LITTLE_ENDIAN__) || defined(__ARMEL__) ||                        \
-    defined(__THUMBEL__) || defined(__AARCH64EL__) || defined(_MIPSEL) ||      \
+#elif defined(__BYTE_ORDER) && __BYTE_ORDER == __LITTLE_ENDIAN || defined(__LITTLE_ENDIAN__) ||    \
+    defined(__ARMEL__) || defined(__THUMBEL__) || defined(__AARCH64EL__) || defined(_MIPSEL) ||    \
     defined(__MIPSEL) || defined(__MIPSEL__) || defined(__APPLE__)
 // Little endian (including Apple Silicon and Intel Macs)
 
-#define htonll(x) ((((uint64_t)htonl(x)) << 32) + htonl((x) >> 32))
+// Fully parenthesize the argument and make the 64->32 truncation on
+// each half explicit, so expression arguments expand safely.
+#define htonll(x)                                                                                  \
+  ((((uint64_t)htonl((uint32_t)(x))) << 32) | (uint64_t)htonl((uint32_t)((x) >> 32)))
 
 #else
 #error "I don't know what architecture this is!"

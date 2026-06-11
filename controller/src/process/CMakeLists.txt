@@ -6,7 +6,6 @@ add_library(beatled_process INTERFACE)
 target_sources(beatled_process INTERFACE 
   core0.c
   core1.c
-  isr_thread.c
 )
 
 target_link_libraries(beatled_process INTERFACE

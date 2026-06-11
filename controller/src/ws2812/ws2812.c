@@ -109,7 +109,7 @@ void update_tempo(intercore_message_t *ic_message) {
   registry_lock_mutex();
 
   // printf("Message type %d\n", ic_message->message_type);
-  if (ic_message->message_type & (0x01 << intercore_time_ref_update)) {
+  if (ic_message->message_type & INTERCORE_FLAG_TIME_REF_UPDATE) {
     uint64_t ref = registry.next_beat_time_ref;
     uint32_t count_at_ref = registry.beat_count;
     uint64_t now = time_us_64();
@@ -143,7 +143,7 @@ void update_tempo(intercore_message_t *ic_message) {
     _next_beat_count = count_at_ref;
   }
 
-  if (ic_message->message_type & (0x01 << intercore_tempo_update)) {
+  if (ic_message->message_type & INTERCORE_FLAG_TEMPO_UPDATE) {
     _tempo_period_us = registry.tempo_period_us;
 
     // Initialize time_ref on first tempo update if not set yet
@@ -160,7 +160,7 @@ void update_tempo(intercore_message_t *ic_message) {
 #endif
   }
 
-  if (ic_message->message_type & (0x01 << intercore_program_update)) {
+  if (ic_message->message_type & INTERCORE_FLAG_PROGRAM_UPDATE) {
     uint8_t new_program_id = registry.program_id;
     if (new_program_id != _program_id) {
       _program_id = new_program_id;

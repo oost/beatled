@@ -78,7 +78,7 @@ int process_tempo_msg(beatled_message_t *server_msg, size_t data_length) {
   //                                          (0x01 << REGISTRY_UPDATE_TEMPO)};
 
   intercore_message_t msg = {.message_type =
-                                 0x01 << intercore_tempo_update | 0x01 << intercore_program_update};
+                                 INTERCORE_FLAG_TEMPO_UPDATE | INTERCORE_FLAG_PROGRAM_UPDATE};
 
   if (!hal_queue_add_message(intercore_command_queue, &msg)) {
     qos_intercore_drop_bump();

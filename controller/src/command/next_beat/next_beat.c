@@ -83,7 +83,7 @@ int process_next_beat_msg(beatled_message_t *server_msg, size_t data_length) {
   registry.update_timestamp = time_us_64();
   registry_unlock_mutex();
 
-  intercore_message_t msg = {.message_type = 0x01 << intercore_time_ref_update};
+  intercore_message_t msg = {.message_type = INTERCORE_FLAG_TIME_REF_UPDATE};
 
   if (!hal_queue_add_message(intercore_command_queue, &msg)) {
     qos_intercore_drop_bump();

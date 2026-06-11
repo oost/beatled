@@ -51,7 +51,7 @@ int command_program(beatled_message_t *server_msg, size_t data_length) {
     return 0;
   }
 
-  intercore_message_t msg = {.message_type = 0x01 << intercore_program_update};
+  intercore_message_t msg = {.message_type = INTERCORE_FLAG_PROGRAM_UPDATE};
   if (!hal_queue_add_message(intercore_command_queue, &msg)) {
     qos_intercore_drop_bump();
     puts("[ERR] Intercore queue full, skipping notification");
