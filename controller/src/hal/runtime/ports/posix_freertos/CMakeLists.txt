@@ -45,6 +45,7 @@ target_sources(${CURRENT_LIBRARY_NAME} INTERFACE
   ${POSIX_RUNTIME_DIR}/renderer.cpp
   ${POSIX_RUNTIME_DIR}/mtk_view_delegate.cpp
   ${POSIX_RUNTIME_DIR}/app_delegate.cpp
+  ${POSIX_RUNTIME_DIR}/mouse_monitor.cpp
   ${POSIX_RUNTIME_DIR}/math.cpp
   ${POSIX_RUNTIME_DIR}/mesh_loader.cpp
   ${POSIX_RUNTIME_DIR}/led_buffer.cpp
