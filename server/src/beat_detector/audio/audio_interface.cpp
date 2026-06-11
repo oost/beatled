@@ -147,12 +147,9 @@ void AudioInterface::copy_to_buffer(float *input_buffer, unsigned long frame_cou
   while (elements_copied < frame_count) {
     // If we have a new buffer, let's set the start time
     if (current_buffer_->start_time() == 0) {
-      // Set time here...
       uint64_t now = Clock::time_us_64();
       uint64_t buffer_time = now - static_cast<uint64_t>(1e6 * (stream_time - input_output_time));
       current_buffer_->set_start_time(buffer_time);
-      // SPDLOG_INFO("Setting start time. Elements copied {}, frame count {}",
-      //             elements_copied, frame_count);
     }
 
     elements_copied += current_buffer_->copy_raw_data(input_buffer + elements_copied,
