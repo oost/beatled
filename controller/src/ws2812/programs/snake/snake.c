@@ -10,7 +10,7 @@
 // disappears (0-255, pre-gamma: keep above ~30 or gamma8[] rounds it to 0).
 #define SNAKE_BEAT_FLOOR 70u
 // Brightest channel value this program may emit (0-255); bounds current draw.
-#define SNAKE_MAX_BRIGHTNESS 255u
+#define SNAKE_MAX_BRIGHTNESS 125u
 
 void pattern_snakes_init() {}
 

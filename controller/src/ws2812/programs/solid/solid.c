@@ -3,7 +3,7 @@
 #include "../utils.h"
 
 // Brightest channel value this program may emit (0-255); bounds current draw.
-#define SOLID_MAX_BRIGHTNESS 255u
+#define SOLID_MAX_BRIGHTNESS 125u
 
 void pattern_solid(uint32_t *stream, size_t len, uint8_t t, uint32_t beat_count) {
   // Use beat position t (0-255) as perceptual brightness: a ramp from dark
