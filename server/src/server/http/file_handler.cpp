@@ -38,8 +38,19 @@ restinio::request_handling_status_t FileHandler::serve_file(const restinio::requ
                        content_type_by_file_extention(extension))
         .set_body(std::move(sf))
         .done();
-  } catch (const std::exception &) {
-    return req->create_response(restinio::status_not_found())
+  } catch (const std::exception &ex) {
+    // sendfile throws on any open failure. A missing file is a routine
+    // 404; anything else (permissions, IO) is a server-side problem
+    // that must not be silently masked as "not found".
+    std::error_code ec;
+    if (!std::filesystem::exists(file_path, ec) || ec) {
+      return req->create_response(restinio::status_not_found())
+          .append_header_date_field()
+          .connection_close()
+          .done();
+    }
+    SPDLOG_WARN("Failed to serve {}: {}", file_path.string(), ex.what());
+    return req->create_response(restinio::status_internal_server_error())
         .append_header_date_field()
         .connection_close()
         .done();
