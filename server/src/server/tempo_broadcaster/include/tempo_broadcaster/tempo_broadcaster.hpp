@@ -53,9 +53,10 @@ private:
   const char *SERVICE_NAME = "Tempo Broadcaster";
   const char *service_name() const override { return SERVICE_NAME; }
 
-  // Send a single buffer either as broadcast or as N unicast frames.
-  void dispatch(DataBuffer::Ptr response_buffer, bool compensate_owd,
-                uint64_t base_time_for_compensation);
+  // Send a single buffer either as broadcast or as N unicast frames. The
+  // same bytes go to every client: timestamps are in the shared synced-clock
+  // domain, so no per-recipient delivery compensation is needed (or correct).
+  void dispatch(DataBuffer::Ptr response_buffer);
 
   void send_to_endpoint(std::shared_ptr<DataBuffer> buffer,
                         const asio::ip::udp::endpoint &endpoint);
