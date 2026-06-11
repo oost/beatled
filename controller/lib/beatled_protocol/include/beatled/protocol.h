@@ -173,6 +173,11 @@ typedef struct {
 // `program_id` (now carried only by TEMPO_RESPONSE and PROGRAM). Adds a
 // monotonically-increasing `seq` so controllers can detect loss and reject
 // stale broadcasts.
+//
+// `beat_count` is the count of the beat that fires AT `next_beat_time_ref`
+// (not of the beat during which the message was sent). Controllers fold it
+// into their local beat grid so patterns keyed on the count stay phase-
+// continuous across re-anchors.
 typedef struct {
   beatled_message_t base;
   uint64_t next_beat_time_ref;
