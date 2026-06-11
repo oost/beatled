@@ -18,9 +18,14 @@ vi.mock("chart.js", () => ({
 
 vi.mock("chartjs-adapter-date-fns", () => ({}));
 
-import BeatChart from "../BeatChart";
+import BeatChart, { datasetStyle } from "../BeatChart";
 
 describe("BeatChart", () => {
+  it("draws straight segments without point markers", () => {
+    expect(datasetStyle.tension).toBe(0);
+    expect(datasetStyle.pointRadius).toBe(0);
+  });
+
   it("renders chart when historyData is provided", () => {
     const historyData = [
       { x: new Date(), y: 120 },
