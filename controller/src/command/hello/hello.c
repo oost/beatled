@@ -34,6 +34,12 @@ int prepare_hello_request(void *buffer_payload, size_t buf_len) {
   msg->version_major = BEATLED_PROTOCOL_VERSION_MAJOR;
   msg->version_minor = BEATLED_PROTOCOL_VERSION_MINOR;
 
+  // The wire field is sized for a hex-string id (2*8+1 bytes) but the HAL
+  // hands back BOARD_ID_SIZE_BYTES raw bytes. Bound the copy at compile
+  // time and zero the field first so no stack bytes leak onto the wire.
+  _Static_assert(BOARD_ID_SIZE_BYTES <= sizeof(((beatled_message_hello_request_t *)0)->board_id),
+                 "board_id wire field too small for HAL board id");
+  memset(msg->board_id, 0, sizeof(msg->board_id));
   get_unique_board_id(msg->board_id);
 
   // Firmware self-description for /api/devices. All three are stamped at
