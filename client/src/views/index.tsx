@@ -11,7 +11,7 @@ export default function Index() {
           GitHub repo.
         </a>
       </p>
-      <Navigate to="/status" replace={true} />
+      <Navigate to="/program" replace={true} />
     </div>
   );
 }

@@ -15,7 +15,6 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { FormattedNumber } from "react-intl";
-import BeatChart from "../components/BeatChart";
 import { format, formatDistanceToNow } from "date-fns";
 import { RefreshCw, Clock } from "lucide-react";
 
@@ -28,9 +27,6 @@ interface TempoHistoryEntry {
   deviceCount?: number;
 }
 
-const tempoHistory: TempoHistoryEntry[] = [];
-const MAX_HISTORY = 30;
-
 export async function loader() {
   console.log("Loading status");
   const [status, devicesResponse, qos] = await Promise.all([
@@ -39,13 +35,8 @@ export async function loader() {
     getQos(),
   ]);
   const last: TempoHistoryEntry = { x: new Date(), y: status.tempo || NaN, ...status };
-  tempoHistory.push(last);
-  if (tempoHistory.length > MAX_HISTORY) {
-    tempoHistory.splice(0, tempoHistory.length - MAX_HISTORY);
-  }
   return {
     last,
-    history: tempoHistory,
     devices: devicesResponse.devices,
     qos,
   };
@@ -224,13 +215,11 @@ export default function StatusPage() {
   const fetcherData = fetcher.data as
     | {
         last: TempoHistoryEntry;
-        history: TempoHistoryEntry[];
         devices: Device[];
         qos: FleetQos | null;
       }
     | undefined;
   const data = fetcherData?.last || ({} as Partial<TempoHistoryEntry>);
-  const historyData = fetcherData?.history || [];
   const devices = fetcherData?.devices || [];
   const qos = fetcherData?.qos ?? null;
 
@@ -307,25 +296,6 @@ export default function StatusPage() {
             </CardFooter>
           </Card>
         </fetcher.Form>
-
-        <Card className="h-full">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Beat History</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {data.error ? (
-              <p className="text-sm text-muted-foreground">{data.status as string}</p>
-            ) : (
-              <BeatChart historyData={historyData} />
-            )}
-          </CardContent>
-          <CardFooter>
-            <p className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Clock className="h-3 w-3" />
-              {data.x && "Updated " + formatDistanceToNow(data.x, { addSuffix: true })}
-            </p>
-          </CardFooter>
-        </Card>
 
         <FleetQosCard qos={qos} />
 

@@ -4,6 +4,9 @@ export interface StatusResponse {
   error?: boolean;
   status?: string | Record<string, boolean>;
   tempo?: number;
+  // Operator-chosen BPM used by the `manual-bpm` service. Mirrors the field
+  // the server returns from /api/status and /api/tempo/manual.
+  manualBpm?: number;
   deviceCount?: number;
 }
 
@@ -101,6 +104,18 @@ export async function serviceControl(serviceId: string, status: boolean): Promis
       id: serviceId,
       status,
     });
+    return res.json();
+  } catch {
+    return { error: true, status: "Network error" };
+  }
+}
+
+// Set the operator-chosen BPM for the `manual-bpm` metronome service. Stores
+// the value server-side; enabling the service is a separate serviceControl
+// call (the two tempo sources are mutually exclusive on the server).
+export async function setManualBpm(bpm: number): Promise<StatusResponse> {
+  try {
+    const res = await postEndpoint("/api/tempo/manual", { bpm });
     return res.json();
   } catch {
     return { error: true, status: "Network error" };

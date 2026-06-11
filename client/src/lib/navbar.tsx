@@ -8,14 +8,14 @@ interface NavRoute {
 
 export const NAVBAR_ROUTES: NavRoute[] = [
   {
-    name: "Status",
-    path: "/status",
-    icon: <Activity className="h-5 w-5" />,
-  },
-  {
     name: "Program",
     path: "/program",
     icon: <Music className="h-5 w-5" />,
+  },
+  {
+    name: "Status",
+    path: "/status",
+    icon: <Activity className="h-5 w-5" />,
   },
   {
     name: "Log",
