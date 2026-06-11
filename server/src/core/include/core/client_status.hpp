@@ -44,9 +44,10 @@ public:
   // requests; the broadcaster uses it for unicast delivery.
   asio::ip::udp::endpoint endpoint;
 
-  // Measured one-way delay (server→client) in microseconds, taken from the
-  // most recent TIME_REQUEST round-trip as RTT/2. 0 means no sample yet —
-  // the broadcaster should fall back to no compensation in that case.
+  // Measured one-way delay (server→client) in microseconds, reported by the
+  // controller as median(RTT)/2 on TEMPO_REQUEST. Diagnostic only: beat
+  // timestamps travel in the synced-clock domain, so delivery delay must
+  // NOT be compensated for (doing so double-counts the path delay).
   uint64_t owd_us = 0;
 
   // Firmware self-description carried on HELLO_REQUEST (protocol v3).
@@ -88,6 +89,27 @@ public:
   QosSnapshot latest_qos;
 };
 
+// Server-side estimate of a snapshot's clock-sync error, in microseconds.
+// The controller samples uptime_us when it builds the QoS block; the server
+// stamps server_received_at_us on arrival, one OWD (~RTT/2) later. So the
+// server's independent view of the controller's offset is
+//   (server_received_at_us - rtt/2) - uptime_us
+// and the difference from the controller's own current_offset_us is its
+// sync error. The spread of these errors across the fleet approximates the
+// real beat skew (each device's raw offset is dominated by its boot epoch
+// and is useless for cross-device comparison). Returns false when the
+// snapshot lacks the inputs (no probe seen yet / no RTT sample).
+inline bool qos_sync_error_us(const ClientStatus::QosSnapshot &q, int64_t &error_us) {
+  const uint32_t rtt = q.last_rtt_us > 0 ? q.last_rtt_us : q.median_rtt_us;
+  if (!q.valid || q.server_received_at_us == 0 || rtt == 0) {
+    return false;
+  }
+  const int64_t server_view =
+      static_cast<int64_t>(q.server_received_at_us - rtt / 2) - static_cast<int64_t>(q.uptime_us);
+  error_us = q.current_offset_us - server_view;
+  return true;
+}
+
 // Manually define to_json for ClientStatus to have full control over board_id serialization
 // board_id contains raw binary bytes from the Pico, so we convert to hex string
 inline void to_json(json &j, const ClientStatus &cs) {
@@ -123,6 +145,12 @@ inline void to_json(json &j, const ClientStatus &cs) {
         {"server_received_at_us", cs.latest_qos.server_received_at_us},
         {"last_rtt_us", cs.latest_qos.last_rtt_us},
     };
+    int64_t sync_error_us = 0;
+    if (qos_sync_error_us(cs.latest_qos, sync_error_us)) {
+      j["qos"]["sync_error_us"] = sync_error_us;
+    } else {
+      j["qos"]["sync_error_us"] = nullptr;
+    }
   } else {
     j["qos"] = nullptr;
   }

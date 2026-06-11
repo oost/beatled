@@ -393,6 +393,12 @@ APIHandler::req_status_t APIHandler::on_get_qos(const req_handle_t &req, route_p
   size_t reporting = 0;
   int64_t min_offset_us = std::numeric_limits<int64_t>::max();
   int64_t max_offset_us = std::numeric_limits<int64_t>::min();
+  // Fleet skew is the spread of per-device *sync errors* (see
+  // qos_sync_error_us): raw offsets are dominated by each device's boot
+  // epoch, so their spread measures who booted when, not sync quality.
+  size_t skew_reporting = 0;
+  int64_t min_sync_error_us = std::numeric_limits<int64_t>::max();
+  int64_t max_sync_error_us = std::numeric_limits<int64_t>::min();
   uint64_t min_rtt_us = std::numeric_limits<uint64_t>::max();
   uint64_t max_rtt_us = 0;
   uint64_t sum_rtt_us = 0;
@@ -410,6 +416,14 @@ APIHandler::req_status_t APIHandler::on_get_qos(const req_handle_t &req, route_p
       min_offset_us = qos.current_offset_us;
     if (qos.current_offset_us > max_offset_us)
       max_offset_us = qos.current_offset_us;
+    int64_t sync_error_us = 0;
+    if (core::qos_sync_error_us(qos, sync_error_us)) {
+      ++skew_reporting;
+      if (sync_error_us < min_sync_error_us)
+        min_sync_error_us = sync_error_us;
+      if (sync_error_us > max_sync_error_us)
+        max_sync_error_us = sync_error_us;
+    }
     if (qos.median_rtt_us > 0) {
       if (qos.median_rtt_us < min_rtt_us)
         min_rtt_us = qos.median_rtt_us;
@@ -438,7 +452,11 @@ APIHandler::req_status_t APIHandler::on_get_qos(const req_handle_t &req, route_p
   if (reporting > 0) {
     response["min_offset_us"] = min_offset_us;
     response["max_offset_us"] = max_offset_us;
-    response["fleet_skew_us"] = max_offset_us - min_offset_us;
+    if (skew_reporting > 0) {
+      response["fleet_skew_us"] = max_sync_error_us - min_sync_error_us;
+    } else {
+      response["fleet_skew_us"] = nullptr;
+    }
     response["mean_rtt_us"] = sum_rtt_us / reporting;
     response["min_rtt_us"] = min_rtt_us == std::numeric_limits<uint64_t>::max() ? 0 : min_rtt_us;
     response["max_rtt_us"] = max_rtt_us;
@@ -464,8 +482,9 @@ APIHandler::req_status_t APIHandler::on_get_qos(const req_handle_t &req, route_p
   // the fleet skew is fine.
   std::string health = "unknown";
   if (reporting > 0) {
-    const uint64_t skew_us =
-        (max_offset_us > min_offset_us) ? static_cast<uint64_t>(max_offset_us - min_offset_us) : 0;
+    const uint64_t skew_us = (skew_reporting > 0 && max_sync_error_us > min_sync_error_us)
+                                 ? static_cast<uint64_t>(max_sync_error_us - min_sync_error_us)
+                                 : 0;
     if (skew_us >= qos_thresholds_.skew_fail_us || total_intercore_drops > 0 ||
         total_time_sync_outliers > 0) {
       health = "fail";
