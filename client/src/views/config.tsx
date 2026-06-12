@@ -5,6 +5,7 @@ import PageHeader from "../components/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import {
   getAPIHost,
   setAPIHost,
@@ -12,6 +13,7 @@ import {
   setAPIToken,
   pingHealth,
 } from "../lib/api";
+import { apControl } from "../lib/ap";
 import { useInterval } from "../hooks/interval";
 
 export async function loader() {
@@ -99,6 +101,99 @@ function useHealthChecks() {
   return statuses;
 }
 
+function AccessPointCard() {
+  const [apStatus, setApStatus] = useState<"on" | "off" | "unknown">("unknown");
+  const [revertMinutes, setRevertMinutes] = useState(10);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  const refresh = useCallback(async () => {
+    const res = await apControl("status");
+    setApStatus(res.error ? "unknown" : (res.ap ?? "unknown"));
+  }, []);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  const switchOn = async () => {
+    const revertNote =
+      revertMinutes > 0 ? ` It will auto-revert to WiFi after ${revertMinutes} min.` : "";
+    if (
+      !window.confirm(
+        `Switch the Pi to hotspot mode? This device will lose its connection to the server.${revertNote}\n\n` +
+          `Rejoin the "Beatled" WiFi network, then open https://192.168.4.1:8443/ to continue.`,
+      )
+    ) {
+      return;
+    }
+    setBusy(true);
+    setMessage(
+      'Switching to hotspot — this device will lose connection. Rejoin the "Beatled" WiFi and open https://192.168.4.1:8443/.',
+    );
+    // The response usually never returns (the Pi's radio switches mid-request),
+    // so we don't depend on it; the message above stays up.
+    await apControl("on", revertMinutes);
+    setBusy(false);
+  };
+
+  const switchOff = async () => {
+    setBusy(true);
+    setMessage(null);
+    const res = await apControl("off");
+    setBusy(false);
+    if (res.error) {
+      setMessage(`Failed to switch to WiFi: ${res.status ?? "error"}`);
+    } else {
+      await refresh();
+    }
+  };
+
+  return (
+    <Card>
+      <CardContent className="pt-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <Label className="text-sm font-medium">Access Point</Label>
+          <span className="text-sm text-muted-foreground">
+            Hotspot is {apStatus === "unknown" ? "—" : apStatus}
+          </span>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Switch the Raspberry Pi between your WiFi and its own “Beatled” hotspot
+          (192.168.4.1). The Pi has a single radio, so turning the hotspot on drops
+          this connection — rejoin the “Beatled” network to reconnect.
+        </p>
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-col gap-1">
+            <Label
+              htmlFor="ap-revert"
+              className="text-xs font-normal text-muted-foreground"
+            >
+              Auto-revert (min)
+            </Label>
+            <input
+              id="ap-revert"
+              type="number"
+              min={0}
+              max={1440}
+              value={revertMinutes}
+              onChange={(e) => setRevertMinutes(Number(e.target.value))}
+              className="flex h-9 w-24 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            />
+          </div>
+          <Button variant="outline" disabled={busy} onClick={switchOn}>
+            Switch to Hotspot
+          </Button>
+          <Button variant="secondary" disabled={busy} onClick={switchOff}>
+            Switch to WiFi
+          </Button>
+        </div>
+        {message && <p className="text-xs text-amber-600">{message}</p>}
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function ConfigPage() {
   const submit = useSubmit();
   const { host, token } = useLoaderData() as { host: string; token: string };
@@ -173,6 +268,7 @@ export default function ConfigPage() {
             />
           </CardContent>
         </Card>
+        <AccessPointCard />
       </div>
     </>
   );
