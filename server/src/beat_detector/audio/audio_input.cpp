@@ -64,7 +64,12 @@ int AudioInput::paCallbackMethod(const void *inputBuffer, void *outputBuffer,
   copy_to_buffer(input, frameCount, timeInfo->inputBufferAdcTime, timeInfo->currentTime);
 
   if (statusFlags) {
-    SPDLOG_ERROR(" *** PortAudio stream status %lu", statusFlags);
+    // spdlog uses fmt-style {} placeholders, not printf %lu. Log the raw
+    // bitmask plus the input flags that actually matter here — both mean
+    // dropped audio frames on an input-only stream.
+    SPDLOG_ERROR(" *** PortAudio stream status {:#x}{}{}", statusFlags,
+                 (statusFlags & paInputUnderflow) ? " input-underflow" : "",
+                 (statusFlags & paInputOverflow) ? " input-overflow" : "");
   }
   (void)outputBuffer;
 
