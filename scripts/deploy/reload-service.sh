@@ -1,8 +1,9 @@
 #!/bin/bash
 #
-# Reload or install the beat-server service on a Raspberry Pi.
-# Called during deployment to ensure the service is running.
-# Certificates must already exist (handled by cmd_deploy).
+# Reload/install the beat-server and wifi-fallback services on a
+# Raspberry Pi. Called during deployment to ensure both services are
+# installed, up to date, and running. Certificates must already exist
+# (handled by cmd_deploy).
 #
 
 set -euo pipefail
@@ -19,18 +20,11 @@ if [ ! -f "$HOME/certs/cert.pem" ]; then
   exit 1
 fi
 
-# Check if service is installed
-info "Checking service status..."
-if ! systemctl status --no-pager beat-server.service > /dev/null 2>&1; then
-  info "Beat server service not found, installing..."
-  # Run as a subprocess, not `.` — install-service.sh is self-contained and
-  # also declares `readonly SCRIPT_DIR`, which collides with ours if sourced.
-  bash "$SCRIPT_DIR/install-service.sh"
-else
-  info "Reloading systemd daemon..."
-  sudo systemctl daemon-reload
-  info "Restarting beat-server..."
-  sudo systemctl restart beat-server.service
-  info "Service status:"
-  systemctl status --no-pager beat-server.service
-fi
+# install-service.sh is idempotent: it regenerates each unit file from its
+# template, reloads systemd, and enables + restarts beat-server and
+# wifi-fallback. Running it on every deploy keeps both services current
+# (the old "only install when missing" path never refreshed wifi-fallback).
+# Run as a subprocess, not `.` — install-service.sh is self-contained and
+# also declares `readonly SCRIPT_DIR`, which would collide if sourced.
+info "Installing/refreshing beat-server and wifi-fallback services..."
+bash "$SCRIPT_DIR/install-service.sh"

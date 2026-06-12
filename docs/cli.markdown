@@ -72,11 +72,29 @@ The `flash` action on the Pico ports copies the `.uf2` to
 BOOTSEL mode (hold the button while plugging USB in). The ESP32
 `flash` uses the existing serial connection from `ESP32_PORT`.
 
+### WiFi config (`.env.wifi`)
+
+The WiFi networks live in **one** file, `controller/.env.wifi`, shared by
+every hardware firmware build *and* the Raspberry Pi host's
+`wifi-fallback` service (see [`server deploy`](#server)). Set them once:
+
+```sh
+cp controller/.env.wifi.template controller/.env.wifi
+$EDITOR controller/.env.wifi
+```
+
+`WIFI_SSID`/`WIFI_PASSWORD` is the primary network. Up to three optional
+fallbacks — `WIFI_SSID_2`/`WIFI_PASSWORD_2` through `_4` — are tried in order
+if it fails; the controller cycles the whole list and keeps retrying until one
+joins. Leave a slot blank to skip it. Fallbacks apply to the `pico`,
+`pico-freertos`, and `esp32-freertos` ports (the simulators have no radio).
+Quote any value containing spaces (`WIFI_SSID="My Home Network"`).
+
 ### Firmware config (`.env.pico` / `.env.esp32`)
 
-The hardware ports bake several values into the firmware at build time
-— Wi-Fi credentials, the server's hostname or IP, the pixel count, and
-the GPIO pin. They live in `.env.*` files inside `controller/`:
+The hardware ports bake a few more values into the firmware at build time
+— the server's hostname or IP, the pixel count, and the GPIO pin. They
+live in per-device `.env.*` files inside `controller/`:
 
 ```sh
 cp controller/.env.pico.template  controller/.env.pico
@@ -84,14 +102,9 @@ cp controller/.env.esp32.template controller/.env.esp32
 $EDITOR controller/.env.pico
 ```
 
-The relevant subcommand sources the file automatically. Both
-`.env.*` shapes are gitignored at the repo root.
-
-`WIFI_SSID`/`WIFI_PASSWORD` is the primary network. Up to three optional
-fallbacks — `WIFI_SSID_2`/`WIFI_PASSWORD_2` through `_4` — are tried in order
-if it fails; the controller cycles the whole list and keeps retrying until one
-joins. Leave a slot blank to skip it. Fallbacks apply to the `pico`,
-`pico-freertos`, and `esp32-freertos` ports (the simulators have no radio).
+The relevant subcommand sources `.env.wifi` first, then the per-device
+file (so a device file can override a shared WiFi value). All `.env.*`
+shapes are gitignored at the repo root.
 
 ## `server`
 
@@ -174,6 +187,14 @@ reloads the systemd unit, and runs an `/api/health` probe; on failure
 it restores the previous backup. See the
 [Deployment runbook](deployment.html).
 
+`scripts/deploy/install-service.sh` (run once on the Pi) also installs a
+`wifi-fallback` systemd unit. It reads the same `controller/.env.wifi`
+and, on boot, brings up each `WIFI_SSID[_2..4]` in turn, falling back to a
+hotspot (`HOTSPOT_CON`, default `beatled-hotspot`) if none connect. The
+WiFi networks are activated by NetworkManager profile name, so a profile
+must already exist whose name matches each SSID — create them once with
+`nmcli dev wifi connect "<SSID>"`.
+
 ## `test`, `build`, `clean`
 
 ```sh
@@ -232,8 +253,8 @@ match (sibling clones, alternate vcpkg root, different ESP32 board).
 | --------------------- | ------------------------------------ | ------- |
 | `VCPKG_DIR`           | `~/coding/external/vcpkg`            | Server build |
 | `PICO_DIR`            | `<repo>/controller`                  | All controller subcommands |
-| `WIFI_SSID`           | *(required for hardware ports)*      | Pico W / ESP32 build (baked into `.uf2`) |
-| `WIFI_PASSWORD`       | *(required for hardware ports)*      | Pico W / ESP32 build |
+| `WIFI_SSID[_2..4]`    | *(required for hardware ports)*      | Pico W / ESP32 build (baked into `.uf2`); Pi host wifi-fallback. Shared via `.env.wifi` |
+| `WIFI_PASSWORD[_2..4]`| *(required for hardware ports)*      | Pico W / ESP32 build. Shared via `.env.wifi` |
 | `BEATLED_SERVER_NAME` | *(required for hardware ports)*      | Pico W / ESP32 build (hostname or IP) |
 | `NUM_PIXELS`          | *(required)*                         | Pixel count baked into firmware |
 | `WS2812_PIN`          | `0`                                  | GPIO data pin |
@@ -242,10 +263,11 @@ match (sibling clones, alternate vcpkg root, different ESP32 board).
 | `BEATLED_API_TOKEN`   | *(none)*                             | Fallback API token when `--api-token` is omitted on the CLI |
 | `BEATLED_LOG_LEVEL`   | `info`                               | Server log level (`trace`/`debug`/`info`/`warn`/`err`/`critical`/`off`); used when `--log-level` is omitted |
 
-`WIFI_SSID`, `WIFI_PASSWORD`, `BEATLED_SERVER_NAME`, `NUM_PIXELS`, and
-`WS2812_PIN` are typically set via `controller/.env.pico` and friends
-rather than exported manually. The build wrapper sources the right
-`.env` file for each port automatically.
+`WIFI_SSID`/`WIFI_PASSWORD` (and the `_2..4` fallbacks) are set once in
+`controller/.env.wifi`; `BEATLED_SERVER_NAME`, `NUM_PIXELS`, and
+`WS2812_PIN` live in the per-device `controller/.env.pico` and friends —
+rather than exported manually. The build wrapper sources `.env.wifi`
+first and then the right per-device file for each port automatically.
 
 ## Common workflows
 
@@ -265,8 +287,10 @@ scripts/git-hooks/install.sh              # pre-commit hooks (clang-format, shel
 ### Iterate on the firmware (POSIX simulator, no hardware)
 
 ```sh
+cp controller/.env.wifi.template controller/.env.wifi
 cp controller/.env.pico.template controller/.env.pico
-$EDITOR controller/.env.pico                # WIFI_SSID, BEATLED_SERVER_NAME, NUM_PIXELS
+$EDITOR controller/.env.wifi                # WIFI_SSID / WIFI_PASSWORD (shared)
+$EDITOR controller/.env.pico                # BEATLED_SERVER_NAME, NUM_PIXELS
 ./beatled.sh controller posix build   # builds + execs the simulator
 ./beatled.sh test pico                # POSIX-port unit + integration tests
 ```
@@ -274,7 +298,7 @@ $EDITOR controller/.env.pico                # WIFI_SSID, BEATLED_SERVER_NAME, NU
 ### Flash a real Pico W
 
 ```sh
-# Once: fill .env.pico (WIFI_SSID / WIFI_PASSWORD / BEATLED_SERVER_NAME)
+# Once: fill .env.wifi (WIFI_SSID / WIFI_PASSWORD) + .env.pico (BEATLED_SERVER_NAME)
 # Hold BOOTSEL while plugging USB so /Volumes/RPI-RP2/ mounts.
 ./beatled.sh controller pico flash
 # or the FreeRTOS port:

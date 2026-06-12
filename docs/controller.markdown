@@ -76,21 +76,27 @@ brew install minicom                    # serial monitor (optional)
 Copy the template and fill in your values:
 
 ```bash
+cp .env.wifi.template .env.wifi
 cp .env.pico.template .env.pico
-# edit .env.pico with your WIFI_SSID, WIFI_PASSWORD, BEATLED_SERVER_NAME, NUM_PIXELS, WS2812_PIN
+# edit .env.wifi with your WIFI_SSID, WIFI_PASSWORD (shared with the Pi host)
+# edit .env.pico with BEATLED_SERVER_NAME, NUM_PIXELS, WS2812_PIN
 ```
 
-To roam between locations, add up to three fallback networks via
+WiFi networks live in the shared `.env.wifi` (one source of truth for the
+firmware builds and the Pi host's wifi-fallback service). To roam between
+locations, add up to three fallback networks via
 `WIFI_SSID_2`/`WIFI_PASSWORD_2` … `_4`. At boot the controller tries each
 non-empty network in order; if a network is unreachable it falls through to
 the next, and once the list is exhausted it cycles back to the first and keeps
 retrying until one joins.
 
-Then configure and build:
+Then configure and build (the build wrapper sources `.env.wifi` before
+`.env.pico`; do the same by hand if you build directly):
 
 ```bash
 export PICO_TOOLCHAIN_PATH="/Applications/ArmGNUToolchain/12.2.rel1/arm-none-eabi"
-source .env.pico   # sets WIFI_SSID, WIFI_PASSWORD, BEATLED_SERVER_NAME, NUM_PIXELS, WS2812_PIN
+source .env.wifi   # sets WIFI_SSID, WIFI_PASSWORD (+ _2..4 fallbacks)
+source .env.pico   # sets BEATLED_SERVER_NAME, NUM_PIXELS, WS2812_PIN
 
 cmake -B build-pico \
   -DPORT=pico \
@@ -159,8 +165,10 @@ cd esp-idf
 Copy the template and fill in your values:
 
 ```bash
+cp .env.wifi.template .env.wifi
 cp .env.esp32.template .env.esp32
-# edit .env.esp32 with WIFI_SSID, WIFI_PASSWORD, BEATLED_SERVER_NAME, ESP32_TARGET, ESP32_PORT, NUM_PIXELS, WS2812_PIN
+# edit .env.wifi with WIFI_SSID, WIFI_PASSWORD (shared with the Pico build + Pi host)
+# edit .env.esp32 with BEATLED_SERVER_NAME, ESP32_TARGET, ESP32_PORT, NUM_PIXELS, WS2812_PIN
 ```
 
 Fallback networks work the same as on the Pico: set `WIFI_SSID_2`/
@@ -177,6 +185,7 @@ Or manually:
 
 ```bash
 cd esp32
+source ../.env.wifi
 source ../.env.esp32
 
 idf.py set-target $ESP32_TARGET
