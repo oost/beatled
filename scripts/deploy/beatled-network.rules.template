@@ -1,0 +1,25 @@
+// Allow the beatled service user to activate/deactivate NetworkManager
+// connections (WiFi client <-> hotspot AP) from a session-less systemd
+// service, without sudo. Scoped to just the NetworkManager actions the
+// WiFi-fallback / ap-mode flow needs — nothing else is granted.
+//
+// Without this, NetworkManager denies a headless service ("Not authorized
+// to control networking"), since polkit only implicitly allows real login
+// sessions. Installed to /etc/polkit-1/rules.d/50-beatled-network.rules,
+// generated from this template by install-service.sh (envsubst).
+//
+// Actions:
+//   network-control       — bring connections up/down (client <-> AP).
+//   wifi.share.protected  — activate the password-protected hotspot, whose
+//   wifi.share.open         ipv4.method=shared needs the "share" privilege
+//                           on top of network-control. Without these, AP
+//                           activation fails with "Not authorized to share
+//                           connections via wifi".
+polkit.addRule(function(action, subject) {
+    if (subject.user == "${USERNAME}" &&
+        (action.id == "org.freedesktop.NetworkManager.network-control" ||
+         action.id == "org.freedesktop.NetworkManager.wifi.share.protected" ||
+         action.id == "org.freedesktop.NetworkManager.wifi.share.open")) {
+        return polkit.Result.YES;
+    }
+});

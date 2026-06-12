@@ -15,6 +15,7 @@ REST API served over HTTPS on port **8443**. Used by the React, iOS, and macOS c
 | `/api/health`          | GET      | Lightweight health check (no auth required)       |
 | `/api/status`          | GET      | Service status, tempo, client list                |
 | `/api/service/control` | POST     | Start/stop services                               |
+| `/api/ap`              | POST     | Switch WiFi between client and access-point mode   |
 | `/api/tempo`           | GET      | Current tempo and time reference                  |
 | `/api/tempo/manual`    | POST     | Set the manual (operator-chosen) BPM              |
 | `/api/program`         | GET/POST | Get/set LED program                               |
@@ -132,6 +133,65 @@ Start or stop a server service.
 |--------|-----------|
 | `400 Bad Request` | Missing `id` or `status` field, body too large, or invalid JSON |
 | `404 Not Found` | Service ID not recognized |
+| `429 Too Many Requests` | Rate limit exceeded |
+
+---
+
+### POST /api/ap
+
+Switch the Raspberry Pi's WiFi between client mode and access-point (hotspot)
+mode by shelling out to `scripts/deploy/ap-mode.sh`. Only meaningful on the Pi
+deployment (it drives NetworkManager via the `network-control` polkit grant the
+deploy installs).
+
+**The Pi has a single radio, so AP and client modes are mutually exclusive.**
+Switching to AP mode tears down the WiFi link this request arrived over — the
+client must rejoin the `Beatled` hotspot and reconnect at `https://192.168.4.1:8443/`
+to see anything further. The server itself keeps running.
+
+**Request body**
+
+```json
+{
+  "mode": "on",
+  "revertMinutes": 10
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `mode` | string | Yes | `on` (activate hotspot), `off` (reconnect to WiFi), or `status` |
+| `revertMinutes` | integer | No | Only with `mode: "on"`. Auto-switch back to WiFi after N minutes (1–1440). A safety net so a bad switch can't strand a headless Pi. Omit or `0` to stay on AP until switched back. |
+
+**Response** `200 OK`
+
+For `status`:
+
+```json
+{
+  "ap": "on"
+}
+```
+
+For `on` / `off`:
+
+```json
+{
+  "result": "ok",
+  "mode": "on",
+  "output": "Auto-revert to WiFi scheduled in 10 min.\nActivating AP 'beatled-hotspot' (this drops upstream WiFi)..."
+}
+```
+
+> Note: when `mode` is `on`, the response may never reach the caller because the
+> radio switches mid-request. The action still completes on the Pi.
+
+**Error responses**
+
+| Status | Condition |
+|--------|-----------|
+| `400 Bad Request` | Missing/invalid `mode`, `revertMinutes` out of range, body too large, or invalid JSON |
+| `500 Internal Server Error` | `ap-mode.sh` exited non-zero (response includes `exitCode` and `output`) |
 | `429 Too Many Requests` | Rate limit exceeded |
 
 ---
