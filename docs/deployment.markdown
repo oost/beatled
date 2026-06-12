@@ -21,6 +21,10 @@ On the **Raspberry Pi**:
 - Debian/Raspbian (64-bit ARM)
 - `envsubst` (part of `gettext`): `sudo apt install gettext-base`
 - A USB microphone for audio capture
+- For the Wi-Fi roaming / fallback-hotspot features: NetworkManager (default on
+  Bookworm) with the connection profiles created once — see
+  [Wi-Fi roaming, fallback hotspot, and mDNS alias](#wi-fi-roaming-fallback-hotspot-and-mdns-alias).
+  A plain wired or single-network deploy needs none of this.
 
 ## Quick Start
 
@@ -83,11 +87,13 @@ This builds a Docker image with the ARM64 cross-compilation toolchain and compil
 The deploy command:
 
 1. Copies certificates to the Pi (if not already present)
-2. Packages `./out/` into a tarball
+2. Bundles `controller/.env.wifi` (if present) and packages `./out/` into a tarball
 3. Transfers it via SCP to the Pi
 4. Backs up the existing installation (if any)
 5. Extracts the new version to `~/beat-server/`
-6. Installs or restarts the systemd service
+6. Installs/restarts the services (`beat-server`, plus `wifi-fallback` and
+   `avahi-alias` when configured), the polkit rule, and the NetworkManager
+   dispatcher — all idempotent, re-run on every deploy
 7. Runs a health check against `https://<host>:8443/api/health`
 
 If the service fails to start, the previous version is automatically restored from the backup.
@@ -159,6 +165,102 @@ To start the server directly (useful for debugging):
 ~/beat-server/scripts/deploy/start-server.sh
 ```
 
+## Wi-Fi roaming, fallback hotspot, and mDNS alias
+
+Beyond the server itself, the deploy installs three helper services so a Pi can
+run untethered:
+
+| Service | What it does |
+|---------|--------------|
+| `wifi-fallback` | On boot, brings up each upstream Wi-Fi in turn; if none connect, starts the Pi's own hotspot so the rig still works off-grid. Installed *enabled but not started* during deploy — starting it would drop the deploy's own Wi-Fi link. |
+| `avahi-alias` | Publishes an extra mDNS name (`MDNS_ALIAS`, default `beatled.local`) so the Pi answers to it in addition to `<hostname>.local`. A NetworkManager dispatcher restarts it on every IP change so the name never goes stale. |
+| `ap-mode` (on demand) | `scripts/deploy/ap-mode.sh` and the `POST /api/ap` endpoint toggle the radio between client and hotspot mode, with an optional auto-revert timer so a bad switch can't strand a headless Pi. |
+
+All of these read the **single shared Wi-Fi config**, `controller/.env.wifi` —
+the same file the controller firmware builds use. See
+[the CLI reference](cli.html) for every field. The deploy bundles `.env.wifi`
+into the tarball so the host services can read it.
+
+The Pi has a single radio, so client and AP modes are mutually exclusive:
+switching to the hotspot tears down upstream Wi-Fi (and any SSH/HTTP session
+riding it). Clients then rejoin the hotspot SSID and reach the server at
+`https://192.168.4.1:8443/`.
+
+### NetworkManager profiles (required, one-time)
+
+`wifi-fallback` and `ap-mode` don't store credentials — they **activate
+NetworkManager connection profiles by name**. Create these on the Pi once,
+before the first deploy (or before relying on the fallback). The names must
+match `controller/.env.wifi`:
+
+- one profile per upstream `WIFI_SSID[_2..4]`, named after the SSID;
+- one AP-mode profile named `HOTSPOT_CON` (default `beatled-hotspot`) that
+  broadcasts `HOTSPOT_SSID`.
+
+> Bookworm-based Raspberry Pi OS uses NetworkManager by default. Confirm with
+> `nmcli general status`; if it isn't the active backend these steps don't apply.
+{: .note }
+
+**Upstream Wi-Fi** — connecting once saves a profile named after the SSID,
+which is exactly what `wifi-fallback` looks for:
+
+```bash
+nmcli device wifi connect "Livebox-98D4" password "<wifi-password>"
+```
+
+Repeat for each additional `WIFI_SSID_2..4` you configured.
+
+**Fallback hotspot** — an access-point profile. The connection **name** must
+equal `HOTSPOT_CON`, the broadcast **SSID** must equal `HOTSPOT_SSID`, and the
+password must match `HOTSPOT_PASSWORD` in `.env.wifi` (so the controllers can
+join it):
+
+```bash
+nmcli connection add type wifi ifname wlan0 con-name beatled-hotspot ssid "Beatled"
+nmcli connection modify beatled-hotspot \
+  connection.autoconnect no \
+  802-11-wireless.mode ap \
+  ipv4.method shared \
+  ipv4.addresses 192.168.4.1/24 \
+  802-11-wireless-security.key-mgmt wpa-psk \
+  802-11-wireless-security.psk "<hotspot-password>"
+```
+
+- `autoconnect no` keeps the Pi on upstream Wi-Fi by default; the hotspot only
+  comes up when `wifi-fallback` (no upstream reachable) or `ap-mode on`
+  activates it.
+- `ipv4.method shared` makes the Pi the gateway and runs DHCP for joined
+  clients; `ipv4.addresses 192.168.4.1/24` fixes that gateway at `192.168.4.1`,
+  so in AP mode the server is always at `https://192.168.4.1:8443/`.
+
+Verify the profiles exist (names must match `.env.wifi`):
+
+```bash
+nmcli -t -f NAME,TYPE connection show
+```
+
+### Privileges (handled by the deploy)
+
+Activating these connections from a headless, session-less service would
+normally be denied by polkit. The deploy installs a scoped polkit rule
+(`/etc/polkit-1/rules.d/50-beatled-network.rules`) granting the service user
+the `network-control` and `wifi.share.protected`/`open` actions — the latter
+are required because the hotspot uses `ipv4.method=shared`; without them AP
+activation fails with *"Not authorized to share connections via wifi."* No
+manual setup is needed.
+
+### Toggling AP mode
+
+```bash
+# On the Pi (or via POST /api/ap from the web/iOS clients):
+~/beat-server/scripts/deploy/ap-mode.sh on 10   # hotspot, auto-revert in 10 min
+~/beat-server/scripts/deploy/ap-mode.sh off     # back to upstream Wi-Fi
+~/beat-server/scripts/deploy/ap-mode.sh status  # "on" or "off"
+```
+
+The optional `<minutes>` argument schedules an automatic switch back to Wi-Fi —
+a safety net so a bad switch can't strand the Pi headless.
+
 ## Troubleshooting
 
 **Deploy fails with "No certificates found locally"**
@@ -173,14 +275,30 @@ To start the server directly (useful for debugging):
 **Browser shows certificate warning**
 : Certificates are locally-trusted via mkcert. Install the mkcert root CA on the device accessing the dashboard. On macOS, `mkcert -install` handles this. Safari does not accept mkcert certificates -- use Chrome instead.
 
+**AP mode fails: "Not authorized to share connections via wifi"**
+: The polkit rule isn't installed (or predates the `wifi.share` grant). Re-run a deploy, or copy `scripts/deploy/beatled-network.rules.template` to `/etc/polkit-1/rules.d/50-beatled-network.rules` (substituting your username). polkitd reloads `rules.d` automatically.
+
+**`wifi-fallback` shows `failed` / the hotspot won't start**
+: The required NetworkManager profiles don't exist or don't match `controller/.env.wifi`. Check `nmcli -t -f NAME connection show` — there must be a profile per `WIFI_SSID[_2..4]` and one named `HOTSPOT_CON`. See [NetworkManager profiles](#networkmanager-profiles-required-one-time).
+
+**`beatled.local` resolves to a stale IP after switching to the hotspot**
+: The mDNS alias should re-publish automatically via the NetworkManager dispatcher. If it's stale, restart it: `sudo systemctl restart avahi-alias.service` (and flush the client's cache, e.g. `sudo killall -HUP mDNSResponder` on macOS). The host's own `<hostname>.local` always tracks the current IP.
+
 ## Deploy Scripts Reference
 
 All scripts live in `scripts/deploy/` and are copied to the Pi during deployment.
 
 | Script | Purpose |
 |--------|---------|
-| `reload-service.sh` | Restarts the service, or installs it on first deploy |
-| `install-service.sh` | Generates the systemd service file from the template and enables it |
+| `reload-service.sh` | Entry point each deploy runs; (re)installs and restarts the services via `install-service.sh` |
+| `install-service.sh` | Generates each systemd unit from its template, installs the polkit rule and the NetworkManager dispatcher, and enables/starts the services |
 | `create-certs.sh` | Generates TLS certificates using mkcert (run on dev machine) |
 | `start-server.sh` | Starts the server directly without systemd |
-| `tail-logs.sh` | Follows the systemd service logs |
+| `tail-logs.sh` | Follows the `beat-server` service logs |
+| `wifi-fallback.sh` | Run by the `wifi-fallback` unit at boot: try each upstream Wi-Fi profile in order, else start the hotspot |
+| `ap-mode.sh` | Toggle client ⇄ hotspot mode on demand (`on [minutes]` / `off` / `status`); also driven by `POST /api/ap` |
+| `avahi-alias.sh` | Run by the `avahi-alias` unit: publish the extra mDNS name (`MDNS_ALIAS`) |
+| `avahi-alias-dispatcher.sh` | Installed as a NetworkManager dispatcher; restarts `avahi-alias` on every IP change so the name tracks the current address |
+
+Templates and the polkit rule alongside them — `*.template.service`,
+`beatled-network.rules.template` — are rendered with `envsubst` at install time.
