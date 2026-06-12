@@ -202,6 +202,15 @@ network. The upstream networks are activated by NetworkManager profile
 name, so a profile must already exist whose name matches each SSID —
 create them once with `nmcli dev wifi connect "<SSID>"`.
 
+`install-service.sh` also installs an `avahi-alias` unit, which publishes an
+extra mDNS name (`MDNS_ALIAS`, default `beatled.local`) via
+`avahi-publish -a -R`, so the Pi answers to that name *in addition to*
+`<hostname>.local`. The `-R` (no reverse PTR) is required: the host's
+primary name already owns the address's PTR, so publishing another would
+collide. Generate the server certificate with both names
+(`./beatled.sh certs beatled.local raspberrypi.local`) so HTTPS validates
+under either.
+
 ## `test`, `build`, `clean`
 
 ```sh
