@@ -84,11 +84,15 @@ $EDITOR controller/.env.wifi
 ```
 
 `WIFI_SSID`/`WIFI_PASSWORD` is the primary network. Up to three optional
-fallbacks — `WIFI_SSID_2`/`WIFI_PASSWORD_2` through `_4` — are tried in order
-if it fails; the controller cycles the whole list and keeps retrying until one
-joins. Leave a slot blank to skip it. Fallbacks apply to the `pico`,
-`pico-freertos`, and `esp32-freertos` ports (the simulators have no radio).
-Quote any value containing spaces (`WIFI_SSID="My Home Network"`).
+upstream fallbacks — `WIFI_SSID_2`/`WIFI_PASSWORD_2` through `_4` — are tried
+in order if it fails. Finally, `HOTSPOT_SSID`/`HOTSPOT_PASSWORD` is the Pi's
+self-hosted fallback network: the controller joins it as a last resort, and
+the Pi host *broadcasts* it (see `wifi-fallback` below) — so it is defined
+once and never duplicated as an upstream entry. The controller cycles the
+whole list and keeps retrying until one joins. Leave a slot blank to skip it.
+These apply to the `pico`, `pico-freertos`, and `esp32-freertos` ports (the
+simulators have no radio). Quote any value containing spaces
+(`WIFI_SSID="My Home Network"`).
 
 ### Firmware config (`.env.pico` / `.env.esp32`)
 
@@ -189,11 +193,14 @@ it restores the previous backup. See the
 
 `scripts/deploy/install-service.sh` (run once on the Pi) also installs a
 `wifi-fallback` systemd unit. It reads the same `controller/.env.wifi`
-and, on boot, brings up each `WIFI_SSID[_2..4]` in turn, falling back to a
-hotspot (`HOTSPOT_CON`, default `beatled-hotspot`) if none connect. The
-WiFi networks are activated by NetworkManager profile name, so a profile
-must already exist whose name matches each SSID — create them once with
-`nmcli dev wifi connect "<SSID>"`.
+and, on boot, brings up each upstream `WIFI_SSID[_2..4]` in turn, falling
+back to the hotspot profile `HOTSPOT_CON` (default `beatled-hotspot`) if
+none connect. That hotspot is an AP-mode profile broadcasting
+`HOTSPOT_SSID` — the same network the controllers join as their last
+resort — so the host *broadcasts* it rather than listing it as an upstream
+network. The upstream networks are activated by NetworkManager profile
+name, so a profile must already exist whose name matches each SSID —
+create them once with `nmcli dev wifi connect "<SSID>"`.
 
 ## `test`, `build`, `clean`
 
@@ -255,6 +262,8 @@ match (sibling clones, alternate vcpkg root, different ESP32 board).
 | `PICO_DIR`            | `<repo>/controller`                  | All controller subcommands |
 | `WIFI_SSID[_2..4]`    | *(required for hardware ports)*      | Pico W / ESP32 build (baked into `.uf2`); Pi host wifi-fallback. Shared via `.env.wifi` |
 | `WIFI_PASSWORD[_2..4]`| *(required for hardware ports)*      | Pico W / ESP32 build. Shared via `.env.wifi` |
+| `HOTSPOT_SSID` / `HOTSPOT_PASSWORD` | *(optional)*           | Pi's fallback hotspot. Firmware joins it last; the Pi host broadcasts it. Shared via `.env.wifi` |
+| `HOTSPOT_CON`         | `beatled-hotspot`                    | Pi host only: AP-mode NetworkManager profile that broadcasts `HOTSPOT_SSID` |
 | `BEATLED_SERVER_NAME` | *(required for hardware ports)*      | Pico W / ESP32 build (hostname or IP) |
 | `NUM_PIXELS`          | *(required)*                         | Pixel count baked into firmware |
 | `WS2812_PIN`          | `0`                                  | GPIO data pin |

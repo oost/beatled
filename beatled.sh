@@ -357,6 +357,8 @@ configure_pico_hw_cmake() {
     -DWIFI_PASSWORD_3="$WIFI_PASSWORD_3" \
     -DWIFI_SSID_4="$WIFI_SSID_4" \
     -DWIFI_PASSWORD_4="$WIFI_PASSWORD_4" \
+    -DHOTSPOT_SSID="$HOTSPOT_SSID" \
+    -DHOTSPOT_PASSWORD="$HOTSPOT_PASSWORD" \
     -DBEATLED_SERVER_NAME="$BEATLED_SERVER_NAME" \
     -DNUM_PIXELS="$NUM_PIXELS" \
     -DWS2812_PIN="$WS2812_PIN" \
@@ -416,6 +418,8 @@ build_esp32() {
     WIFI_PASSWORD_3="$WIFI_PASSWORD_3" \
     WIFI_SSID_4="$WIFI_SSID_4" \
     WIFI_PASSWORD_4="$WIFI_PASSWORD_4" \
+    HOTSPOT_SSID="$HOTSPOT_SSID" \
+    HOTSPOT_PASSWORD="$HOTSPOT_PASSWORD" \
     BEATLED_SERVER_NAME="$BEATLED_SERVER_NAME" \
     WS2812_PIN="$WS2812_PIN" \
       idf.py build)
@@ -513,6 +517,7 @@ load_pico_env() {
   : "${WIFI_SSID_2:=}"; : "${WIFI_PASSWORD_2:=}"
   : "${WIFI_SSID_3:=}"; : "${WIFI_PASSWORD_3:=}"
   : "${WIFI_SSID_4:=}"; : "${WIFI_PASSWORD_4:=}"
+  : "${HOTSPOT_SSID:=}"; : "${HOTSPOT_PASSWORD:=}"
   set +a
 }
 
@@ -533,6 +538,7 @@ load_posix_env() {
   : "${WIFI_SSID_2:=}"; : "${WIFI_PASSWORD_2:=}"
   : "${WIFI_SSID_3:=}"; : "${WIFI_PASSWORD_3:=}"
   : "${WIFI_SSID_4:=}"; : "${WIFI_PASSWORD_4:=}"
+  : "${HOTSPOT_SSID:=}"; : "${HOTSPOT_PASSWORD:=}"
   : "${WS2812_PIN:=0}"
   : "${NUM_PIXELS:=30}"
   # shellcheck disable=SC1090
@@ -556,6 +562,7 @@ load_esp32_env() {
   : "${WIFI_SSID_2:=}"; : "${WIFI_PASSWORD_2:=}"
   : "${WIFI_SSID_3:=}"; : "${WIFI_PASSWORD_3:=}"
   : "${WIFI_SSID_4:=}"; : "${WIFI_PASSWORD_4:=}"
+  : "${HOTSPOT_SSID:=}"; : "${HOTSPOT_PASSWORD:=}"
   set +a
 }
 

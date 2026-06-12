@@ -84,11 +84,13 @@ cp .env.pico.template .env.pico
 
 WiFi networks live in the shared `.env.wifi` (one source of truth for the
 firmware builds and the Pi host's wifi-fallback service). To roam between
-locations, add up to three fallback networks via
-`WIFI_SSID_2`/`WIFI_PASSWORD_2` … `_4`. At boot the controller tries each
-non-empty network in order; if a network is unreachable it falls through to
-the next, and once the list is exhausted it cycles back to the first and keeps
-retrying until one joins.
+locations, add up to three upstream fallback networks via
+`WIFI_SSID_2`/`WIFI_PASSWORD_2` … `_4`, and optionally the Pi's own
+fallback hotspot via `HOTSPOT_SSID`/`HOTSPOT_PASSWORD` (joined last — it's
+what the Pi broadcasts when no upstream WiFi is reachable). At boot the
+controller tries each non-empty network in order; if a network is
+unreachable it falls through to the next, and once the list is exhausted it
+cycles back to the first and keeps retrying until one joins.
 
 Then configure and build (the build wrapper sources `.env.wifi` before
 `.env.pico`; do the same by hand if you build directly):
