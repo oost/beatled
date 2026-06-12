@@ -61,7 +61,8 @@ export type ApiEndpoint =
   | "/api/health"
   | "/api/log"
   | "/api/service/control"
-  | "/api/tempo/manual";
+  | "/api/tempo/manual"
+  | "/api/ap";
 
 export type ApiErrorKind = "http" | "network" | "timeout" | "invalid";
 
