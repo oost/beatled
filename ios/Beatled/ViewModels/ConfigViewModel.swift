@@ -44,6 +44,14 @@ class ConfigViewModel {
     var settings: AppSettings
     var healthStatuses: [HostPreset: HealthStatus] = [:]
 
+    // Access-point (hotspot) control via POST /api/ap.
+    var apStatus: String = "unknown" // "on", "off", or "unknown"
+    var apMessage: String?
+    var apBusy = false
+    var revertMinutes: Int = 10
+
+    private let api: APIClient
+
     var selectedPreset: HostPreset {
         didSet {
             if selectedPreset == .custom {
@@ -62,8 +70,9 @@ class ConfigViewModel {
         }
     }
 
-    init(settings: AppSettings) {
+    init(settings: AppSettings, api: APIClient) {
         self.settings = settings
+        self.api = api
         self.selectedPreset = HostPreset.from(host: settings.apiHost)
         if self.selectedPreset == .custom {
             self.customHost = settings.apiHost
@@ -134,6 +143,51 @@ class ConfigViewModel {
             for await (preset, status) in group {
                 healthStatuses[preset] = status
             }
+        }
+    }
+
+    // MARK: - Access point control
+
+    @MainActor
+    func refreshAPStatus() async {
+        do {
+            let resp: APStatusResponse = try await api.post(
+                "/api/ap", body: APControlRequest(mode: "status", revertMinutes: nil))
+            apStatus = resp.ap
+        } catch {
+            apStatus = "unknown"
+        }
+    }
+
+    /// Switch the Pi to hotspot mode. The single radio means this tears down
+    /// the link this request travels over, so the response usually never
+    /// arrives — we don't depend on it and leave the guidance message up.
+    @MainActor
+    func switchAPOn() {
+        apBusy = true
+        apMessage = "Switching to hotspot — this device will lose connection. "
+            + "Rejoin the \"Beatled\" WiFi and open https://192.168.4.1:8443/."
+        Task { @MainActor in
+            let mins = revertMinutes > 0 ? revertMinutes : nil
+            let _: APActionResponse? = try? await api.post(
+                "/api/ap", body: APControlRequest(mode: "on", revertMinutes: mins))
+            apBusy = false
+        }
+    }
+
+    @MainActor
+    func switchAPOff() {
+        apBusy = true
+        apMessage = nil
+        Task { @MainActor in
+            do {
+                let _: APActionResponse = try await api.post(
+                    "/api/ap", body: APControlRequest(mode: "off", revertMinutes: nil))
+                await refreshAPStatus()
+            } catch {
+                apMessage = "Failed to switch to WiFi: \(error.localizedDescription)"
+            }
+            apBusy = false
         }
     }
 }
