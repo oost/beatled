@@ -7,6 +7,9 @@
 # The avahi-alias service publishes an extra mDNS name so the Pi answers to
 # <MDNS_ALIAS> in addition to <hostname>.local. Override the name via the
 # environment (or controller/.env.wifi): MDNS_ALIAS (default beatled.local).
+# A NetworkManager dispatcher restarts that service whenever the host IP
+# changes (ap-mode switch, wifi-fallback, DHCP renewal) so the alias never
+# advertises a stale address.
 #
 # The wifi-fallback service brings up known NetworkManager connections on
 # boot — the WiFi networks defined once in controller/.env.wifi, tried in
@@ -121,3 +124,12 @@ install_service wifi-fallback enable
 # Publishing an mDNS record doesn't touch the network link, so it's safe to
 # start now (unlike wifi-fallback, which would bounce the deploy's WiFi).
 install_service avahi-alias
+
+# NetworkManager dispatcher: re-publish the mDNS alias whenever the host IP
+# changes (ap-mode switch, wifi-fallback, DHCP renewal), since avahi-alias
+# holds a static A record that would otherwise go stale. NM runs it as root,
+# and ignores dispatcher scripts that aren't root-owned / are group- or
+# world-writable, so install with strict ownership and perms.
+info "Installing NetworkManager dispatcher for avahi-alias"
+sudo install -o root -g root -m 755 "$SCRIPT_DIR/avahi-alias-dispatcher.sh" \
+  /etc/NetworkManager/dispatcher.d/90-beatled-avahi-alias
