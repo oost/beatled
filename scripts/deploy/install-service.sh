@@ -105,8 +105,16 @@ install_service() {
 
 info "Installing services (ROOT_DIR=$ROOT_DIR, networks=[${WIFI_CONNECTIONS:-none}], HOTSPOT_CON=$HOTSPOT_CON, MDNS_ALIAS=$MDNS_ALIAS)"
 
-# These are executed by their services; make sure they're runnable.
-chmod +x "$SCRIPT_DIR/wifi-fallback.sh" "$SCRIPT_DIR/avahi-alias.sh"
+# These are executed by their services / the API; make sure they're runnable.
+chmod +x "$SCRIPT_DIR/wifi-fallback.sh" "$SCRIPT_DIR/avahi-alias.sh" "$SCRIPT_DIR/ap-mode.sh"
+
+# polkit rule: lets the service user activate NetworkManager connections
+# (wifi-fallback at boot, ap-mode on demand) without sudo or an interactive
+# session. polkitd watches rules.d and reloads automatically.
+info "Installing polkit rule for NetworkManager control (user $USERNAME)"
+envsubst < "$SCRIPT_DIR/beatled-network.rules.template" > "$SCRIPT_DIR/beatled-network.rules"
+sudo cp "$SCRIPT_DIR/beatled-network.rules" /etc/polkit-1/rules.d/50-beatled-network.rules
+sudo chmod 644 /etc/polkit-1/rules.d/50-beatled-network.rules
 
 install_service beat-server
 install_service wifi-fallback enable

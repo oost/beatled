@@ -1,7 +1,10 @@
+#include <array>
+#include <cstdio>
 #include <iomanip>
 #include <limits>
 #include <nlohmann/json.hpp>
 #include <sstream>
+#include <sys/wait.h>
 
 #include "./api_handler.hpp"
 #include "beatled/protocol.h"
@@ -11,6 +14,40 @@ using beatled::core::tempo_ref_t;
 
 namespace beatled::server {
 
+namespace {
+struct CommandResult {
+  int exit_code;
+  std::string output;
+};
+
+// Run a shell command, capturing stdout+stderr and the exit code. Used only
+// for the AP-mode toggle (ap-mode.sh). The single caller-controlled part of
+// the command line is whitelisted (mode) or an integer (revert minutes), so
+// there is no shell-injection surface.
+CommandResult run_command(const std::string &cmd) {
+  std::array<char, 256> buf{};
+  std::string out;
+  FILE *pipe = ::popen(cmd.c_str(), "r");
+  if (pipe == nullptr) {
+    return {-1, "failed to start command"};
+  }
+  while (std::fgets(buf.data(), static_cast<int>(buf.size()), pipe) != nullptr) {
+    out += buf.data();
+  }
+  int status = ::pclose(pipe);
+  int code = (status == -1) ? -1 : (WIFEXITED(status) ? WEXITSTATUS(status) : -1);
+  return {code, out};
+}
+
+std::string rstrip(std::string s) {
+  while (!s.empty() &&
+         (s.back() == '\n' || s.back() == '\r' || s.back() == ' ' || s.back() == '\t')) {
+    s.pop_back();
+  }
+  return s;
+}
+} // namespace
+
 struct Program {
   std::string name;
   int id;
@@ -19,9 +56,9 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Program, name, id)
 
 APIHandler::APIHandler(ServiceManagerInterface &service_manager, Logger &logger,
                        const std::string &cors_origin, const std::string &api_token,
-                       QosThresholds qos_thresholds)
+                       QosThresholds qos_thresholds, const std::string &ap_script)
     : service_manager_{service_manager}, logger_{logger}, cors_origin_{cors_origin},
-      api_token_{api_token}, qos_thresholds_{qos_thresholds} {}
+      api_token_{api_token}, qos_thresholds_{qos_thresholds}, ap_script_{ap_script} {}
 
 bool APIHandler::authorize_request(const std::optional<std::string> &authorization_header,
                                    std::string_view api_token) {
@@ -152,6 +189,103 @@ APIHandler::req_status_t APIHandler::on_post_service_control(const req_handle_t 
     response_body["error"] = e.what();
 
     SPDLOG_ERROR("Error with request: {}", e.what());
+    return init_resp(req->create_response(restinio::status_bad_request()))
+        .set_body(response_body.dump())
+        .connection_close()
+        .done();
+  }
+}
+
+APIHandler::req_status_t APIHandler::on_post_ap(const req_handle_t &req, route_params_t params) {
+  if (!check_auth(req)) {
+    return init_resp(req->create_response(restinio::status_unauthorized()))
+        .set_body(R"({"error":"Unauthorized"})")
+        .done();
+  }
+  if (!check_rate_limit()) {
+    return init_resp(req->create_response(restinio::status_too_many_requests()))
+        .set_body(R"({"error":"Too many requests"})")
+        .done();
+  }
+
+  json response_body;
+  try {
+    if (req->body().size() > 4096) {
+      response_body["error"] = "Request body too large";
+      return init_resp(req->create_response(restinio::status_bad_request()))
+          .set_body(response_body.dump())
+          .connection_close()
+          .done();
+    }
+    json request_body = json::parse(req->body());
+    if (!request_body.contains("mode")) {
+      response_body["error"] = "Missing required field: mode";
+      return init_resp(req->create_response(restinio::status_bad_request()))
+          .set_body(response_body.dump())
+          .connection_close()
+          .done();
+    }
+    std::string mode = request_body["mode"].get<std::string>();
+    // Whitelist: mode is part of the command line, so restrict it to these
+    // three tokens to keep the shell-out injection-free.
+    if (mode != "on" && mode != "off" && mode != "status") {
+      response_body["error"] = "Invalid mode (expected on, off, or status)";
+      return init_resp(req->create_response(restinio::status_bad_request()))
+          .set_body(response_body.dump())
+          .connection_close()
+          .done();
+    }
+
+    std::string cmd = ap_script_ + " " + mode;
+    // Optional auto-revert (only meaningful for "on"): an integer number of
+    // minutes after which the Pi switches back to WiFi. It arrives as a JSON
+    // number and is re-serialized via std::to_string, so it can only be
+    // digits — no injection.
+    if (mode == "on" && request_body.contains("revertMinutes")) {
+      int revert = request_body["revertMinutes"].get<int>();
+      if (revert < 0 || revert > 1440) {
+        response_body["error"] = "revertMinutes out of range (0-1440)";
+        return init_resp(req->create_response(restinio::status_bad_request()))
+            .set_body(response_body.dump())
+            .connection_close()
+            .done();
+      }
+      if (revert > 0) {
+        cmd += " " + std::to_string(revert);
+      }
+    }
+
+    SPDLOG_INFO("AP mode request: {}", cmd);
+    // NOTE: "on" switches wlan0 to AP mode, tearing down the link this request
+    // arrived over — the client must rejoin the hotspot to see any response.
+    // The handler still completes server-side.
+    CommandResult result = run_command(cmd + " 2>&1");
+    std::string out = rstrip(result.output);
+
+    if (result.exit_code != 0) {
+      response_body["error"] = "ap-mode.sh failed";
+      response_body["mode"] = mode;
+      response_body["exitCode"] = result.exit_code;
+      response_body["output"] = out;
+      SPDLOG_ERROR("ap-mode.sh failed (exit {}): {}", result.exit_code, out);
+      return init_resp(req->create_response(restinio::status_internal_server_error()))
+          .set_body(response_body.dump())
+          .done();
+    }
+
+    if (mode == "status") {
+      response_body["ap"] = out; // "on" or "off"
+    } else {
+      response_body["result"] = "ok";
+      response_body["mode"] = mode;
+      response_body["output"] = out;
+    }
+    return init_resp(req->create_response(restinio::status_ok()))
+        .set_body(response_body.dump())
+        .done();
+  } catch (const std::exception &e) {
+    response_body["error"] = e.what();
+    SPDLOG_ERROR("Error with AP request: {}", e.what());
     return init_resp(req->create_response(restinio::status_bad_request()))
         .set_body(response_body.dump())
         .connection_close()

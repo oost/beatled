@@ -36,11 +36,16 @@ public:
 
   APIHandler(ServiceManagerInterface &service_manager, Logger &logger,
              const std::string &cors_origin = "", const std::string &api_token = "",
-             QosThresholds qos_thresholds = QosThresholds{});
+             QosThresholds qos_thresholds = QosThresholds{},
+             const std::string &ap_script = "scripts/deploy/ap-mode.sh");
 
   req_status_t on_get_status(const req_handle_t &req, route_params_t params);
 
   req_status_t on_post_service_control(const req_handle_t &req, route_params_t params);
+
+  // Toggle the Pi's WiFi between client and access-point mode by shelling
+  // out to ap-mode.sh. Body: {"mode": "on"|"off"|"status"}.
+  req_status_t on_post_ap(const req_handle_t &req, route_params_t params);
 
   req_status_t on_get_tempo(const req_handle_t &req, route_params_t params);
   req_status_t on_post_manual_tempo(const req_handle_t &req, route_params_t params);
@@ -83,6 +88,7 @@ private:
   std::string cors_origin_;
   std::string api_token_;
   QosThresholds qos_thresholds_;
+  std::string ap_script_;
 
   // Rate limiting: sliding window
   static constexpr size_t kMaxRequestsPerWindow = 60;
