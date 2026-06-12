@@ -80,6 +80,12 @@ cp .env.pico.template .env.pico
 # edit .env.pico with your WIFI_SSID, WIFI_PASSWORD, BEATLED_SERVER_NAME, NUM_PIXELS, WS2812_PIN
 ```
 
+To roam between locations, add up to three fallback networks via
+`WIFI_SSID_2`/`WIFI_PASSWORD_2` … `_4`. At boot the controller tries each
+non-empty network in order; if a network is unreachable it falls through to
+the next, and once the list is exhausted it cycles back to the first and keeps
+retrying until one joins.
+
 Then configure and build:
 
 ```bash
@@ -156,6 +162,10 @@ Copy the template and fill in your values:
 cp .env.esp32.template .env.esp32
 # edit .env.esp32 with WIFI_SSID, WIFI_PASSWORD, BEATLED_SERVER_NAME, ESP32_TARGET, ESP32_PORT, NUM_PIXELS, WS2812_PIN
 ```
+
+Fallback networks work the same as on the Pico: set `WIFI_SSID_2`/
+`WIFI_PASSWORD_2` … `_4` to have the controller try each in order and keep
+cycling until one connects.
 
 Then build and flash using the project script from the `beatled` repo:
 

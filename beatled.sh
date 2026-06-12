@@ -346,6 +346,12 @@ configure_pico_hw_cmake() {
     -DPICO_SDK_PATH="$PICO_DIR/lib/pico-sdk" \
     -DWIFI_SSID="$WIFI_SSID" \
     -DWIFI_PASSWORD="$WIFI_PASSWORD" \
+    -DWIFI_SSID_2="$WIFI_SSID_2" \
+    -DWIFI_PASSWORD_2="$WIFI_PASSWORD_2" \
+    -DWIFI_SSID_3="$WIFI_SSID_3" \
+    -DWIFI_PASSWORD_3="$WIFI_PASSWORD_3" \
+    -DWIFI_SSID_4="$WIFI_SSID_4" \
+    -DWIFI_PASSWORD_4="$WIFI_PASSWORD_4" \
     -DBEATLED_SERVER_NAME="$BEATLED_SERVER_NAME" \
     -DNUM_PIXELS="$NUM_PIXELS" \
     -DWS2812_PIN="$WS2812_PIN" \
@@ -399,6 +405,12 @@ build_esp32() {
     idf.py set-target "$ESP32_TARGET" && \
     WIFI_SSID="$WIFI_SSID" \
     WIFI_PASSWORD="$WIFI_PASSWORD" \
+    WIFI_SSID_2="$WIFI_SSID_2" \
+    WIFI_PASSWORD_2="$WIFI_PASSWORD_2" \
+    WIFI_SSID_3="$WIFI_SSID_3" \
+    WIFI_PASSWORD_3="$WIFI_PASSWORD_3" \
+    WIFI_SSID_4="$WIFI_SSID_4" \
+    WIFI_PASSWORD_4="$WIFI_PASSWORD_4" \
     BEATLED_SERVER_NAME="$BEATLED_SERVER_NAME" \
     WS2812_PIN="$WS2812_PIN" \
       idf.py build)
@@ -475,8 +487,15 @@ load_pico_env() {
     error "Copy .env.pico.template to .env.pico and fill in your values"
     exit 1
   fi
+  set -a
   # shellcheck disable=SC1090
-  set -a; source "$env_file"; set +a
+  source "$env_file"
+  # Fallback networks are optional; default empty so unset slots don't trip
+  # `set -u` when forwarded as -D flags.
+  : "${WIFI_SSID_2:=}"; : "${WIFI_PASSWORD_2:=}"
+  : "${WIFI_SSID_3:=}"; : "${WIFI_PASSWORD_3:=}"
+  : "${WIFI_SSID_4:=}"; : "${WIFI_PASSWORD_4:=}"
+  set +a
 }
 
 load_posix_env() {
@@ -493,6 +512,9 @@ load_posix_env() {
   set -a
   : "${WIFI_SSID:=}"
   : "${WIFI_PASSWORD:=}"
+  : "${WIFI_SSID_2:=}"; : "${WIFI_PASSWORD_2:=}"
+  : "${WIFI_SSID_3:=}"; : "${WIFI_PASSWORD_3:=}"
+  : "${WIFI_SSID_4:=}"; : "${WIFI_PASSWORD_4:=}"
   : "${WS2812_PIN:=0}"
   : "${NUM_PIXELS:=30}"
   # shellcheck disable=SC1090
@@ -507,8 +529,15 @@ load_esp32_env() {
     error "Create it with WIFI_SSID, WIFI_PASSWORD, BEATLED_SERVER_NAME, ESP32_TARGET, ESP32_PORT"
     exit 1
   fi
+  set -a
   # shellcheck disable=SC1090
-  set -a; source "$env_file"; set +a
+  source "$env_file"
+  # Fallback networks are optional; default empty so unset slots don't trip
+  # `set -u` when forwarded to idf.py.
+  : "${WIFI_SSID_2:=}"; : "${WIFI_PASSWORD_2:=}"
+  : "${WIFI_SSID_3:=}"; : "${WIFI_PASSWORD_3:=}"
+  : "${WIFI_SSID_4:=}"; : "${WIFI_PASSWORD_4:=}"
+  set +a
 }
 
 # --- Server commands ---
