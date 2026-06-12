@@ -4,12 +4,15 @@
 # Raspberry Pi. Each service file is generated from its template
 # (envsubst) and then enabled and started.
 #
-# The wifi-fallback service brings up a known NetworkManager connection
-# on boot and falls back to a hotspot if it can't. Override the
-# connection names via the environment:
+# The wifi-fallback service brings up known NetworkManager connections on
+# boot — the WiFi networks defined once in controller/.env.wifi, tried in
+# order — and falls back to a hotspot if none connect. Each network is
+# activated by profile name, so a NetworkManager profile must already
+# exist whose name matches the SSID (the default when created via
+# `nmcli dev wifi connect "<SSID>"`).
 #
-#   WIFI_SSID    NetworkManager connection to bring up   (default: beatled-wifi)
-#   HOTSPOT_CON  NetworkManager hotspot connection name  (default: beatled-hotspot)
+#   controller/.env.wifi    WIFI_SSID[_2..4]  the networks to try, in order
+#   HOTSPOT_CON (env var)   hotspot profile name   (default: beatled-hotspot)
 #
 
 set -euo pipefail
@@ -36,13 +39,44 @@ export USERNAME
 USERNAME="$(whoami)"
 export ROOT_DIR
 ROOT_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
-export WIFI_SSID="${WIFI_SSID:-beatled-wifi}"
+# Pull the WiFi networks from the single shared source of truth, the same
+# file the controller firmware builds read. Each non-empty SSID becomes a
+# NetworkManager connection name the host tries in order. The file may also
+# set HOTSPOT_CON to override the hotspot profile name.
+WIFI_ENV="$ROOT_DIR/controller/.env.wifi"
+if [[ -f "$WIFI_ENV" ]]; then
+  # shellcheck disable=SC1090
+  source "$WIFI_ENV"
+fi
+# Default only applies if neither the environment nor .env.wifi set it.
 export HOTSPOT_CON="${HOTSPOT_CON:-beatled-hotspot}"
+: "${WIFI_SSID:=}"
+: "${WIFI_SSID_2:=}"
+: "${WIFI_SSID_3:=}"
+: "${WIFI_SSID_4:=}"
 
-# Generate a service file from its template, install it under
-# /etc/systemd/system/, then enable and start it.
+# Build a systemd-quoted argument list (e.g. "Net A" "Net B") so SSIDs
+# with spaces survive the ExecStart=, then template it into the unit.
+export WIFI_CONNECTIONS=""
+for ssid in "$WIFI_SSID" "$WIFI_SSID_2" "$WIFI_SSID_3" "$WIFI_SSID_4"; do
+  [[ -n "$ssid" ]] && WIFI_CONNECTIONS+="\"$ssid\" "
+done
+WIFI_CONNECTIONS="${WIFI_CONNECTIONS% }"
+
+if [[ -z "$WIFI_CONNECTIONS" ]]; then
+  error "No WIFI_SSID found in $WIFI_ENV — wifi-fallback will start the hotspot immediately"
+fi
+
+# Generate a service file from its template and install it under
+# /etc/systemd/system/. The second argument controls activation:
+#   restart  (default) — enable and (re)start the service now
+#   enable   — enable for next boot but DON'T start it now. Used for
+#              wifi-fallback: starting it re-activates the WiFi link, which
+#              would drop an SSH session deploying over that same link. It's
+#              a boot-time connectivity guard, so next boot is the right time.
 install_service() {
   local name="$1"
+  local activation="${2:-restart}"
   local template="$SCRIPT_DIR/${name}.template.service"
   local generated="$SCRIPT_DIR/${name}.service"
 
@@ -54,16 +88,20 @@ install_service() {
 
   sudo systemctl daemon-reload
   sudo systemctl enable "${name}.service"
-  sudo systemctl restart "${name}.service"
 
-  info "${name} status:"
-  systemctl status --no-pager "${name}.service" || true
+  if [[ "$activation" == "restart" ]]; then
+    sudo systemctl restart "${name}.service"
+    info "${name} status:"
+    systemctl status --no-pager "${name}.service" || true
+  else
+    info "${name} enabled (not started now); takes effect on next boot"
+  fi
 }
 
-info "Installing services (ROOT_DIR=$ROOT_DIR, WIFI_SSID=$WIFI_SSID, HOTSPOT_CON=$HOTSPOT_CON)"
+info "Installing services (ROOT_DIR=$ROOT_DIR, networks=[${WIFI_CONNECTIONS:-none}], HOTSPOT_CON=$HOTSPOT_CON)"
 
 # wifi-fallback.sh is executed by the service; make sure it's runnable.
 chmod +x "$SCRIPT_DIR/wifi-fallback.sh"
 
 install_service beat-server
-install_service wifi-fallback
+install_service wifi-fallback enable

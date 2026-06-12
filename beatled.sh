@@ -64,8 +64,8 @@ Examples:
 Environment variables (all optional, sensible defaults shown):
   VCPKG_DIR              ~/coding/external/vcpkg   vcpkg checkout used by the server build
   PICO_DIR               <repo>/controller         firmware tree (set only to point at a sibling clone)
-  WIFI_SSID              (none — required for hw)  baked into the firmware .uf2 at build time
-  WIFI_PASSWORD          (none — required for hw)  baked into the firmware .uf2 at build time
+  WIFI_SSID[_2..4]       (none — required for hw)  WiFi networks, shared via controller/.env.wifi
+  WIFI_PASSWORD[_2..4]   (none — required for hw)  WiFi passwords, shared via controller/.env.wifi
   BEATLED_SERVER_NAME    (none — required for hw)  hostname or IP the controllers connect to
   NUM_PIXELS             (none — required)         LEDs on the strip
   WS2812_PIN             0                         GPIO data pin for the WS2812 strip
@@ -73,9 +73,11 @@ Environment variables (all optional, sensible defaults shown):
   ESP32_PORT             /dev/cu.usbmodem*         serial device for esptool / monitor
   BEATLED_API_TOKEN      (none)                    fallback API token for 'server start --api-token'
 
-Most of those live in $PICO_DIR/.env.pico, .env.posix, or .env.esp32.
-Copy the .template alongside, fill in your values, and the relevant
-subcommand sources it automatically.
+WiFi networks live once in $PICO_DIR/.env.wifi (shared by the firmware
+builds and the Pi host's wifi-fallback service). Everything else lives in
+$PICO_DIR/.env.pico, .env.posix, or .env.esp32. Copy the matching
+.template alongside, fill in your values, and the relevant subcommand
+sources it automatically (.env.wifi first, then the per-device file).
 
 Full reference: https://oost.github.io/beatled/cli.html
 EOF
@@ -158,10 +160,13 @@ Flashing notes:
            point at the serial device (usually /dev/cu.usbmodem*).
 
 Config:
+  Copy $PICO_DIR/.env.wifi.template     to .env.wifi    (shared WiFi networks)
   Copy $PICO_DIR/.env.pico.template     to .env.pico    (Pico W hardware)
   Copy $PICO_DIR/.env.posix.template    to .env.posix   (POSIX simulator)
   Copy $PICO_DIR/.env.esp32.template    to .env.esp32   (ESP32)
-  Fill in WIFI_SSID / WIFI_PASSWORD / BEATLED_SERVER_NAME / NUM_PIXELS /
+  Put WIFI_SSID / WIFI_PASSWORD (and the optional _2.._4 fallbacks) in
+  .env.wifi — that one file also drives the Pi host's wifi-fallback service
+  on deploy. Per-device files carry BEATLED_SERVER_NAME / NUM_PIXELS /
   WS2812_PIN. These values are baked into the firmware at build time. The
   POSIX simulator only needs BEATLED_SERVER_NAME + NUM_PIXELS (no Wi-Fi or
   GPIO), so .env.posix can stay minimal.
@@ -480,6 +485,18 @@ clean_esp32() {
 
 # --- Env loaders ---
 
+# WiFi networks are shared between the controller firmware and the Pi
+# host's wifi-fallback service, so they live in one file. Source it (when
+# present) before the per-device env so a device file can still override a
+# value. Must run inside a `set -a` block so the values are exported.
+load_wifi_env() {
+  local wifi_file="$PICO_DIR/.env.wifi"
+  if [[ -f "$wifi_file" ]]; then
+    # shellcheck disable=SC1090
+    source "$wifi_file"
+  fi
+}
+
 load_pico_env() {
   local env_file="$PICO_DIR/.env.pico"
   if [[ ! -f "$env_file" ]]; then
@@ -488,6 +505,7 @@ load_pico_env() {
     exit 1
   fi
   set -a
+  load_wifi_env
   # shellcheck disable=SC1090
   source "$env_file"
   # Fallback networks are optional; default empty so unset slots don't trip
@@ -530,6 +548,7 @@ load_esp32_env() {
     exit 1
   fi
   set -a
+  load_wifi_env
   # shellcheck disable=SC1090
   source "$env_file"
   # Fallback networks are optional; default empty so unset slots don't trip
@@ -627,8 +646,24 @@ cmd_server_deploy() {
     scp -r "$certs_dir" "${username}@${host}:${remote_home}/certs" > /dev/null
   fi
 
+  # The Docker rpi build doesn't include controller/, but the Pi host's
+  # wifi-fallback service reads controller/.env.wifi (the shared WiFi
+  # source of truth). Ship it alongside so install-service.sh finds it.
+  local wifi_env="$PROJECT_DIR/controller/.env.wifi"
+  if [ -f "$wifi_env" ]; then
+    info "Bundling controller/.env.wifi for the host wifi-fallback service"
+    mkdir -p "$out_dir/controller"
+    cp "$wifi_env" "$out_dir/controller/.env.wifi"
+  else
+    warn "controller/.env.wifi not found — wifi-fallback will fall back to the hotspot"
+  fi
+
   info "Packaging build output..."
-  (cd "$out_dir" && rm -f "$tgz" && tar -czf "$tgz" ./*)
+  # macOS bsdtar otherwise embeds AppleDouble (._*) companions and
+  # provenance xattrs, which litter the Pi with ._foo files and flood the
+  # remote tar with "Ignoring unknown extended header" warnings.
+  (cd "$out_dir" && rm -f "$tgz" && \
+    COPYFILE_DISABLE=1 tar --no-mac-metadata --no-xattrs -czf "$tgz" ./*)
 
   info "Copying tarball to ${host}..."
   scp "$out_dir/$tgz" "${username}@${host}:${remote_home}/" > /dev/null
