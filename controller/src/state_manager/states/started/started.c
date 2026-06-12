@@ -35,12 +35,12 @@ int enter_started_state() {
   puts("[INIT] Initializing WiFi");
   hal_wifi_init();
   // Networks are tried in order; empty slots are skipped. Configure the
-  // fallbacks via WIFI_SSID_2/WIFI_PASSWORD_2 .. _4 in the .env file.
+  // upstream fallbacks via WIFI_SSID_2/WIFI_PASSWORD_2 .. _4 and the
+  // last-resort hotspot via HOTSPOT_SSID/HOTSPOT_PASSWORD in the .env file.
   static const wifi_network_t wifi_networks[] = {
-      {WIFI_SSID, WIFI_PASSWORD},
-      {WIFI_SSID_2, WIFI_PASSWORD_2},
-      {WIFI_SSID_3, WIFI_PASSWORD_3},
-      {WIFI_SSID_4, WIFI_PASSWORD_4},
+      {WIFI_SSID, WIFI_PASSWORD},       {WIFI_SSID_2, WIFI_PASSWORD_2},
+      {WIFI_SSID_3, WIFI_PASSWORD_3},   {WIFI_SSID_4, WIFI_PASSWORD_4},
+      {HOTSPOT_SSID, HOTSPOT_PASSWORD},
   };
   wifi_check(wifi_networks, sizeof(wifi_networks) / sizeof(wifi_networks[0]));
 

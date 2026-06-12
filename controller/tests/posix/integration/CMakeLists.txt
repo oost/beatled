@@ -32,6 +32,8 @@ target_compile_definitions(test_integration PRIVATE
     WIFI_PASSWORD_3=\"\"
     WIFI_SSID_4=\"\"
     WIFI_PASSWORD_4=\"\"
+    HOTSPOT_SSID=\"\"
+    HOTSPOT_PASSWORD=\"\"
     BEATLED_SERVER_NAME="localhost"
 )
 target_include_directories(test_integration PRIVATE
