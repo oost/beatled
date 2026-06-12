@@ -1,0 +1,12 @@
+[Unit]
+Description=WiFi with hotspot fallback
+After=network.target NetworkManager.service
+Wants=NetworkManager.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/wifi-fallback.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
