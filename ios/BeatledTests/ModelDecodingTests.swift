@@ -238,4 +238,38 @@ final class ModelDecodingTests: XCTestCase {
         let response = try decode(ServiceControlResponse.self, #"{ "status": true }"#)
         XCTAssertTrue(response.status)
     }
+
+    // MARK: /api/ap
+
+    func testAPControlRequestEncoding() throws {
+        let request = APControlRequest(mode: "on", revertMinutes: 10)
+        let encoded = try JSONEncoder().encode(request)
+        let object = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        XCTAssertEqual(object["mode"] as? String, "on")
+        XCTAssertEqual(object["revertMinutes"] as? Int, 10)
+    }
+
+    func testAPControlRequestOmitsRevertWhenNil() throws {
+        let request = APControlRequest(mode: "status", revertMinutes: nil)
+        let encoded = try JSONEncoder().encode(request)
+        let object = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        XCTAssertEqual(object["mode"] as? String, "status")
+        XCTAssertNil(object["revertMinutes"])
+    }
+
+    func testAPStatusResponseDecoding() throws {
+        let response = try decode(APStatusResponse.self, #"{ "ap": "on" }"#)
+        XCTAssertEqual(response.ap, "on")
+    }
+
+    func testAPActionResponseDecoding() throws {
+        let response = try decode(
+            APActionResponse.self,
+            #"{ "result": "ok", "mode": "off", "output": "Reconnecting to WiFi 'Livebox-98D4'..." }"#)
+        XCTAssertEqual(response.result, "ok")
+        XCTAssertEqual(response.mode, "off")
+        XCTAssertTrue(response.output.contains("Reconnecting"))
+    }
 }

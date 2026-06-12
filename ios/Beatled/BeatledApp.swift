@@ -11,7 +11,7 @@ struct BeatledApp: App {
         let client = APIClient(settings: settings)
         self._settings = State(initialValue: settings)
         self._apiClient = State(initialValue: client)
-        self._configViewModel = State(initialValue: ConfigViewModel(settings: settings))
+        self._configViewModel = State(initialValue: ConfigViewModel(settings: settings, api: client))
     }
 
     var body: some Scene {

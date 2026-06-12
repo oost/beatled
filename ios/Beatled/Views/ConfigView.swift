@@ -3,6 +3,7 @@ import SwiftUI
 struct ConfigView: View {
     @State var viewModel: ConfigViewModel
     @State private var showInsecureWarning = false
+    @State private var showAPWarning = false
 
     var body: some View {
         NavigationStack {
@@ -10,6 +11,7 @@ struct ConfigView: View {
                 serverSection
                 authenticationSection
                 securitySection
+                accessPointSection
                 aboutSection
             }
             .formStyle(.grouped)
@@ -24,7 +26,43 @@ struct ConfigView: View {
             } message: {
                 Text("Allowing insecure connections bypasses certificate validation and may expose your data to security risks. Only enable this for development or when connecting to trusted servers with self-signed certificates.")
             }
+            .alert("Switch to Hotspot?", isPresented: $showAPWarning) {
+                Button("Cancel", role: .cancel) {}
+                Button("Switch", role: .destructive) { viewModel.switchAPOn() }
+            } message: {
+                Text(
+                    "This device will lose its connection to the server. Rejoin the “Beatled” WiFi and open https://192.168.4.1:8443/ to continue."
+                    + (viewModel.revertMinutes > 0
+                       ? " The Pi auto-reverts to WiFi after \(viewModel.revertMinutes) min."
+                       : ""))
+            }
         }
+    }
+
+    @ViewBuilder
+    private var accessPointSection: some View {
+        Section {
+            LabeledContent("Hotspot") {
+                Text(viewModel.apStatus == "unknown" ? "—" : viewModel.apStatus)
+                    .foregroundStyle(.secondary)
+            }
+            Stepper("Auto-revert: \(viewModel.revertMinutes) min",
+                    value: $viewModel.revertMinutes, in: 0...1440)
+            Button("Switch to Hotspot") { showAPWarning = true }
+                .disabled(viewModel.apBusy)
+            Button("Switch to WiFi") { viewModel.switchAPOff() }
+                .disabled(viewModel.apBusy)
+            if let message = viewModel.apMessage {
+                Label(message, systemImage: "wifi.exclamationmark")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+            }
+        } header: {
+            Text("Access Point")
+        } footer: {
+            Text("Switch the Pi between your WiFi and its own “Beatled” hotspot (192.168.4.1). The Pi has a single radio, so turning the hotspot on drops this connection — rejoin the “Beatled” network to reconnect.")
+        }
+        .task { await viewModel.refreshAPStatus() }
     }
 
     @ViewBuilder

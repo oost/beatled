@@ -48,20 +48,22 @@ final class ConfigViewModelTests: XCTestCase {
     // MARK: ConfigViewModel
 
     func testInitSelectsMatchingPreset() {
-        let viewModel = ConfigViewModel(settings: makeSettings(host: "https://beatled.local:8443"))
+        let viewModel = ConfigViewModel(settings: makeSettings(host: "https://beatled.local:8443"),
+                                        api: APIClient(settings: makeSettings()))
         XCTAssertEqual(viewModel.selectedPreset, .beatledLocal)
         XCTAssertEqual(viewModel.customHost, "")
     }
 
     func testInitWithUnknownHostSelectsCustomAndKeepsHost() {
-        let viewModel = ConfigViewModel(settings: makeSettings(host: "https://example.com:9999"))
+        let viewModel = ConfigViewModel(settings: makeSettings(host: "https://example.com:9999"),
+                                        api: APIClient(settings: makeSettings()))
         XCTAssertEqual(viewModel.selectedPreset, .custom)
         XCTAssertEqual(viewModel.customHost, "https://example.com:9999")
     }
 
     func testSelectingPresetWritesHostToSettings() {
         let settings = makeSettings()
-        let viewModel = ConfigViewModel(settings: settings)
+        let viewModel = ConfigViewModel(settings: settings, api: APIClient(settings: settings))
 
         viewModel.selectedPreset = .raspberryPi
 
@@ -71,7 +73,7 @@ final class ConfigViewModelTests: XCTestCase {
 
     func testCustomHostWritesThroughOnlyWhenCustomSelected() {
         let settings = makeSettings(host: "https://example.com:9999")
-        let viewModel = ConfigViewModel(settings: settings)
+        let viewModel = ConfigViewModel(settings: settings, api: APIClient(settings: settings))
 
         viewModel.customHost = "https://other.example:1234"
         XCTAssertEqual(settings.apiHost, "https://other.example:1234")
