@@ -12,6 +12,12 @@ target_sources(
 target_compile_definitions(beatled_state_manager INTERFACE
     WIFI_SSID=\"${WIFI_SSID}\"
     WIFI_PASSWORD=\"${WIFI_PASSWORD}\"
+    WIFI_SSID_2=\"${WIFI_SSID_2}\"
+    WIFI_PASSWORD_2=\"${WIFI_PASSWORD_2}\"
+    WIFI_SSID_3=\"${WIFI_SSID_3}\"
+    WIFI_PASSWORD_3=\"${WIFI_PASSWORD_3}\"
+    WIFI_SSID_4=\"${WIFI_SSID_4}\"
+    WIFI_PASSWORD_4=\"${WIFI_PASSWORD_4}\"
     BEATLED_SERVER_NAME="${BEATLED_SERVER_NAME}"
 )
 

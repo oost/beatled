@@ -27,15 +27,22 @@ int enter_started_state() {
   event_queue_init();
 
   puts("[INIT] Initializing intercore queue");
-  intercore_command_queue =
-      hal_queue_init(sizeof(intercore_message_t), MAX_INTERCORE_QUEUE_COUNT);
+  intercore_command_queue = hal_queue_init(sizeof(intercore_message_t), MAX_INTERCORE_QUEUE_COUNT);
 
   puts("[INIT] Initializing STDIO");
   hal_stdio_init();
 
   puts("[INIT] Initializing WiFi");
   hal_wifi_init();
-  wifi_check(WIFI_SSID, WIFI_PASSWORD);
+  // Networks are tried in order; empty slots are skipped. Configure the
+  // fallbacks via WIFI_SSID_2/WIFI_PASSWORD_2 .. _4 in the .env file.
+  static const wifi_network_t wifi_networks[] = {
+      {WIFI_SSID, WIFI_PASSWORD},
+      {WIFI_SSID_2, WIFI_PASSWORD_2},
+      {WIFI_SSID_3, WIFI_PASSWORD_3},
+      {WIFI_SSID_4, WIFI_PASSWORD_4},
+  };
+  wifi_check(wifi_networks, sizeof(wifi_networks) / sizeof(wifi_networks[0]));
 
   puts("[INIT] Initializing IP stack");
   udp_print_all_ip_addresses();
@@ -43,8 +50,7 @@ int enter_started_state() {
   sleep_ms(500);
 
   puts("[INIT] Starting UDP listener");
-  start_udp(BEATLED_SERVER_NAME, UDP_SERVER_PORT, UDP_PORT,
-            &add_payload_to_event_queue);
+  start_udp(BEATLED_SERVER_NAME, UDP_SERVER_PORT, UDP_PORT, &add_payload_to_event_queue);
 
   if (!schedule_state_transition(STATE_INITIALIZED)) {
     BEATLED_FATAL("Failed to schedule transition to INITIALIZED");
@@ -53,4 +59,6 @@ int enter_started_state() {
   return 0;
 }
 
-int exit_started_state() { return 0; }
+int exit_started_state() {
+  return 0;
+}

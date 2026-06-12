@@ -87,6 +87,12 @@ $EDITOR controller/.env.pico
 The relevant subcommand sources the file automatically. Both
 `.env.*` shapes are gitignored at the repo root.
 
+`WIFI_SSID`/`WIFI_PASSWORD` is the primary network. Up to three optional
+fallbacks — `WIFI_SSID_2`/`WIFI_PASSWORD_2` through `_4` — are tried in order
+if it fails; the controller cycles the whole list and keeps retrying until one
+joins. Leave a slot blank to skip it. Fallbacks apply to the `pico`,
+`pico-freertos`, and `esp32-freertos` ports (the simulators have no radio).
+
 ## `server`
 
 ```sh

@@ -22,11 +22,19 @@ int wifi_connect(const char *wifi_ssid, const char *wifi_password) {
   return 0;
 }
 
-void wifi_check(const char *wifi_ssid, const char *wifi_password) {
-  if (cyw43_wifi_link_status(&cyw43_state, CYW43_ITF_STA) != CYW43_LINK_JOIN) {
-    while (1) {
-      if (!wifi_connect(wifi_ssid, wifi_password)) {
-        return;
+void wifi_check(const wifi_network_t *networks, size_t count) {
+  if (cyw43_wifi_link_status(&cyw43_state, CYW43_ITF_STA) == CYW43_LINK_JOIN) {
+    return;
+  }
+  // Cycle the list forever: try each network in order, fall through to the
+  // next on failure, and start over once the list is exhausted.
+  while (1) {
+    for (size_t i = 0; i < count; i++) {
+      if (networks[i].ssid == NULL || networks[i].ssid[0] == '\0') {
+        continue; // skip empty slots
+      }
+      if (!wifi_connect(networks[i].ssid, networks[i].password)) {
+        return; // joined
       }
     }
   }

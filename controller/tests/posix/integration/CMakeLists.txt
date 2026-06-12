@@ -26,6 +26,12 @@ add_executable(test_integration
 target_compile_definitions(test_integration PRIVATE
     WIFI_SSID=\"test\"
     WIFI_PASSWORD=\"test\"
+    WIFI_SSID_2=\"\"
+    WIFI_PASSWORD_2=\"\"
+    WIFI_SSID_3=\"\"
+    WIFI_PASSWORD_3=\"\"
+    WIFI_SSID_4=\"\"
+    WIFI_PASSWORD_4=\"\"
     BEATLED_SERVER_NAME="localhost"
 )
 target_include_directories(test_integration PRIVATE
