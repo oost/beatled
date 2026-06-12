@@ -97,8 +97,13 @@ Then configure and build (the build wrapper sources `.env.wifi` before
 
 ```bash
 export PICO_TOOLCHAIN_PATH="/Applications/ArmGNUToolchain/12.2.rel1/arm-none-eabi"
-source .env.wifi   # sets WIFI_SSID, WIFI_PASSWORD (+ _2..4 fallbacks)
-source .env.pico   # sets BEATLED_SERVER_NAME, NUM_PIXELS, WS2812_PIN
+# `set -a` exports every var so CMake picks them up from the environment
+# ($ENV{WIFI_SSID} etc.) — a plain `source` would set but not export them,
+# baking in empty WiFi credentials.
+set -a
+source .env.wifi   # WIFI_SSID/WIFI_PASSWORD (+ _2..4 fallbacks, HOTSPOT_*)
+source .env.pico   # BEATLED_SERVER_NAME, NUM_PIXELS, WS2812_PIN
+set +a
 
 cmake -B build-pico \
   -DPORT=pico \
@@ -187,14 +192,16 @@ Or manually:
 
 ```bash
 cd esp32
+# `set -a` exports every var so idf.py / CMake read them from the
+# environment ($ENV{WIFI_SSID} etc.), including the _2..4 fallbacks and
+# HOTSPOT_SSID/HOTSPOT_PASSWORD.
+set -a
 source ../.env.wifi
 source ../.env.esp32
+set +a
 
 idf.py set-target $ESP32_TARGET
-WIFI_SSID="$WIFI_SSID" WIFI_PASSWORD="$WIFI_PASSWORD" \
-  BEATLED_SERVER_NAME="$BEATLED_SERVER_NAME" \
-  NUM_PIXELS="$NUM_PIXELS" WS2812_PIN="$WS2812_PIN" \
-  idf.py build flash monitor -p $ESP32_PORT
+idf.py build flash monitor -p $ESP32_PORT
 ```
 
 ### Flash & Monitor
