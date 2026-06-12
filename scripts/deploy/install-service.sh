@@ -1,7 +1,15 @@
 #!/bin/bash
 #
-# Install the beat-server systemd service on a Raspberry Pi.
-# Generates the service file from the template and enables it.
+# Install the beat-server and wifi-fallback systemd services on a
+# Raspberry Pi. Each service file is generated from its template
+# (envsubst) and then enabled and started.
+#
+# The wifi-fallback service brings up a known NetworkManager connection
+# on boot and falls back to a hotspot if it can't. Override the
+# connection names via the environment:
+#
+#   WIFI_SSID    NetworkManager connection to bring up   (default: beatled-wifi)
+#   HOTSPOT_CON  NetworkManager hotspot connection name  (default: beatled-hotspot)
 #
 
 set -euo pipefail
@@ -28,20 +36,34 @@ export USERNAME
 USERNAME="$(whoami)"
 export ROOT_DIR
 ROOT_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
+export WIFI_SSID="${WIFI_SSID:-beatled-wifi}"
+export HOTSPOT_CON="${HOTSPOT_CON:-beatled-hotspot}"
 
-info "Installing beat-server service (ROOT_DIR=$ROOT_DIR)"
+# Generate a service file from its template, install it under
+# /etc/systemd/system/, then enable and start it.
+install_service() {
+  local name="$1"
+  local template="$SCRIPT_DIR/${name}.template.service"
+  local generated="$SCRIPT_DIR/${name}.service"
 
-readonly SERVICE_FILE="$SCRIPT_DIR/beat-server.service"
-envsubst < "$SCRIPT_DIR/beat-server.template.service" > "$SERVICE_FILE"
+  info "Installing ${name} service"
+  envsubst < "$template" > "$generated"
 
-info "Copying service file to /etc/systemd/system/"
-sudo cp "$SERVICE_FILE" /etc/systemd/system/beat-server.service
-sudo chmod 644 /etc/systemd/system/beat-server.service
+  sudo cp "$generated" "/etc/systemd/system/${name}.service"
+  sudo chmod 644 "/etc/systemd/system/${name}.service"
 
-info "Reloading systemd, enabling and starting service..."
-sudo systemctl daemon-reload
-sudo systemctl enable beat-server.service
-sudo systemctl start beat-server.service
+  sudo systemctl daemon-reload
+  sudo systemctl enable "${name}.service"
+  sudo systemctl restart "${name}.service"
 
-info "Service status:"
-systemctl status --no-pager beat-server.service
+  info "${name} status:"
+  systemctl status --no-pager "${name}.service" || true
+}
+
+info "Installing services (ROOT_DIR=$ROOT_DIR, WIFI_SSID=$WIFI_SSID, HOTSPOT_CON=$HOTSPOT_CON)"
+
+# wifi-fallback.sh is executed by the service; make sure it's runnable.
+chmod +x "$SCRIPT_DIR/wifi-fallback.sh"
+
+install_service beat-server
+install_service wifi-fallback
