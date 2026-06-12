@@ -23,8 +23,9 @@ fi
 info "Checking service status..."
 if ! systemctl status --no-pager beat-server.service > /dev/null 2>&1; then
   info "Beat server service not found, installing..."
-  # shellcheck disable=SC1091
-  . "$SCRIPT_DIR/install-service.sh"
+  # Run as a subprocess, not `.` — install-service.sh is self-contained and
+  # also declares `readonly SCRIPT_DIR`, which collides with ours if sourced.
+  bash "$SCRIPT_DIR/install-service.sh"
 else
   info "Reloading systemd daemon..."
   sudo systemctl daemon-reload

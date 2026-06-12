@@ -7,13 +7,19 @@
 
 FROM docker-builder AS build-server
 
-COPY server /home/source/ 
+COPY server /home/source/
+# server/CMakeLists.txt resolves BEATLED_PROTOCOL_PATH to
+# ../controller/lib/beatled_protocol (the single source of truth for the
+# wire protocol since beatled-pico was absorbed into controller/). Copy it
+# in as a sibling of /home/source so that relative path resolves.
+COPY controller/lib/beatled_protocol /home/controller/lib/beatled_protocol
 
-WORKDIR /home/source 
+WORKDIR /home/source
 
 RUN cmake -G Ninja -DCMAKE_TOOLCHAIN_FILE=/home/source/cmake/docker-toolchain.cmake \
   -DVCPKG_DIR=${VCPKG_HOME}  -DVCPKG_TARGET_TRIPLET=${TARGET_TRIPLET} \
   -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+  -DBUILD_PLUGINS=OFF \
   -B ../build -S .
 
 RUN cmake --build ../build \
