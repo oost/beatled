@@ -1,0 +1,19 @@
+[Unit]
+Description=WiFi with hotspot fallback
+After=network.target NetworkManager.service
+Wants=NetworkManager.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+User=${USERNAME}
+Group=${USERNAME}
+ExecStart=$ROOT_DIR/scripts/deploy/wifi-fallback.sh "${WIFI_SSID}" "${HOTSPOT_CON}"
+WorkingDirectory=$ROOT_DIR
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=$ROOT_DIR
+
+[Install]
+WantedBy=multi-user.target
