@@ -1,0 +1,20 @@
+[Unit]
+Description=Publish an extra mDNS .local alias for this host
+After=network-online.target avahi-daemon.service
+Wants=network-online.target
+Requires=avahi-daemon.service
+
+[Service]
+Type=simple
+ExecStart=$ROOT_DIR/scripts/deploy/avahi-alias.sh "${MDNS_ALIAS}"
+Restart=always
+RestartSec=5
+User=${USERNAME}
+Group=${USERNAME}
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=$ROOT_DIR
+
+[Install]
+WantedBy=multi-user.target

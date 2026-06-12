@@ -1,8 +1,12 @@
 #!/bin/bash
 #
-# Install the beat-server and wifi-fallback systemd services on a
-# Raspberry Pi. Each service file is generated from its template
+# Install the beat-server, wifi-fallback, and avahi-alias systemd services
+# on a Raspberry Pi. Each service file is generated from its template
 # (envsubst) and then enabled and started.
+#
+# The avahi-alias service publishes an extra mDNS name so the Pi answers to
+# <MDNS_ALIAS> in addition to <hostname>.local. Override the name via the
+# environment (or controller/.env.wifi): MDNS_ALIAS (default beatled.local).
 #
 # The wifi-fallback service brings up known NetworkManager connections on
 # boot — the WiFi networks defined once in controller/.env.wifi, tried in
@@ -48,8 +52,9 @@ if [[ -f "$WIFI_ENV" ]]; then
   # shellcheck disable=SC1090
   source "$WIFI_ENV"
 fi
-# Default only applies if neither the environment nor .env.wifi set it.
+# Defaults only apply if neither the environment nor .env.wifi set them.
 export HOTSPOT_CON="${HOTSPOT_CON:-beatled-hotspot}"
+export MDNS_ALIAS="${MDNS_ALIAS:-beatled.local}"
 : "${WIFI_SSID:=}"
 : "${WIFI_SSID_2:=}"
 : "${WIFI_SSID_3:=}"
@@ -98,10 +103,13 @@ install_service() {
   fi
 }
 
-info "Installing services (ROOT_DIR=$ROOT_DIR, networks=[${WIFI_CONNECTIONS:-none}], HOTSPOT_CON=$HOTSPOT_CON)"
+info "Installing services (ROOT_DIR=$ROOT_DIR, networks=[${WIFI_CONNECTIONS:-none}], HOTSPOT_CON=$HOTSPOT_CON, MDNS_ALIAS=$MDNS_ALIAS)"
 
-# wifi-fallback.sh is executed by the service; make sure it's runnable.
-chmod +x "$SCRIPT_DIR/wifi-fallback.sh"
+# These are executed by their services; make sure they're runnable.
+chmod +x "$SCRIPT_DIR/wifi-fallback.sh" "$SCRIPT_DIR/avahi-alias.sh"
 
 install_service beat-server
 install_service wifi-fallback enable
+# Publishing an mDNS record doesn't touch the network link, so it's safe to
+# start now (unlike wifi-fallback, which would bounce the deploy's WiFi).
+install_service avahi-alias
