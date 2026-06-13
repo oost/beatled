@@ -3,6 +3,13 @@ Description=Publish an extra mDNS .local alias for this host
 After=network-online.target avahi-daemon.service
 Wants=network-online.target
 Requires=avahi-daemon.service
+# An AP->Wi-Fi handoff (boot, wifi-fallback, ap-mode) makes the NM dispatcher
+# fire several `systemctl restart` events in the same second, and Restart=always
+# adds its own retries on top. Without disabling the start limit, that burst
+# trips systemd's default (5 starts / 10s) and latches the unit 'failed', so the
+# alias stays unpublished until a manual reset-failed. Disable the limit so the
+# unit always keeps retrying until an IP exists and the name sticks.
+StartLimitIntervalSec=0
 
 [Service]
 Type=simple
