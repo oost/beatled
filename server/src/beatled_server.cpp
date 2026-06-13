@@ -3,6 +3,7 @@
 
 #include "./application.hpp"
 #include "./build_constants.h"
+#include "core/realtime.hpp"
 
 using beatled::core::Config;
 
@@ -20,6 +21,11 @@ int main(int argc, char const *argv[]) {
 
   try {
     print_version(argv[0]);
+
+    // Pin memory up front so neither the network worker pool nor the
+    // beat-detector loop ever stalls on a major page fault. No-op off Linux;
+    // a soft failure if the process lacks the memlock privilege.
+    beatled::core::lock_process_memory();
 
     const auto beatled_config = Config(argc, argv);
     beatled_config.log_config();

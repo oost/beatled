@@ -9,6 +9,7 @@
 #include "beat_detector/beat_detector.hpp"
 #include "beat_detector_impl.h"
 #include "core/clock.hpp"
+#include "core/realtime.hpp"
 
 namespace beatled::detector {
 
@@ -55,7 +56,18 @@ void BeatDetector::start_sync() {
   }
 }
 
+// SCHED_FIFO priority for the beat-detection loop. Mid-high in the 1–99
+// real-time band: comfortably above normal time-sharing work so audio frames
+// are never starved, but below the priorities the kernel reserves for IRQ
+// threads and PortAudio's own callback thread.
+static constexpr int kBeatDetectorRtPriority = 80;
+
 void BeatDetector::Impl::do_detect_tempo() {
+  // This loop is the timing-critical path — a late dequeue skews the beat
+  // estimate. Promote it to SCHED_FIFO on Linux (no-op / soft-fail elsewhere)
+  // so the scheduler never preempts it for time-sharing work.
+  beatled::core::set_thread_realtime_priority(kBeatDetectorRtPriority);
+
   // Use frame_rate = 0 to let the OS choose the frame rate (potentially
   // dynamically)
   AudioInput audio_input(audio_buffer_pool_.get(), sample_rate_, 512);
