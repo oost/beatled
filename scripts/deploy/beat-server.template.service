@@ -11,6 +11,13 @@ User=${USERNAME}
 Group=${USERNAME}
 ExecStart=$ROOT_DIR/server/beat_server -a 0.0.0.0 --root-dir $ROOT_DIR/client/ --certs-dir /home/${USERNAME}/certs/ --start-http --start-udp
 WorkingDirectory=$ROOT_DIR
+# Real-time headroom for the server's mlockall + SCHED_FIFO beat-detector
+# thread. With these rlimits the unprivileged User= above can lock memory
+# and raise its scheduling policy without CAP_IPC_LOCK / CAP_SYS_NICE, so
+# NoNewPrivileges stays on. LimitRTPRIO must be >= the priority the server
+# requests (80, see core/realtime.cpp).
+LimitMEMLOCK=infinity
+LimitRTPRIO=80
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=read-only
