@@ -281,7 +281,7 @@ build_rpi() {
 
   info "Building beatled server (ARM64)..."
   rm -rf "$PROJECT_DIR/out"
-  docker build -f "$PROJECT_DIR/docker/Dockerfile.beatled" "$PROJECT_DIR" --progress=plain -o "$PROJECT_DIR/out"
+  docker build -f "$PROJECT_DIR/docker/Dockerfile.beatled" "$PROJECT_DIR" --target export --progress=plain -o "$PROJECT_DIR/out"
 
   ok "RPi build complete (output: $PROJECT_DIR/out/)"
 }
