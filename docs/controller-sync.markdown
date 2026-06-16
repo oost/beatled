@@ -77,6 +77,8 @@ The server sends [NEXT_BEAT](protocol.html#next_beat-8) messages before each bea
 
 [PROGRAM](protocol.html#program-7) is now pushed by the server **on state change** (instant fan-out via a StateManager callback) plus a 5 Hz refresh, so late joiners and missed broadcasts don't strand controllers on a wrong pattern. Each NEXT_BEAT and PROGRAM carries a 16-bit `seq` that the controller uses to count loss and reject stale duplicates.
 
+Protocol v5 adds a 32-bit `epoch` to NEXT_BEAT, PROGRAM, and BEAT. The `seq` counters are per-process and reset to zero whenever the server restarts, so a controller that outlived the restart would otherwise reject every fresh push as "stale" (`delta < 0`) until the counter climbed back past its last-seen value — stranding it on the wrong pattern for up to ~an hour. The server picks a random `epoch` once at startup and stamps it on every message; the controller scopes its `seq` comparison to the current epoch and re-anchors (adopting the incoming `seq` unconditionally) the moment the epoch changes. The `seq` reset on restart is now self-healing rather than a stranding hazard.
+
 ### 5. QoS / diagnostics (protocol v4)
 
 Two complementary diagnostic channels feed `/api/devices.qos` and `/api/qos` so operators can see fleet sync health and catch silently-degrading controllers.

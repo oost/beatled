@@ -75,19 +75,19 @@ TEST_CASE("Protocol struct sizes match wire format", "[protocol]") {
     REQUIRE(sizeof(beatled_message_tempo_response_t) == 15);
   }
 
-  SECTION("Program message is 5 bytes (v2)") {
-    // 1 byte type + 2 bytes program_id + 2 bytes seq
-    REQUIRE(sizeof(beatled_message_program_t) == 5);
+  SECTION("Program message is 9 bytes (v5)") {
+    // 1 type + 2 program_id + 2 seq + 4 epoch
+    REQUIRE(sizeof(beatled_message_program_t) == 9);
   }
 
-  SECTION("Next beat message is 15 bytes (v2)") {
-    // base(1) + next_beat_time_ref(8) + beat_count(4) + seq(2) = 15
-    REQUIRE(sizeof(beatled_message_next_beat_t) == 15);
+  SECTION("Next beat message is 19 bytes (v5)") {
+    // base(1) + next_beat_time_ref(8) + beat_count(4) + seq(2) + epoch(4) = 19
+    REQUIRE(sizeof(beatled_message_next_beat_t) == 19);
   }
 
-  SECTION("Beat message is 15 bytes (v2)") {
+  SECTION("Beat message is 19 bytes (v5)") {
     // Same layout as next_beat
-    REQUIRE(sizeof(beatled_message_beat_t) == 15);
+    REQUIRE(sizeof(beatled_message_beat_t) == 19);
   }
 
   SECTION("Message type enum has expected count") {

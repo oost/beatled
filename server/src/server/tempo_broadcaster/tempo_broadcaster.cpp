@@ -1,5 +1,6 @@
 #include <asio.hpp>
 #include <fmt/ostream.h>
+#include <random>
 #include <spdlog/spdlog.h>
 
 #include "core/clock.hpp"
@@ -28,8 +29,8 @@ TempoBroadcaster::TempoBroadcaster(const std::string &id, asio::io_context &io_c
           udp::endpoint(asio::ip::make_address_v4(broadcasting_server_parameters.address),
                         broadcasting_server_parameters.port)},
       broadcasting_server_parameters_{broadcasting_server_parameters},
-      strand_{asio::make_strand(io_context)} {
-  SPDLOG_INFO("Creating {}", name());
+      strand_{asio::make_strand(io_context)}, epoch_{std::random_device{}()} {
+  SPDLOG_INFO("Creating {} (protocol epoch={})", name(), epoch_);
 
   socket_->open(udp::v4());
   if (!socket_->is_open()) {
@@ -67,7 +68,7 @@ void TempoBroadcaster::broadcast_next_beat(uint64_t next_beat_time_ref, uint32_t
 
   asio::post(strand_, [this, next_beat_time_ref, beat_count]() {
     uint16_t seq = next_beat_seq_.fetch_add(1, std::memory_order_relaxed);
-    auto buffer = std::make_unique<NextBeatBuffer>(next_beat_time_ref, beat_count, seq);
+    auto buffer = std::make_unique<NextBeatBuffer>(next_beat_time_ref, beat_count, seq, epoch_);
     // Per-beat traffic — same reasoning as application.cpp.
     SPDLOG_DEBUG("{} next_beat seq={} t={} count={}", name(), seq, next_beat_time_ref, beat_count);
     dispatch(std::move(buffer));
@@ -82,7 +83,7 @@ void TempoBroadcaster::broadcast_beat(uint64_t beat_time_ref, uint32_t beat_coun
 
   asio::post(strand_, [this, beat_time_ref, beat_count]() {
     uint16_t seq = beat_seq_.fetch_add(1, std::memory_order_relaxed);
-    auto buffer = std::make_unique<BeatBuffer>(beat_time_ref, beat_count, seq);
+    auto buffer = std::make_unique<BeatBuffer>(beat_time_ref, beat_count, seq, epoch_);
     dispatch(std::move(buffer));
   });
 }
@@ -97,7 +98,7 @@ void TempoBroadcaster::push_program_now() {
     SPDLOG_INFO("{} program push seq={} pid={}", name(), seq, pid);
 
     // Immediate send.
-    dispatch(std::make_unique<ProgramPushBuffer>(pid, seq));
+    dispatch(std::make_unique<ProgramPushBuffer>(pid, seq, epoch_));
 
     // Retry 50 ms later with the same seq so controllers that already
     // applied the first packet treat the retry as an idempotent no-op
@@ -112,7 +113,7 @@ void TempoBroadcaster::push_program_now() {
           if (ec || !is_running()) {
             return;
           }
-          dispatch(std::make_unique<ProgramPushBuffer>(pid, seq));
+          dispatch(std::make_unique<ProgramPushBuffer>(pid, seq, epoch_));
         }));
   });
 }

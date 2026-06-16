@@ -17,15 +17,13 @@ TEST_CASE("ErrorResponseBuffer serialization", "[udp][protocol]") {
     REQUIRE(buf.size() == sizeof(beatled_message_error_t));
     REQUIRE(buf.type() == BEATLED_MESSAGE_ERROR);
 
-    const auto *msg =
-        reinterpret_cast<const beatled_message_error_t *>(&buf.data());
+    const auto *msg = reinterpret_cast<const beatled_message_error_t *>(&buf.data());
     REQUIRE(msg->error_code == BEATLED_ERROR_NO_DATA);
   }
 
   SECTION("Different error codes are preserved") {
     ErrorResponseBuffer buf(BEATLED_ERROR_UNKNOWN_MESSAGE_TYPE);
-    const auto *msg =
-        reinterpret_cast<const beatled_message_error_t *>(&buf.data());
+    const auto *msg = reinterpret_cast<const beatled_message_error_t *>(&buf.data());
     REQUIRE(msg->error_code == BEATLED_ERROR_UNKNOWN_MESSAGE_TYPE);
   }
 }
@@ -39,8 +37,7 @@ TEST_CASE("HelloResponseBuffer serialization", "[udp][protocol]") {
   REQUIRE(buf.size() == sizeof(beatled_message_hello_response_t));
   REQUIRE(buf.type() == BEATLED_MESSAGE_HELLO_RESPONSE);
 
-  const auto *msg =
-      reinterpret_cast<const beatled_message_hello_response_t *>(&buf.data());
+  const auto *msg = reinterpret_cast<const beatled_message_hello_response_t *>(&buf.data());
   REQUIRE(ntohs(msg->client_id) == client_id);
 }
 
@@ -56,8 +53,7 @@ TEST_CASE("TimeResponseBuffer serialization", "[udp][protocol]") {
   REQUIRE(buf.size() == sizeof(beatled_message_time_response_t));
   REQUIRE(buf.type() == BEATLED_MESSAGE_TIME_RESPONSE);
 
-  const auto *msg =
-      reinterpret_cast<const beatled_message_time_response_t *>(&buf.data());
+  const auto *msg = reinterpret_cast<const beatled_message_time_response_t *>(&buf.data());
   REQUIRE(ntohll(msg->orig_time) == orig);
   REQUIRE(ntohll(msg->recv_time) == recv);
   REQUIRE(ntohll(msg->xmit_time) == xmit);
@@ -75,8 +71,7 @@ TEST_CASE("TempoResponseBuffer serialization", "[udp][protocol]") {
   REQUIRE(buf.size() == sizeof(beatled_message_tempo_response_t));
   REQUIRE(buf.type() == BEATLED_MESSAGE_TEMPO_RESPONSE);
 
-  const auto *msg =
-      reinterpret_cast<const beatled_message_tempo_response_t *>(&buf.data());
+  const auto *msg = reinterpret_cast<const beatled_message_tempo_response_t *>(&buf.data());
   REQUIRE(ntohll(msg->beat_time_ref) == beat_time_ref);
   REQUIRE(ntohl(msg->tempo_period_us) == tempo_period_us);
   REQUIRE(ntohs(msg->program_id) == program_id);
@@ -88,17 +83,18 @@ TEST_CASE("NextBeatBuffer serialization", "[udp][protocol]") {
   uint64_t next_beat_time_ref = 9999999ULL;
   uint32_t beat_count = 100;
   uint16_t seq = 12345;
+  uint32_t epoch = 0xABCD1234;
 
-  NextBeatBuffer buf(next_beat_time_ref, beat_count, seq);
+  NextBeatBuffer buf(next_beat_time_ref, beat_count, seq, epoch);
 
   REQUIRE(buf.size() == sizeof(beatled_message_next_beat_t));
   REQUIRE(buf.type() == BEATLED_MESSAGE_NEXT_BEAT);
 
-  const auto *msg =
-      reinterpret_cast<const beatled_message_next_beat_t *>(&buf.data());
+  const auto *msg = reinterpret_cast<const beatled_message_next_beat_t *>(&buf.data());
   REQUIRE(ntohll(msg->next_beat_time_ref) == next_beat_time_ref);
   REQUIRE(ntohl(msg->beat_count) == beat_count);
   REQUIRE(ntohs(msg->seq) == seq);
+  REQUIRE(ntohl(msg->epoch) == epoch);
 }
 
 // --- BeatBuffer ---
@@ -107,17 +103,18 @@ TEST_CASE("BeatBuffer serialization", "[udp][protocol]") {
   uint64_t beat_time_ref = 8888888ULL;
   uint32_t beat_count = 50;
   uint16_t seq = 4242;
+  uint32_t epoch = 0x0BADF00D;
 
-  BeatBuffer buf(beat_time_ref, beat_count, seq);
+  BeatBuffer buf(beat_time_ref, beat_count, seq, epoch);
 
   REQUIRE(buf.size() == sizeof(beatled_message_beat_t));
   REQUIRE(buf.type() == BEATLED_MESSAGE_BEAT);
 
-  const auto *msg =
-      reinterpret_cast<const beatled_message_beat_t *>(&buf.data());
+  const auto *msg = reinterpret_cast<const beatled_message_beat_t *>(&buf.data());
   REQUIRE(ntohll(msg->beat_time_ref) == beat_time_ref);
   REQUIRE(ntohl(msg->beat_count) == beat_count);
   REQUIRE(ntohs(msg->seq) == seq);
+  REQUIRE(ntohl(msg->epoch) == epoch);
 }
 
 // --- ProgramPushBuffer ---
@@ -125,16 +122,17 @@ TEST_CASE("BeatBuffer serialization", "[udp][protocol]") {
 TEST_CASE("ProgramPushBuffer serialization", "[udp][protocol]") {
   uint16_t program_id = 5;
   uint16_t seq = 7;
+  uint32_t epoch = 0xDEADBEEF;
 
-  ProgramPushBuffer buf(program_id, seq);
+  ProgramPushBuffer buf(program_id, seq, epoch);
 
   REQUIRE(buf.size() == sizeof(beatled_message_program_t));
   REQUIRE(buf.type() == BEATLED_MESSAGE_PROGRAM);
 
-  const auto *msg =
-      reinterpret_cast<const beatled_message_program_t *>(&buf.data());
+  const auto *msg = reinterpret_cast<const beatled_message_program_t *>(&buf.data());
   REQUIRE(ntohs(msg->program_id) == program_id);
   REQUIRE(ntohs(msg->seq) == seq);
+  REQUIRE(ntohl(msg->epoch) == epoch);
 }
 
 // --- UDPRequestBuffer ---
@@ -153,8 +151,7 @@ TEST_CASE("UDPRequestBuffer size validation", "[udp][protocol]") {
   }
 
   SECTION("Overflow throws") {
-    REQUIRE_THROWS_AS(buf.setSize(DataBuffer::BUFFER_SIZE + 1),
-                      std::overflow_error);
+    REQUIRE_THROWS_AS(buf.setSize(DataBuffer::BUFFER_SIZE + 1), std::overflow_error);
   }
 }
 
