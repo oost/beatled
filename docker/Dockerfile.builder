@@ -30,10 +30,14 @@ RUN dpkg --add-architecture arm64 \
   # autoconf libtool
 
 ENV VCPKG_FORCE_SYSTEM_BINARIES=1
+# Pin to the same vcpkg commit as server/vcpkg.json's builtin-baseline and
+# .github/workflows/server-ci.yml so the cross-compiled deploy binary is built
+# against the same library versions that CI and native builds test against.
+# This SHA is the vcpkg release tag 2026.01.16.
 RUN cd /tmp \
-    && git clone https://github.com/Microsoft/vcpkg.git -n \ 
+    && git clone https://github.com/Microsoft/vcpkg.git -n \
     && cd vcpkg \
-    && git checkout b216ddff25a1f432870e6c340ce79357049ef86e \
+    && git checkout 66c0373dc7fca549e5803087b9487edfe3aca0a1 \
     && ./bootstrap-vcpkg.sh
 
 COPY server/cmake/arm64-linux-custom.cmake /tmp/vcpkg/triplets
