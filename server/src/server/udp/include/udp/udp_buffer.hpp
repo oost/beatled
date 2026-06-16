@@ -74,17 +74,17 @@ public:
 
 class NextBeatBuffer : public ResponseBuffer<beatled_message_next_beat_t> {
 public:
-  NextBeatBuffer(uint64_t next_beat_time_ref, uint32_t beat_count, uint16_t seq);
+  NextBeatBuffer(uint64_t next_beat_time_ref, uint32_t beat_count, uint16_t seq, uint32_t epoch);
 };
 
 class BeatBuffer : public ResponseBuffer<beatled_message_beat_t> {
 public:
-  BeatBuffer(uint64_t beat_time_ref, uint32_t beat_count, uint16_t seq);
+  BeatBuffer(uint64_t beat_time_ref, uint32_t beat_count, uint16_t seq, uint32_t epoch);
 };
 
 class ProgramPushBuffer : public ResponseBuffer<beatled_message_program_t> {
 public:
-  ProgramPushBuffer(uint16_t program_id, uint16_t seq);
+  ProgramPushBuffer(uint16_t program_id, uint16_t seq, uint32_t epoch);
 };
 
 // Server-initiated STATUS probe. The 8-byte `server_send_time_us` is

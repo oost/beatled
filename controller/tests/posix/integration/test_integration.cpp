@@ -437,6 +437,46 @@ TEST_CASE("Program change updates registry and queues intercore message", "[inte
   REQUIRE((ic.message_type & (0x01 << intercore_program_update)) != 0);
 }
 
+TEST_CASE("Program seq resets across a server-boot epoch change (v5)", "[integration]") {
+  init_system();
+  advance_to(STATE_TEMPO_SYNCED);
+  drain_intercore_queue();
+
+  // Epoch E1: apply program 5 at a high seq (simulating a long-running server).
+  beatled_message_program_t p1;
+  memset(&p1, 0, sizeof(p1));
+  p1.base.type = BEATLED_MESSAGE_PROGRAM;
+  p1.program_id = htons(5);
+  p1.seq = htons(30000);
+  p1.epoch = htonl(0x1111);
+  event_t e1 = make_server_event(&p1, sizeof(p1));
+  REQUIRE(handle_event(&e1) == 0);
+  REQUIRE(registry.program_id == 5);
+
+  // Same epoch, lower seq: a genuine stale/out-of-order push, must be ignored.
+  beatled_message_program_t p2;
+  memset(&p2, 0, sizeof(p2));
+  p2.base.type = BEATLED_MESSAGE_PROGRAM;
+  p2.program_id = htons(6);
+  p2.seq = htons(3);
+  p2.epoch = htonl(0x1111);
+  event_t e2 = make_server_event(&p2, sizeof(p2));
+  REQUIRE(handle_event(&e2) == 0);
+  REQUIRE(registry.program_id == 5); // unchanged — stale within the epoch
+
+  // New epoch (server restarted, seq counter reset to a low value): the low
+  // seq must NOT be rejected — this is exactly the stranding bug v5 fixes.
+  beatled_message_program_t p3;
+  memset(&p3, 0, sizeof(p3));
+  p3.base.type = BEATLED_MESSAGE_PROGRAM;
+  p3.program_id = htons(6);
+  p3.seq = htons(1);
+  p3.epoch = htonl(0x2222);
+  event_t e3 = make_server_event(&p3, sizeof(p3));
+  REQUIRE(handle_event(&e3) == 0);
+  REQUIRE(registry.program_id == 6); // applied — epoch change re-anchored seq
+}
+
 TEST_CASE("Error message handled without state change", "[integration]") {
   init_system();
   advance_to(STATE_REGISTERED);

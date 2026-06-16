@@ -15,6 +15,7 @@
 // Track the last-seen sequence number to detect packet loss. Wraparound is
 // handled by treating the signed 16-bit difference as the actual increment.
 static uint16_t last_next_beat_seq = 0;
+static uint32_t last_next_beat_epoch = 0;
 static bool have_seen_next_beat = false;
 static uint32_t next_beat_gap_total = 0;
 
@@ -39,9 +40,13 @@ int process_next_beat_msg(beatled_message_t *server_msg, size_t data_length) {
       server_time_to_local_time(ntohll(next_beat_msg->next_beat_time_ref));
   uint32_t beat_count = ntohl(next_beat_msg->beat_count);
   uint16_t seq = ntohs(next_beat_msg->seq);
+  uint32_t epoch = ntohl(next_beat_msg->epoch);
 
-  // Sequence-gap accounting. (int16_t) cast handles 16-bit wrap correctly.
-  if (have_seen_next_beat) {
+  // Sequence-gap accounting, scoped to one server-boot epoch. (int16_t) cast
+  // handles 16-bit wrap correctly. A new epoch means the server restarted and
+  // reset its seq counter; re-anchor without rejecting the message or logging
+  // the reset as a flood of lost beats (see protocol v5).
+  if (have_seen_next_beat && epoch == last_next_beat_epoch) {
     int16_t delta = (int16_t)(seq - last_next_beat_seq);
     if (delta <= 0) {
       // Stale or duplicate (older or same seq) — drop without applying.
@@ -60,6 +65,7 @@ int process_next_beat_msg(beatled_message_t *server_msg, size_t data_length) {
     }
   }
   last_next_beat_seq = seq;
+  last_next_beat_epoch = epoch;
   have_seen_next_beat = true;
 
 #if BEATLED_VERBOSE_LOG

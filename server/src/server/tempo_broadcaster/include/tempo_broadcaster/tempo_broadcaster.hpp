@@ -91,6 +91,13 @@ private:
   std::atomic<uint16_t> next_beat_seq_{0};
   std::atomic<uint16_t> beat_seq_{0};
   std::atomic<uint16_t> program_seq_{0};
+
+  // Per-server-boot epoch (protocol v5), stamped on every NEXT_BEAT / BEAT /
+  // PROGRAM. The seq counters above reset to 0 on every process restart;
+  // carrying a fresh random epoch lets controllers that outlived the restart
+  // tell "the counter restarted" from "this push is stale" and re-anchor
+  // instead of rejecting every fresh push. Generated once in the ctor.
+  const uint32_t epoch_;
 };
 } // namespace beatled::server
 

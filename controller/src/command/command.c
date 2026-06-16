@@ -18,7 +18,11 @@
 
 // Track the last-seen PROGRAM sequence number to drop late duplicates.
 // Unlike NEXT_BEAT we don't count gaps — PROGRAM repeats every 1s anyway.
+// `last_program_epoch` scopes the seq comparison to one server-boot (v5): a
+// new epoch means the server restarted and reset its seq, so we must not treat
+// the reset as "stale".
 static uint16_t last_program_seq = 0;
+static uint32_t last_program_epoch = 0;
 static bool have_seen_program = false;
 
 int command_program(beatled_message_t *server_msg, size_t data_length) {
@@ -29,8 +33,12 @@ int command_program(beatled_message_t *server_msg, size_t data_length) {
 
   uint16_t program_id = ntohs(program_msg->program_id);
   uint16_t seq = ntohs(program_msg->seq);
+  uint32_t epoch = ntohl(program_msg->epoch);
 
-  if (have_seen_program) {
+  // Only compare seq within the same server-boot epoch. On a new epoch the
+  // server has restarted (and reset its seq counter), so adopt the incoming
+  // seq unconditionally instead of rejecting it as stale.
+  if (have_seen_program && epoch == last_program_epoch) {
     int16_t delta = (int16_t)(seq - last_program_seq);
     if (delta < 0) {
       // Older than what we've applied — ignore.
@@ -38,6 +46,7 @@ int command_program(beatled_message_t *server_msg, size_t data_length) {
     }
   }
   last_program_seq = seq;
+  last_program_epoch = epoch;
   have_seen_program = true;
 
   printf("[CMD] Program push: id=%u seq=%u\n", program_id, seq);

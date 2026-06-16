@@ -25,7 +25,7 @@ extern "C" {
 // reserved forever as {version_major, version_minor}. A server of any
 // major version can therefore always read the peer's major version, even
 // when the rest of the message layout has changed.
-#define BEATLED_PROTOCOL_VERSION_MAJOR 4
+#define BEATLED_PROTOCOL_VERSION_MAJOR 5
 #define BEATLED_PROTOCOL_VERSION_MINOR 0
 
 typedef enum {
@@ -161,10 +161,19 @@ typedef struct {
 // out-of-order pushes. The server emits one on every program change plus a
 // low-rate (~1 Hz) refresh so late joiners and packet-loss don't strand
 // controllers on a wrong pattern.
+//
+// Protocol v5: trails `seq` with a per-server-boot `epoch`. `seq` resets to a
+// low value every time the server process restarts, so a controller that
+// outlived the restart would reject every fresh push as "stale" (delta < 0)
+// until the counter climbed back past its last-seen value — stranding it on
+// the wrong pattern for up to ~an hour. The epoch is a random value picked
+// once at server startup; when a controller sees a new epoch it adopts the
+// incoming `seq` unconditionally instead of comparing against the old run's.
 typedef struct {
   beatled_message_t base;
   uint16_t program_id;
   uint16_t seq;
+  uint32_t epoch;
 } __attribute__((__packed__)) beatled_message_program_t;
 
 // eCommandType = BEATLED_MESSAGE_NEXT_BEAT
@@ -178,22 +187,31 @@ typedef struct {
 // (not of the beat during which the message was sent). Controllers fold it
 // into their local beat grid so patterns keyed on the count stay phase-
 // continuous across re-anchors.
+//
+// Protocol v5: trails `seq` with the same per-server-boot `epoch` as PROGRAM
+// (see beatled_message_program_t). On an epoch change the controller resets
+// its seq-gap tracking instead of treating the post-restart `seq` reset as a
+// flood of dropped beats.
 typedef struct {
   beatled_message_t base;
   uint64_t next_beat_time_ref;
   uint32_t beat_count;
   uint16_t seq;
+  uint32_t epoch;
 } __attribute__((__packed__)) beatled_message_next_beat_t;
 
 // eCommandType = BEATLED_MESSAGE_BEAT
 //
 // Same shape as NEXT_BEAT; currently unused by the live system but kept in
 // the catalogue for parity with the beat-detector callback structure.
+// Protocol v5: carries the per-server-boot `epoch` for wire parity with
+// NEXT_BEAT even though the live server doesn't emit BEAT.
 typedef struct {
   beatled_message_t base;
   uint64_t beat_time_ref;
   uint32_t beat_count;
   uint16_t seq;
+  uint32_t epoch;
 } __attribute__((__packed__)) beatled_message_beat_t;
 
 // eCommandType = BEATLED_MESSAGE_STATUS_REQUEST
