@@ -1,4 +1,31 @@
 import Foundation
+import SwiftUI
+
+/// User's preferred appearance, mirroring the web client's System/Light/Dark
+/// control so all three clients expose the same choice.
+enum AppearancePreference: String, CaseIterable, Identifiable {
+    case system, light, dark
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .system: "System"
+        case .light: "Light"
+        case .dark: "Dark"
+        }
+    }
+
+    /// nil follows the OS appearance; otherwise force the scheme via
+    /// `.preferredColorScheme`.
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .system: nil
+        case .light: .light
+        case .dark: .dark
+        }
+    }
+}
 
 @Observable
 class AppSettings {
@@ -24,6 +51,9 @@ class AppSettings {
     var allowInsecureConnections: Bool {
         didSet { defaults.set(allowInsecureConnections, forKey: "allowInsecureConnections") }
     }
+    var appearance: AppearancePreference {
+        didSet { defaults.set(appearance.rawValue, forKey: "appearance") }
+    }
 
     init(tokenStore: TokenStore = KeychainTokenStore(), defaults: UserDefaults = .standard) {
         self.tokenStore = tokenStore
@@ -45,5 +75,7 @@ class AppSettings {
 
         self.apiToken = tokenStore.load() ?? ""
         self.allowInsecureConnections = defaults.bool(forKey: "allowInsecureConnections")
+        self.appearance = AppearancePreference(
+            rawValue: defaults.string(forKey: "appearance") ?? "") ?? .system
     }
 }

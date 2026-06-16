@@ -15,6 +15,8 @@ import {
 } from "../lib/api";
 import { apControl } from "../lib/ap";
 import { useInterval } from "../hooks/interval";
+import { useTheme, type ThemePreference } from "../hooks/use-theme";
+import { Monitor, Sun, Moon } from "lucide-react";
 
 export async function loader() {
   return { host: getAPIHost(), token: getAPIToken() };
@@ -194,6 +196,43 @@ function AccessPointCard() {
   );
 }
 
+const APPEARANCE_OPTIONS: {
+  value: ThemePreference;
+  label: string;
+  icon: React.ReactNode;
+}[] = [
+  { value: "system", label: "System", icon: <Monitor className="h-4 w-4" /> },
+  { value: "light", label: "Light", icon: <Sun className="h-4 w-4" /> },
+  { value: "dark", label: "Dark", icon: <Moon className="h-4 w-4" /> },
+];
+
+function AppearanceCard() {
+  const { preference, setTheme } = useTheme();
+
+  return (
+    <Card>
+      <CardContent className="pt-6 space-y-3">
+        <Label className="text-sm font-medium">Appearance</Label>
+        <div className="grid grid-cols-3 gap-2">
+          {APPEARANCE_OPTIONS.map((opt) => (
+            <Button
+              key={opt.value}
+              type="button"
+              variant={preference === opt.value ? "default" : "outline"}
+              aria-pressed={preference === opt.value}
+              onClick={() => setTheme(opt.value)}
+              className="flex items-center justify-center gap-2"
+            >
+              {opt.icon}
+              {opt.label}
+            </Button>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function ConfigPage() {
   const submit = useSubmit();
   const { host, token } = useLoaderData() as { host: string; token: string };
@@ -230,8 +269,9 @@ export default function ConfigPage() {
 
   return (
     <>
-      <PageHeader title="Config" />
+      <PageHeader title="Settings" />
       <div className="px-4 pb-8 md:px-8 space-y-4">
+        <AppearanceCard />
         <Card>
           <CardContent className="pt-6">
             <fieldset>

@@ -8,6 +8,7 @@ struct ConfigView: View {
     var body: some View {
         NavigationStack {
             Form {
+                appearanceSection
                 serverSection
                 authenticationSection
                 securitySection
@@ -15,7 +16,7 @@ struct ConfigView: View {
                 aboutSection
             }
             .formStyle(.grouped)
-            .navigationTitle("Config")
+            .navigationTitle("Settings")
             .alert("Security Warning", isPresented: $showInsecureWarning) {
                 Button("Cancel", role: .cancel) {
                     viewModel.settings.allowInsecureConnections = false
@@ -36,6 +37,19 @@ struct ConfigView: View {
                        ? " The Pi auto-reverts to WiFi after \(viewModel.revertMinutes) min."
                        : ""))
             }
+        }
+    }
+
+    @ViewBuilder
+    private var appearanceSection: some View {
+        Section("Appearance") {
+            Picker("Theme", selection: $viewModel.settings.appearance) {
+                ForEach(AppearancePreference.allCases) { preference in
+                    Text(preference.label).tag(preference)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
         }
     }
 
