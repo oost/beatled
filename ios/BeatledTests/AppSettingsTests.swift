@@ -125,4 +125,23 @@ final class AppSettingsTests: XCTestCase {
         let reloaded = AppSettings(tokenStore: InMemoryTokenStore(), defaults: defaults)
         XCTAssertTrue(reloaded.allowInsecureConnections)
     }
+
+    // MARK: Appearance persistence
+
+    func testAppearanceDefaultsToSystemAndPersists() {
+        let settings = AppSettings(tokenStore: InMemoryTokenStore(), defaults: defaults)
+        XCTAssertEqual(settings.appearance, .system)
+
+        settings.appearance = .dark
+        XCTAssertEqual(defaults.string(forKey: "appearance"), "dark")
+
+        let reloaded = AppSettings(tokenStore: InMemoryTokenStore(), defaults: defaults)
+        XCTAssertEqual(reloaded.appearance, .dark)
+    }
+
+    func testUnknownStoredAppearanceFallsBackToSystem() {
+        defaults.set("chartreuse", forKey: "appearance")
+        let settings = AppSettings(tokenStore: InMemoryTokenStore(), defaults: defaults)
+        XCTAssertEqual(settings.appearance, .system)
+    }
 }

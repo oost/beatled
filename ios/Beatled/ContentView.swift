@@ -20,7 +20,7 @@ struct ContentView: View {
             Tab("Log", systemImage: "text.alignleft") {
                 LogView(viewModel: LogViewModel(api: api))
             }
-            Tab("Config", systemImage: "gearshape") {
+            Tab("Settings", systemImage: "gearshape") {
                 ConfigView(viewModel: configViewModel)
             }
         }

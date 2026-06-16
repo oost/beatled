@@ -21,6 +21,7 @@ struct BeatledApp: App {
                 .environment(apiClient)
                 .environment(configViewModel)
                 .tint(Color("AccentColor"))
+                .preferredColorScheme(settings.appearance.colorScheme)
                 .task { await configViewModel.runHealthChecks() }
         }
         #if os(macOS)

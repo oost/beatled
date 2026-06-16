@@ -23,7 +23,7 @@ export const NAVBAR_ROUTES: NavRoute[] = [
     icon: <ScrollText className="h-5 w-5" />,
   },
   {
-    name: "Config",
+    name: "Settings",
     path: "/config",
     icon: <Settings className="h-5 w-5" />,
   },
