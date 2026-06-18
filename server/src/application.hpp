@@ -4,6 +4,7 @@
 #include <memory>
 #include <thread>
 
+#include "core/clock.hpp"
 #include "core/config.hpp"
 #include "core/interfaces/service_manager.hpp"
 #include "core/state_manager.hpp"
@@ -25,10 +26,15 @@ public:
 
   StateManager &state_manager() override { return state_manager_; }
 
+  // Monotonic microseconds since this Application was constructed (≈ process
+  // start). Surfaced on /api/status as the server's "time since last restart".
+  uint64_t uptime_us() const override { return core::Clock::time_us_64() - start_time_us_; }
+
 private:
   void initialize_io_context();
   void start_threads();
 
+  const uint64_t start_time_us_{core::Clock::time_us_64()};
   const server::Server::parameters_t server_parameters_;
   StateManager state_manager_;
   server::Logger logger_;

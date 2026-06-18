@@ -85,7 +85,8 @@ Returns the server health status, service states, current tempo, and connected d
   },
   "tempo": 120.5,
   "manualBpm": 120.0,
-  "deviceCount": 3
+  "deviceCount": 3,
+  "uptime_us": 9876543210
 }
 ```
 
@@ -96,6 +97,7 @@ Returns the server health status, service states, current tempo, and connected d
 | `tempo` | number | Current tempo in BPM (from whichever tempo source is active) |
 | `manualBpm` | number | Operator-chosen BPM used by the `manual-bpm` service |
 | `deviceCount` | number | Number of connected Pico W devices |
+| `uptime_us` | number | Microseconds since the server process started (time since last restart) |
 
 ---
 

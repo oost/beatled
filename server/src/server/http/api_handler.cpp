@@ -113,6 +113,7 @@ APIHandler::req_status_t APIHandler::on_get_status(const req_handle_t &req, rout
   response_body["tempo"] = service_manager_.state_manager().get_tempo_ref().tempo;
   response_body["manualBpm"] = service_manager_.state_manager().get_manual_bpm();
   response_body["deviceCount"] = service_manager_.state_manager().get_clients().size();
+  response_body["uptime_us"] = service_manager_.uptime_us();
 
   return init_resp(req->create_response(restinio::status_ok()))
       .set_body(response_body.dump())

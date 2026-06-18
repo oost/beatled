@@ -54,10 +54,12 @@ TEST_CASE("API response contract: status endpoint", "[api]") {
     }
     response["status"] = service_status;
     response["tempo"] = sm.state_manager().get_tempo_ref().tempo;
+    response["uptime_us"] = sm.uptime_us();
 
     REQUIRE(response.contains("message"));
     REQUIRE(response.contains("status"));
     REQUIRE(response.contains("tempo"));
+    REQUIRE(response.contains("uptime_us"));
     REQUIRE(response["message"] == "It's all good!");
     REQUIRE(response["tempo"].get<float>() == 120.5f);
     REQUIRE(response["status"]["beat_detector"] == false);
@@ -102,15 +104,14 @@ TEST_CASE("API response contract: program endpoint", "[api]") {
 
     json response;
     response["programId"] = program_id;
-    response["programs"] = json::array(
-        {{{"name", "Snakes!"}, {"id", 0}},
-         {{"name", "Random data"}, {"id", 1}},
-         {{"name", "Sparkles"}, {"id", 2}},
-         {{"name", "Greys"}, {"id", 3}},
-         {{"name", "Drops"}, {"id", 4}},
-         {{"name", "Solid!"}, {"id", 5}},
-         {{"name", "Fade"}, {"id", 6}},
-         {{"name", "Fade Color"}, {"id", 7}}});
+    response["programs"] = json::array({{{"name", "Snakes!"}, {"id", 0}},
+                                        {{"name", "Random data"}, {"id", 1}},
+                                        {{"name", "Sparkles"}, {"id", 2}},
+                                        {{"name", "Greys"}, {"id", 3}},
+                                        {{"name", "Drops"}, {"id", 4}},
+                                        {{"name", "Solid!"}, {"id", 5}},
+                                        {{"name", "Fade"}, {"id", 6}},
+                                        {{"name", "Fade Color"}, {"id", 7}}});
 
     REQUIRE(response["programId"].get<uint16_t>() == 3);
     REQUIRE(response["programs"].is_array());

@@ -1,6 +1,7 @@
 #ifndef CORE__INTERFACES__SERVICE_MANAGER_HPP
 #define CORE__INTERFACES__SERVICE_MANAGER_HPP
 
+#include <cstdint>
 #include <fmt/format.h>
 #include <stdexcept>
 
@@ -23,6 +24,12 @@ public:
   const service_map_t &services() const { return interface_map_; }
 
   virtual StateManager &state_manager() = 0;
+
+  // Microseconds since the server process started. Defaults to 0 so test
+  // doubles needn't implement it; the real Application overrides it with a
+  // monotonic-clock delta from construction time.
+  virtual uint64_t uptime_us() const { return 0; }
+
   virtual ~ServiceManagerInterface() {}
 
 protected:
