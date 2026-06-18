@@ -9,6 +9,12 @@ CONFIG_LWIP_DNS_SUPPORT_MDNS_QUERIES=y
 # WiFi
 CONFIG_ESP_WIFI_SOFTAP_SUPPORT=n
 
+# Flash: the ESP32-C3 module is 4 MB. Pin it here (IDF defaults to 2 MB)
+# so the flasher uses the whole chip and the partition table can grow
+# into it — a prerequisite for a two-OTA layout.
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+CONFIG_ESPTOOLPY_FLASHSIZE="4MB"
+
 # Stack sizes
 CONFIG_ESP_MAIN_TASK_STACK_SIZE=8192
 CONFIG_FREERTOS_TIMER_TASK_STACK_DEPTH=4096
