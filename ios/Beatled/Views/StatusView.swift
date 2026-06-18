@@ -59,11 +59,32 @@ struct StatusView: View {
             }
             .padding(.vertical, 4)
 
+            serverUptimeRow
+
             if let lastUpdate = viewModel.lastUpdate {
                 HStack {
                     Image(systemName: "clock")
                         .font(.caption2)
                     Text("Updated \(lastUpdate, style: .relative) ago")
+                        .font(.caption)
+                }
+                .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    // Server "time since last restart". uptime_us is sampled at fetch time
+    // (lastUpdate); a 30s TimelineView extrapolates from that anchor so the
+    // value counts up live between the 2s data polls.
+    @ViewBuilder
+    private var serverUptimeRow: some View {
+        if let uptimeUs = viewModel.status?.uptimeUs, let anchor = viewModel.lastUpdate {
+            TimelineView(.periodic(from: .now, by: 30)) { context in
+                let liveUs = uptimeUs + max(0, context.date.timeIntervalSince(anchor)) * 1_000_000
+                HStack {
+                    Image(systemName: "clock.arrow.circlepath")
+                        .font(.caption2)
+                    Text("Up \(formatDurationUs(liveUs))")
                         .font(.caption)
                 }
                 .foregroundStyle(.secondary)

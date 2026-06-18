@@ -7,6 +7,32 @@ struct StatusResponse: Codable {
     let deviceCount: Int
     // Optional so older servers without the field still decode.
     let manualBpm: Double?
+    // Microseconds since the server process started (time since last restart).
+    // Optional so older servers without the field still decode.
+    let uptimeUs: Double?
+
+    private enum CodingKeys: String, CodingKey {
+        case message
+        case status
+        case tempo
+        case deviceCount
+        case manualBpm
+        case uptimeUs = "uptime_us"
+    }
+}
+
+// Compact duration: "3d 4h", "4h 12m", "12m 5s", "5s". Shared by the server
+// uptime row and the per-device uptime column.
+func formatDurationUs(_ us: Double) -> String {
+    let totalSec = Int(us / 1_000_000)
+    let d = totalSec / 86400
+    let h = (totalSec % 86400) / 3600
+    let m = (totalSec % 3600) / 60
+    let s = totalSec % 60
+    if d > 0 { return "\(d)d \(h)h" }
+    if h > 0 { return "\(h)h \(m)m" }
+    if m > 0 { return "\(m)m \(s)s" }
+    return "\(s)s"
 }
 
 struct DevicesResponse: Codable {
@@ -123,6 +149,12 @@ struct Device: Codable, Identifiable {
     }
 
     var id: Int { clientId }
+
+    // Controller time-since-boot from the QoS block (uptime_us).
+    var uptimeText: String {
+        guard let us = qos?.uptimeUs else { return "—" }
+        return formatDurationUs(us)
+    }
 
     var lastSeenText: String {
         let nowUs = UInt64(Date().timeIntervalSince1970 * 1_000_000)
