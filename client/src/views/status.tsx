@@ -1,5 +1,5 @@
 import { useFetcher } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useInterval } from "../hooks/interval";
 import { getStatus, getDevices, getQos, serviceControl, type Device, type FleetQos } from "../lib/status";
 import PageHeader from "../components/page-header";
@@ -25,6 +25,27 @@ interface TempoHistoryEntry {
   status?: string | boolean | Record<string, boolean>;
   tempo?: number;
   deviceCount?: number;
+  uptime_us?: number;
+}
+
+// Compact duration: "3d 4h", "4h 12m", "12m 5s", "5s".
+function formatDurationUs(us: number): string {
+  const totalSec = Math.floor(us / 1_000_000);
+  const d = Math.floor(totalSec / 86400);
+  const h = Math.floor((totalSec % 86400) / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  if (d > 0) return `${d}d ${h}h`;
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+}
+
+// Controller time-since-boot, reported in the QoS block (uptime_us).
+function formatDeviceUptime(device: Device): string {
+  const us = device.qos?.uptime_us;
+  if (us === undefined || us === null) return "—";
+  return formatDurationUs(us);
 }
 
 export async function loader() {
@@ -195,6 +216,12 @@ function FleetQosCard({ qos }: FleetQosCardProps) {
 export default function StatusPage() {
   const fetcher = useFetcher();
 
+  // Drives the live server-uptime display. The status data itself is polled
+  // by the 2s fetcher below; this 30s tick re-renders so the uptime keeps
+  // counting up between polls (and refreshes at least every 30s, per spec).
+  const [now, setNow] = useState(() => Date.now());
+  useInterval(() => setNow(Date.now()), 30 * 1000);
+
   useInterval(() => {
     if (fetcher.state === "idle") {
       fetcher.submit(null);
@@ -222,6 +249,13 @@ export default function StatusPage() {
   const data = fetcherData?.last || ({} as Partial<TempoHistoryEntry>);
   const devices = fetcherData?.devices || [];
   const qos = fetcherData?.qos ?? null;
+
+  // Server "time since last restart". uptime_us is sampled at fetch time
+  // (data.x); extrapolate to the current `now` tick so it counts up live.
+  const serverUptime =
+    data.uptime_us !== undefined && data.x
+      ? formatDurationUs(data.uptime_us + Math.max(0, now - data.x.getTime()) * 1000)
+      : null;
 
   return (
     <>
@@ -265,6 +299,10 @@ export default function StatusPage() {
                           />
                         )}
                       </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">Uptime</TableCell>
+                      <TableCell className="text-right">{serverUptime ?? "—"}</TableCell>
                     </TableRow>
                     <TableRow>
                       <TableCell className="font-medium">Devices</TableCell>
@@ -316,6 +354,7 @@ export default function StatusPage() {
                     <TableHead className="text-right">Offset</TableHead>
                     <TableHead className="text-right">RTT</TableHead>
                     <TableHead className="text-right">NB gaps</TableHead>
+                    <TableHead className="text-right">Uptime</TableHead>
                     <TableHead className="text-right">Last Seen</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -335,6 +374,9 @@ export default function StatusPage() {
                       </TableCell>
                       <TableCell className="text-right font-mono text-xs">
                         {formatLoss(device)}
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-xs">
+                        {formatDeviceUptime(device)}
                       </TableCell>
                       <TableCell className="text-right">
                         {formatLastSeen(device.last_status_time)}

@@ -12,6 +12,8 @@ export interface StatusResponse {
   // the server returns from /api/status and /api/tempo/manual.
   manualBpm?: number;
   deviceCount?: number;
+  // Microseconds since the server process started (time since last restart).
+  uptime_us?: number;
 }
 
 function isRecord(v: unknown): v is Record<string, unknown> {
@@ -25,6 +27,7 @@ export function isStatusResponse(v: unknown): v is StatusResponse {
   if (v.tempo !== undefined && typeof v.tempo !== "number") return false;
   if (v.manualBpm !== undefined && typeof v.manualBpm !== "number") return false;
   if (v.deviceCount !== undefined && typeof v.deviceCount !== "number") return false;
+  if (v.uptime_us !== undefined && typeof v.uptime_us !== "number") return false;
   if (
     v.status !== undefined &&
     typeof v.status !== "string" &&
