@@ -40,7 +40,7 @@ struct DevicesTableView: View {
         let offset = Self.signedMs(device.qos?.currentOffsetUs)
         let rtt = Self.ms(device.qos?.medianRttUs)
         let gaps = device.qos?.nextBeatGapTotal.map(String.init) ?? "—"
-        return "offset \(offset) · RTT \(rtt) · NB gaps \(gaps)"
+        return "offset \(offset) · RTT \(rtt) · NB gaps \(gaps) · up \(device.uptimeText)"
     }
 
     private static func ms(_ us: Double?) -> String {
