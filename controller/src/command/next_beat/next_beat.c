@@ -59,7 +59,7 @@ int process_next_beat_msg(beatled_message_t *server_msg, size_t data_length) {
       uint32_t lost = (uint32_t)delta - 1;
       next_beat_gap_total += lost;
 #if BEATLED_VERBOSE_LOG
-      printf("[CMD] NEXT_BEAT gap: %u missed (seq %u -> %u, total=%" PRIu32 ")\n", lost,
+      printf("[CMD] NEXT_BEAT gap: %" PRIu32 " missed (seq %u -> %u, total=%" PRIu32 ")\n", lost,
              last_next_beat_seq, seq, next_beat_gap_total);
 #endif
     }

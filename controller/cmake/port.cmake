@@ -33,6 +33,8 @@ macro(port_init)
     pico_sdk_init()
 
     add_compile_definitions(PICO_PORT)
+    # Real LED strip present on the Pico hardware: enable the boot self-test.
+    add_compile_definitions(BEATLED_LED_SELF_TEST=1)
 
     if(FREERTOS_PORT)
       message("Initializing FreeRTOS")

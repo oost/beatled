@@ -1,6 +1,18 @@
 set(ROOT "${CMAKE_CURRENT_LIST_DIR}/../../src")
 set(LIB "${CMAKE_CURRENT_LIST_DIR}/../../lib")
 
+# Generate generated/beatled_version.h (git hash + build time), mirroring the
+# Pico build (controller/CMakeLists.txt). main.c includes it. Done at configure
+# time so the header exists before compilation.
+set(BEATLED_GENERATED_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated")
+file(MAKE_DIRECTORY "${BEATLED_GENERATED_DIR}")
+execute_process(
+  COMMAND ${CMAKE_COMMAND}
+    -DBEATLED_SRC_DIR=${CMAKE_CURRENT_LIST_DIR}/../..
+    -DOUT=${BEATLED_GENERATED_DIR}/beatled_version.h
+    -P ${CMAKE_CURRENT_LIST_DIR}/../../cmake/gen_version.cmake
+)
+
 idf_component_register(
     SRCS
         # Entry point
@@ -31,6 +43,7 @@ idf_component_register(
         "${ROOT}/ws2812/programs/random/random.c"
         "${ROOT}/ws2812/programs/sparkle/sparkle.c"
         "${ROOT}/ws2812/programs/snake/snake.c"
+        "${ROOT}/ws2812/programs/off/off.c"
 
         # Platform-independent: state machine
         "${ROOT}/state_manager/state_manager.c"
@@ -46,6 +59,8 @@ idf_component_register(
         "${ROOT}/command/tempo/tempo.c"
         "${ROOT}/command/hello/hello.c"
         "${ROOT}/command/next_beat/next_beat.c"
+        "${ROOT}/command/status/status.c"
+        "${ROOT}/command/diagnostics/qos.c"
 
         # Platform-independent: clock, events, process, autotest
         "${ROOT}/clock/clock.c"
@@ -53,7 +68,6 @@ idf_component_register(
         "${ROOT}/event/event_queue.c"
         "${ROOT}/process/intercore_queue.c"
         "${ROOT}/process/core0.c"
-        "${ROOT}/process/isr_thread.c"
         "${ROOT}/process/core1.c"
         "${ROOT}/autotest/autotest.c"
 
@@ -61,6 +75,9 @@ idf_component_register(
         "${LIB}/beatled_protocol/include/beatled/protocol.c"
 
     INCLUDE_DIRS
+        # Generated version header (git hash + build time)
+        "${BEATLED_GENERATED_DIR}"
+
         # HAL public headers
         "${ROOT}/hal/blink/include"
         "${ROOT}/hal/board/include"
@@ -135,6 +152,8 @@ endif()
 target_compile_definitions(${COMPONENT_LIB} PUBLIC
     ESP32_PORT
     FREERTOS_PORT
+    # ESP-IDF provides its own app_main(); don't compile the shared int main().
+    BEATLED_PROVIDES_MAIN=0
     WIFI_SSID=\"${WIFI_SSID}\"
     WIFI_PASSWORD=\"${WIFI_PASSWORD}\"
     WIFI_SSID_2=\"${WIFI_SSID_2}\"

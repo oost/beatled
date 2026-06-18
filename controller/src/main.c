@@ -40,7 +40,7 @@ void start_beatled() {
   join_cores();
 }
 
-#ifndef ESP32_PORT
+#if BEATLED_PROVIDES_MAIN
 int main(void) {
   startup(&start_beatled);
 

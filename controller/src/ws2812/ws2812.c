@@ -13,19 +13,21 @@
 #include "config/constants.h"
 #include "hal/registry.h"
 #include "hal/ws2812.h"
+#include "hal/time.h"
 #include "process/intercore_queue.h"
 #include "state_manager/state_manager.h"
-#ifdef POSIX_PORT
-#include "hal/startup.h"
-#else
-#include "pico/time.h"
-#endif
 #include "programs/utils.h"
 #include "ws2812/ws2812.h"
 #include "ws2812_config.h"
 #include "ws2812_patterns.h"
 
-#ifdef PICO_PORT
+// Simulator HUD sink — invoked via BEATLED_HUD_UPDATE (config/constants.h),
+// which is a no-op on hardware. Provided by the POSIX renderer; forward-declared
+// here so this file pulls in no port-specific header.
+void push_status_update(uint8_t state, bool connected, uint16_t program_id,
+                        uint32_t tempo_period_us, uint32_t beat_count, int64_t time_offset);
+
+#if BEATLED_LED_SELF_TEST
 #define LED_SELF_TEST_STEP_MS 1200
 #define LED_SELF_TEST_BRIGHTNESS 125
 
@@ -34,7 +36,7 @@ static void led_self_test_fill(uint32_t *colors, uint32_t value, const char *lab
     colors[p] = value;
   output_strings_dma(colors);
   printf("[INIT] LED self-test: %s\n", label);
-  sleep_ms(LED_SELF_TEST_STEP_MS);
+  hal_sleep_ms(LED_SELF_TEST_STEP_MS);
 }
 
 static void led_self_test(void) {
@@ -225,12 +227,11 @@ uint32_t led_update(void) {
   output_strings_dma(colors[current_stream]);
   current_stream ^= 1;
 
-  // Update status ~10x per second (every 10 LED cycles at 100Hz)
+  // Update status ~10x per second (every 10 LED cycles at 100Hz). No-op on
+  // hardware (no HUD); see BEATLED_HUD_UPDATE.
   if (_cycle_idx % 10 == 0) {
-#ifdef POSIX_PORT
-    push_status_update(state_manager_get_state(), state_manager_get_state() >= STATE_REGISTERED,
+    BEATLED_HUD_UPDATE(state_manager_get_state(), state_manager_get_state() >= STATE_REGISTERED,
                        program_id, (uint32_t)tempo_period_us, beat_count, time_offset);
-#endif
   }
 
   // Verbose logging every 1000 cycles (~10 seconds)

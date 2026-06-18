@@ -1,4 +1,5 @@
-// #include <pico/sync.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -8,10 +9,12 @@
 #include "hal/unique_id.h"
 #include "state_manager/state_manager.h"
 #include "state_manager/states.h"
-#ifdef POSIX_PORT
-extern void push_status_update(uint8_t state, bool connected, uint16_t program_id,
-                               uint32_t tempo_period_us, uint32_t beat_count, int64_t time_offset);
-#endif
+
+// Simulator HUD sink — invoked via BEATLED_HUD_UPDATE (config/constants.h),
+// which is a no-op on hardware. Provided by the POSIX renderer (or the test
+// stub); forward-declared here so this file needs no port-specific header.
+void push_status_update(uint8_t state, bool connected, uint16_t program_id,
+                        uint32_t tempo_period_us, uint32_t beat_count, int64_t time_offset);
 
 typedef struct state_manager_internal_state {
   state_manager_state_t current_state;
@@ -129,8 +132,7 @@ int transition_state(state_manager_state_t new_state) {
     printf("[STATE] Unknown state: %s (%d)\n", state_name(new_state), new_state);
   }
 
-#ifdef POSIX_PORT
-  // Read current registry values to preserve tempo/program info in HUD.
+  // Mirror current registry values to the simulator HUD (no-op on hardware).
   // Must run AFTER the enter handlers: the very first transition's
   // enter_started_state() is what calls registry_init(), and the FreeRTOS
   // registry port (posix-freertos sim) deadlocks taking the not-yet-created
@@ -142,9 +144,8 @@ int transition_state(state_manager_state_t new_state) {
   int64_t time_offset = (int64_t)registry.time_offset;
   registry_unlock_mutex();
 
-  push_status_update(new_state, new_state >= STATE_REGISTERED, program_id, tempo_period_us,
+  BEATLED_HUD_UPDATE(new_state, new_state >= STATE_REGISTERED, program_id, tempo_period_us,
                      beat_count, time_offset);
-#endif
 
   return err;
 }

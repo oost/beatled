@@ -55,20 +55,55 @@
 // and reboot. On Pico, just log and continue.
 #ifdef POSIX_PORT
 #include <stdlib.h>
-#define BEATLED_FATAL(msg)                                                     \
-  do {                                                                         \
-    puts("[FATAL] " msg);                                                      \
-    exit(1);                                                                   \
+#define BEATLED_FATAL(msg)                                                                         \
+  do {                                                                                             \
+    puts("[FATAL] " msg);                                                                          \
+    exit(1);                                                                                       \
   } while (0)
 #elif defined(ESP32_PORT)
 #include <stdlib.h>
-#define BEATLED_FATAL(msg)                                                     \
-  do {                                                                         \
-    puts("[FATAL] " msg);                                                      \
-    abort();                                                                   \
+#define BEATLED_FATAL(msg)                                                                         \
+  do {                                                                                             \
+    puts("[FATAL] " msg);                                                                          \
+    abort();                                                                                       \
   } while (0)
 #else
 #define BEATLED_FATAL(msg) puts("[ERR] " msg)
+#endif
+
+// Visible R/G/B/W LED bring-up sweep at boot — only meaningful where there's a
+// real strip (the Pico builds enable it). A feature flag rather than a port
+// check, so the shared LED code carries no #ifdef. Default off; the build
+// turns it on.
+#ifndef BEATLED_LED_SELF_TEST
+#define BEATLED_LED_SELF_TEST 0
+#endif
+
+// Whether this build supplies the standard int main() entry point. The ESP-IDF
+// build provides its own app_main(), so that build sets this to 0.
+#ifndef BEATLED_PROVIDES_MAIN
+#define BEATLED_PROVIDES_MAIN 1
+#endif
+
+// Simulator HUD hook. The POSIX renderer mirrors controller state to an
+// on-screen overlay; real hardware has no HUD, so this compiles to nothing —
+// shared code calls it unconditionally and hardware pays no cost (no function
+// call). On POSIX it calls push_status_update (declared in hal/startup.h, or
+// forward-declared by the caller); callers needn't include any port header.
+#ifdef POSIX_PORT
+#define BEATLED_HUD_UPDATE(state, connected, program_id, tempo_period_us, beat_count, time_offset) \
+  push_status_update((state), (connected), (program_id), (tempo_period_us), (beat_count),          \
+                     (time_offset))
+#else
+#define BEATLED_HUD_UPDATE(state, connected, program_id, tempo_period_us, beat_count, time_offset) \
+  do {                                                                                             \
+    (void)(state);                                                                                 \
+    (void)(connected);                                                                             \
+    (void)(program_id);                                                                            \
+    (void)(tempo_period_us);                                                                       \
+    (void)(beat_count);                                                                            \
+    (void)(time_offset);                                                                           \
+  } while (0)
 #endif
 
 #endif // BEATLED_CONSTANTS_H
